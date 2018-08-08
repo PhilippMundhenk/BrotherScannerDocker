@@ -1,7 +1,7 @@
 FROM ubuntu:16.04
 
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y clean
-RUN apt-get -y install sane sane-utils ghostscript netpbm x11-common- wget && apt-get -y clean
+RUN apt-get -y install sane sane-utils ghostscript netpbm x11-common- wget graphicsmagick && apt-get -y clean
 
 RUN cd /tmp && \
     wget http://download.brother.com/welcome/dlf006645/brscan4-0.4.5-1.amd64.deb && \
