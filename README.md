@@ -30,5 +30,26 @@ scanning tasks. You can add any shell script here.
 You may mount the scripts like this:
 -v $PWD/script/:/opt/brother/scanner/brscan-skey/script/
 
+## FTPS upload
+In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
+To do so, set the following environment variables to your values:
+ENV FTP_USER="scanner"
+ENV FTP_PASSWORD="scanner"
+ENV FTP_HOST="ftp.mydomain.com"
+ENV FTP_PATH="/"
+
+This only works with the scripts offered here in folder script/ (see Customize).
+
+## Automatic Synchronization Solutions
+Many automatic synchronization solutions, such as Synology CloudStation, are notified
+about changes in the filesystem through inotify (see http://man7.org/linux/man-pages/man7/inotify.7.html).
+As the volume is mounted in Docker, the security mechanisms isolate the host and container
+filesystem. This means that such systems do not work.
+
+To solve this issue, a simple 'sed "" -i' can be performed on the file. The scripts in folder script/ use SSH
+to execute this command. This generates an inotify event, in turn starting synchronisation.
+
+Of course this requires SSH access to the host. If this is not available, consider the FTPS option.
+
 ## Supported Models
 You can retrieve the supported models by the helper script listModels.sh
