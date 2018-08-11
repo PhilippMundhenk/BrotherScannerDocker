@@ -33,10 +33,10 @@ You may mount the scripts like this:
 ## FTPS upload
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
 To do so, set the following environment variables to your values:
-ENV FTP_USER="scanner"
-ENV FTP_PASSWORD="scanner"
-ENV FTP_HOST="ftp.mydomain.com"
-ENV FTP_PATH="/"
+- FTP_USER="scanner"
+- FTP_PASSWORD="scanner"
+- FTP_HOST="ftp.mydomain.com"
+- FTP_PATH="/"
 
 This only works with the scripts offered here in folder script/ (see Customize).
 
@@ -48,6 +48,11 @@ filesystem. This means that such systems do not work.
 
 To solve this issue, a simple 'sed "" -i' can be performed on the file. The scripts in folder script/ use SSH
 to execute this command. This generates an inotify event, in turn starting synchronisation.
+To use this option, set the following variables to your values:
+- SSH_USER="admin"
+- SSH_PASSWORD="admin"
+- SSH_HOST="localhost"
+- SSH_PATH="/path/to/scans/folder/"
 
 Of course this requires SSH access to the host. If this is not available, consider the FTPS option.
 
