@@ -15,12 +15,16 @@ date=$(date +%Y-%m-%d-%H-%M-%S)
 if [ -f "/home/$USER/scan_pid" ]; then
 	#kill conversion and do right now:
 	kill -9 `cat /home/$USER/scan_pid`
-	
+
 	gm convert -page A4+0+0 /scans/*.pnm /scans/$date.pdf
+	#TODO: make settings configurable (especially host and port and switch to turn on/off)
+	curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf localhost:32769/ocr.php
 	rm /scans/*.pnm
 	rm /home/$USER/scan_pid
-	
+
 	/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date.pdf
+	#TODO this is temporary only (final is only one PDF file):
+	/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date-ocr.pdf
 fi
 
 date=$(date +%Y-%m-%d-%H-%M-%S)
@@ -52,10 +56,14 @@ fi
 	fi
 	echo "converting to PDF..."
 	gm convert -page A4+0+0 $filename_base*.pnm /scans/$date.pdf
+	#TODO: make settings configurable (especially host and port and switch to turn on/off)
+	curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf localhost:32769/ocr.php
 	rm $filename_base*.pnm
 	rm /home/$USER/scan_pid
 
 	/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date.pdf
+	#TODO this is temporary only (final is only one PDF file):
+	/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date-ocr.pdf
 } &
 echo $! > /home/$USER/scan_pid
 echo "converting process is running in PID: "$(cat /home/$USER/scan_pid)
