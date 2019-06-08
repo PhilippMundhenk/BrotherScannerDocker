@@ -56,12 +56,19 @@ for filename in *back*.pnm; do
         fi
 done
 
-echo "converting to PDF..."
-gm convert -page A4+0+0 /scans/*.pnm /scans/$date.pdf
-curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf localhost:32800/ocr.php
-rm /scans/*.pnm
-rm /scans/*front*
-rm /scans/*back*
+(
+	mkdir "/scans/convert_$date"
+	mv /scans/*.pnm "/scans/convert_$date"
+	cd "/scans/convert_$date"
+	echo "converting to PDF..."
+	gm convert -page A4+0+0 *.pnm /scans/$date.pdf
+	cd /scans
+	rm -rf "/scans/convert_$date"
 
-/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date.pdf
-/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date-ocr.pdf
+	/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date.pdf
+
+	(
+		curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf localhost:32800/ocr.php 
+		/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date-ocr.pdf
+	) &
+) &
