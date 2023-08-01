@@ -21,10 +21,10 @@ ENV IPADDRESS="192.168.1.123"
 ENV USERNAME="NAS"
 
 #only set these variables, if inotify needs to be triggered (e.g., for CloudStation):
-ENV SSH_USER="admin"
-ENV SSH_PASSWORD="admin"
-ENV SSH_HOST="localhost"
-ENV SSH_PATH="/path/to/scans/folder/"
+ENV SSH_USER=""
+ENV SSH_PASSWORD=""
+ENV SSH_HOST=""
+ENV SSH_PATH=""
 
 #only set these variables, if you need FTP upload:
 ENV FTP_USER="scanner"
