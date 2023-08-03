@@ -20,7 +20,7 @@ ENV MODEL="MFC-L2700DW"
 ENV IPADDRESS="192.168.1.123"
 ENV USERNAME="NAS"
 
-#only set these variables, if inotify needs to be triggered (e.g., for CloudStation):
+#only set these variables, if inotify needs to be triggered (e.g., for Synology Drive):
 ENV SSH_USER=""
 ENV SSH_PASSWORD=""
 ENV SSH_HOST=""
