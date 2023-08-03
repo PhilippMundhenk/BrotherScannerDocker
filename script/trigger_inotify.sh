@@ -6,12 +6,12 @@ file=$5
 
 if [ -z "${user}" ] || [ -z "${password}" ] || [ -z "${address}" ] || [ -z "${filepath}" ]; then
   echo "SSH environment variables not set, skipping inotify trigger."
-  exit 1
+else
+  if sshpass -p "$password" ssh -o StrictHostKeyChecking=no $user@$address "sed \"\" -i $filepath/$file"; then
+    echo "trigger inotify successful"
+  else
+    echo "trigger inotify failed"
+    exit 1
+  fi
 fi
 
-if sshpass -p "$password" ssh -o StrictHostKeyChecking=no $user@$address "sed \"\" -i $filepath/$file"; then
-  echo "trigger inotify successful"
-else
-  echo "trigger inotify failed"
-  exit 1
-fi
