@@ -16,9 +16,18 @@ You can configure the tool via environment variables. The following are required
 | MODEL  | Model of your scanner (see Supported Models)  |
 | IPADDRESS | IP Address of your scanner |
 
-You may also want to mount a directory to retrieve your data. Scanned files are stored in /root/brscan.
-
-See run.sh for example how to use environment variables and mounts.
+### Docker example
+'''
+docker run \
+    -d \
+    -v "/home/$USER/scans:/scans" \
+    -v "$PWD/script:/opt/brother/scanner/brscan-skey/script/" \
+    -e NAME="Scanner" \
+    -e MODEL="MFC-L2700DW" \
+    -e IPADDRESS="10.0.0.1" \
+    --net=host \
+	ghcr.io/philippmundhenk/brotherscannerdocker:master
+'''
 
 ## Customize
 As the standard scripts are not working particularly well, you may customize them to your needs.
@@ -28,7 +37,8 @@ drivers will call these scripts. Each script corresponds to a shortcut button on
 you can customize the actions running on your scanner. Hint: These scripts don't necessarily need to do
 scanning tasks. You can add any shell script here.
 You may mount the scripts like this:
--v $PWD/script/:/opt/brother/scanner/brscan-skey/script/
+
+-v "$PWD/script/:/opt/brother/scanner/brscan-skey/script/"
 
 ## FTPS upload
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
