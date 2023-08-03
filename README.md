@@ -17,7 +17,7 @@ You can configure the tool via environment variables. The following are required
 | IPADDRESS | IP Address of your scanner |
 
 ### Docker Example
-```
+```bash
 docker run \
     -d \
     -v "/home/$USER/scans:/scans" \
