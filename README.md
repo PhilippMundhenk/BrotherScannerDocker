@@ -16,8 +16,8 @@ You can configure the tool via environment variables. The following are required
 | MODEL  | Model of your scanner (see Supported Models)  |
 | IPADDRESS | IP Address of your scanner |
 
-### Docker example
-'''
+### Docker Example
+```
 docker run \
     -d \
     -v "/home/$USER/scans:/scans" \
@@ -27,7 +27,24 @@ docker run \
     -e IPADDRESS="10.0.0.1" \
     --net=host \
 	ghcr.io/philippmundhenk/brotherscannerdocker:master
-'''
+```
+
+### Docker Compose Example
+```yaml
+version: '3'
+
+services:
+    brother-scanner:
+        image: ghcr.io/philippmundhenk/brotherscannerdocker:master
+        volumes:
+            - /var/docker/brotherscanner/scans:/scans
+        environment:
+            - NAME=Scanner
+            - MODEL=MFC-L2700DW
+            - IPADRESS=192.168.44.26
+        restart: unless-stopped
+        network_mode: "host"
+```
 
 ## Customize
 As the standard scripts are not working particularly well, you may customize them to your needs.
