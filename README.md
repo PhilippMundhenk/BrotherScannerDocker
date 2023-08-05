@@ -26,7 +26,7 @@ docker run \
     -e MODEL="MFC-L2700DW" \
     -e IPADDRESS="10.0.0.1" \
     --net=host \
-	ghcr.io/philippmundhenk/brotherscannerdocker:master
+    ghcr.io/philippmundhenk/brotherscannerdocker:master
 ```
 
 ### Docker Compose Example
@@ -41,7 +41,7 @@ services:
         environment:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
-            - IPADRESS=192.168.44.26
+            - IPADRESS=10.0.0.1
         restart: unless-stopped
         network_mode: "host"
 ```
