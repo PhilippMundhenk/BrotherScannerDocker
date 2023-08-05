@@ -26,7 +26,7 @@ docker run \
     -e MODEL="MFC-L2700DW" \
     -e IPADDRESS="10.0.0.1" \
     --net=host \
-    ghcr.io/philippmundhenk/brotherscannerdocker:master
+    ghcr.io/philippmundhenk/brotherscannerdocker
 ```
 
 ### Docker Compose Example
@@ -35,7 +35,7 @@ version: '3'
 
 services:
     brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker:master
+        image: ghcr.io/philippmundhenk/brotherscannerdocker
         volumes:
             - /var/docker/brotherscanner/scans:/scans
         environment:
