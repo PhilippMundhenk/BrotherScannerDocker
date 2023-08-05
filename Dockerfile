@@ -27,10 +27,11 @@ ENV SSH_HOST=""
 ENV SSH_PATH=""
 
 #only set these variables, if you need FTP upload:
-ENV FTP_USER="scanner"
-ENV FTP_PASSWORD="scanner"
-ENV FTP_HOST="ftp.mydomain.com"
-ENV FTP_PATH="/"
+ENV FTP_USER=""
+ENV FTP_PASSWORD=""
+ENV FTP_HOST=""
+# Make sure this ends in a slash.
+ENV FTP_PATH="/scans/" 
 
 EXPOSE 54925
 EXPOSE 54921
