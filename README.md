@@ -49,8 +49,8 @@ services:
             - OCR_SERVER=localhost # optional, for OCR
             - OCR_PORT=32800 # optional, for OCR
             - OCR_PATH=ocr.php # optional, for OCR
-            - UID=1000
-            - GID=1000
+            - UID=1000 # optional, for /scans permissions
+            - GID=1000 # optional, for /scans permissions
         restart: unless-stopped
         network_mode: "host"
 
