@@ -41,7 +41,7 @@ services:
         environment:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
-            - IPADRESS=10.0.0.1
+            - IPADDRESS=10.0.0.1
         restart: unless-stopped
         network_mode: "host"
 ```
