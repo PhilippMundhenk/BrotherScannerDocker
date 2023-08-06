@@ -1,4 +1,10 @@
-adduser $USERNAME --disabled-password --force-badname --gecos ""
+if [[ -z ${UID} ]]; then
+	UID=1000
+fi
+if [[ -z ${GID} ]]; then
+	GID=1000
+fi
+adduser $USERNAME -u $UID -g $GID --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
