@@ -14,7 +14,7 @@ RUN cd /tmp && \
 	rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
 ADD files/runScanner.sh /opt/brother/runScanner.sh
-ADD script /opt/brother/scanner/brscan-skey/script
+COPY script /opt/brother/scanner/brscan-skey/script
 
 ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"
@@ -39,9 +39,6 @@ EXPOSE 54921
 
 #directory for scans:
 VOLUME /scans
-
-#directory for config files:
-VOLUME /opt/brother/scanner/brscan-skey
 
 CMD /opt/brother/runScanner.sh
 
