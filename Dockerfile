@@ -14,6 +14,7 @@ RUN cd /tmp && \
 	rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
 ADD files/runScanner.sh /opt/brother/runScanner.sh
+ADD script /opt/brother/scanner/brscan-skey/script
 
 ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"
