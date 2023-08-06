@@ -31,7 +31,7 @@ fi
 gm convert /scans/$date-page*.pnm /scans/$date.pdf
 rm /scans/$date-page*.pnm
 
-/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh $SSH_USER $SSH_PASSWORD $SSH_HOST $SSH_PATH $date.pdf
+/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date.pdf
 
 /opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
   "${FTP_USER}" \
