@@ -51,7 +51,7 @@ fi
 	
 		echo "starting OCR for $date..."
 		(
-			curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf localhost:32800/ocr.php
+			curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH}
 			/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date-ocr.pdf
 			/opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
 			  "${FTP_USER}" \
