@@ -1,10 +1,12 @@
+#!/bin/bash
 if [[ -z ${UID} ]]; then
 	UID=1000
 fi
 if [[ -z ${GID} ]]; then
 	GID=1000
 fi
-adduser $USERNAME -u $UID -g $GID --disabled-password --force-badname --gecos ""
+groupadd --gid $GID NAS
+adduser $USERNAME --uid $UID --gid $GID --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
