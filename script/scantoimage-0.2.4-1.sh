@@ -2,6 +2,7 @@
 # $1 = scanner device
 # $2 = friendly name
 
+{}
 #override environment, as brscan is screwing it up:
 export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
 
@@ -39,3 +40,5 @@ rm /scans/$date-page*.pnm
   "${FTP_HOST}" \
   "${FTP_PATH}" \
   "${date}.pdf"
+  
+} > /var/log/scanner.log 2>&1

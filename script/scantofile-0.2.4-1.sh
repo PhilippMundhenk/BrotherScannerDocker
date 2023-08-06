@@ -2,6 +2,7 @@
 # $1 = scanner device
 # $2 = friendly name
 
+{
 #override environment, as brscan is screwing it up:
 export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
 
@@ -64,3 +65,5 @@ fi
 ) &
 echo $! > scan_pid
 echo "conversion process for $date is running in PID: "$(cat scan_pid)
+
+} > /var/log/scanner.log 2>&1
