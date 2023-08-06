@@ -67,17 +67,21 @@ fi
 		cd /scans
 		rm -rf $date
 		
-		echo "starting OCR for $date..."
-		(
-			curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH} 
-			/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date-ocr.pdf
+		if [ -z "${OCR_SERVER}" ] || [ -z "${OCR_PORT}" ] || [ -z "${OCR_PATH}" ]; then
+			echo "OCR environment variables not set, skipping OCR."
+		else
+			echo "starting OCR for $date..."
+			(
+				curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH} 
+				/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date-ocr.pdf
 
-			/opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
-			  "${FTP_USER}" \
-			  "${FTP_PASSWORD}" \
-			  "${FTP_HOST}" \
-			  "${FTP_PATH}" \
-			  "${date}.pdf"
-		) &
+				/opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
+				  "${FTP_USER}" \
+				  "${FTP_PASSWORD}" \
+				  "${FTP_HOST}" \
+				  "${FTP_PATH}" \
+				  "${date}.pdf"
+			) &
+		fi
 	) &
 ) &
