@@ -46,16 +46,16 @@ services:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
             - IPADDRESS=10.0.0.1
-			- OCR_SERVER=localhost # optional, for OCR
+            - OCR_SERVER=localhost # optional, for OCR
             - OCR_PORT=32800 # optional, for OCR
             - OCR_PATH=ocr.php # optional, for OCR
-			- UID=1000
-			- GID=1000
+            - UID=1000
+            - GID=1000
         restart: unless-stopped
         network_mode: "host"
-	
-	# optional, for OCR
-	ocr:
+
+    # optional, for OCR
+    ocr:
       image: ghcr.io/philippmundhenk/tesseractocrmicroservice
       restart: unless-stopped
       ports:
