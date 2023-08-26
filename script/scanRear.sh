@@ -20,19 +20,29 @@ cd /scans/$date
 kill -9 `cat scan_pid`
 rm scan_pid
 
+$capability_source=$(scanimage --device-name "$device" -A | grep "--source")
+
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
     sleep  0.1
 fi
-scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
+if [[ $capability_source ]]; then
+  scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
+else
+  scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --resolution $resolution --batch=$output_file
+fi
 if [ ! -s $filename_base"0001.pnm" ];then
   if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 1000000
   else
     sleep  1
   fi
-  scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
+  if [[ $capability_source ]]; then
+    scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
+  else
+    scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --resolution $resolution --batch=$output_file
+  fi
 fi
 
 (
