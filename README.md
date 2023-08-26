@@ -15,6 +15,7 @@ You can configure the tool via environment variables. The following are required
 | NAME  | Arbitrary name to give your scanner  |
 | MODEL  | Model of your scanner (see Supported Models)  |
 | IPADDRESS | IP Address of your scanner |
+| RESOLUTION | (optional) DPI resolution of scan, refer to capabilities of printer on startup |
 
 ### Docker Example
 ```bash
