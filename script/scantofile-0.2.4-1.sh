@@ -20,11 +20,9 @@ filename_base=/scans/$date/$date"-front-page"
 output_file=$filename_base"%04d.pnm"
 echo "filename: "$output_file
 
-$scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name \"$device\" --resolution $resolution --batch=$output_file"
-$capability_source=$(scanimage --device-name "$device" -A | grep "source")
-if [[ $capability_source ]]; then
-  $scan_cmd="$scan_cmd --source \"Automatic Document Feeder(centrally aligned)\""
-fi
+#sthg is wrong with device name, probably escaping, use default printer:
+#scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name=$device --resolution=$resolution --batch=$output_file"
+scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --resolution=$resolution --batch=$output_file"
 
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
