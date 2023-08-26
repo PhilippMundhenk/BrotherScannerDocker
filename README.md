@@ -51,6 +51,7 @@ services:
             - OCR_PATH=ocr.php # optional, for OCR
             - UID=1000 # optional, for /scans permissions
             - GID=1000 # optional, for /scans permissions
+            - TZ=Europe/Berlin # optional, for correct time in scanned filenames
         restart: unless-stopped
         network_mode: "host"
 
