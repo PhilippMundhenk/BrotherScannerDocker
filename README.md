@@ -10,12 +10,12 @@ the container needs to be started with --net=host. See run.sh for example.
 ## Usage
 You can configure the tool via environment variables. The following are required:
 
-| Variable | Description |
-| ------------- | ------------- |
-| NAME  | Arbitrary name to give your scanner  |
-| MODEL  | Model of your scanner (see Supported Models)  |
-| IPADDRESS | IP Address of your scanner |
-| RESOLUTION | (optional) DPI resolution of scan, refer to capabilities of printer on startup |
+| Variable | Type | Description |
+| ------------- | ------------- | ------------- |
+| NAME  | mandatory | Arbitrary name to give your scanner. Displayed on scanner, if multiple servers are running. |
+| MODEL  | mandatory | Model of your scanner (e.g., MFC-L2700DW) |
+| IPADDRESS | mandatory | IP Address of your scanner |
+| RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
 
 ### Docker Example
 ```bash
@@ -117,6 +117,3 @@ To use this option, set the followin variables to your values:
 - OCR_PATH=ocr.php
 ```
 This will call the OCR service at https://192.168.1.101:8080/ocr.php.
-
-## Supported Models
-You can retrieve the supported models by the helper script listModels.sh
