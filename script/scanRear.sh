@@ -5,9 +5,11 @@
 #override environment, as brscan is screwing it up:
 export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
 
-# Resolution (dpi):
-# 100,200,300,400,600
-resolution=300
+if [[ $RESOLUTION ]]; then
+  resolution=$RESOLUTION
+else
+  resolution=300
+fi
 device=$1
 cd /scans
 date=$(ls -rd */ | grep $(date +"%Y-%m-%d") | head -1)
@@ -20,29 +22,25 @@ cd /scans/$date
 kill -9 `cat scan_pid`
 rm scan_pid
 
-$capability_source=$(scanimage --device-name "$device" -A | grep "--source")
+$scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name \"$device\" --resolution $resolution --batch=$output_file"
+$capability_source=$(scanimage --device-name "$device" -A | grep "source")
+if [[ $capability_source ]]; then
+  $scan_cmd="$scan_cmd --source \"Automatic Document Feeder(centrally aligned)\""
+fi
 
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
     sleep  0.1
 fi
-if [[ $capability_source ]]; then
-  scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
-else
-  scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --resolution $resolution --batch=$output_file
-fi
+$($scan_cmd)
 if [ ! -s $filename_base"0001.pnm" ];then
   if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 1000000
   else
     sleep  1
   fi
-  if [[ $capability_source ]]; then
-    scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --source "Automatic Document Feeder(centrally aligned)" --resolution $resolution --batch=$output_file
-  else
-    scanimage -l 0 -t 0 -x 215 -y 297 --device-name "$device" --resolution $resolution --batch=$output_file
-  fi
+  $($scan_cmd)
 fi
 
 (

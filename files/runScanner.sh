@@ -15,6 +15,10 @@ env > /opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 su - $USERNAME -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS"
 su - $USERNAME -c "/usr/bin/brscan-skey"
+
+echo "capabilities:"
+scanimage -A
+
 echo "startup successful"
 while true;
 do
