@@ -107,10 +107,10 @@ To use this option, set the following variables to your values:
 Of course this requires SSH access to the host. If this is not available, consider the FTPS option.
 
 ## OCR
-This image is prepare to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
+This image is prepared to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
 This uploads, waits for OCR to complete and downloads the file again.
-The resulting PDF file is saved in the /scans directory, wiht the appendix "-ocr" in the filename.
-To use this option, set the followin variables to your values:
+The resulting PDF file is saved in the /scans directory, with the appendix "-ocr" in the filename.
+To use this option, set the following variables to your values:
 ```
 - OCR_SERVER=192.168.1.101
 - OCR_PORT=8080
