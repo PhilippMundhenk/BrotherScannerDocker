@@ -30,7 +30,7 @@
 </head>
 <body>
 	<div class="form">
-			<div class="title">Brother Scanner</div>
+			<div class="title">Brother <?php echo($MODEL); ?></div>
 			<div class="cut cut-long"></div>
 			<form action="/scan.php" method="get">
 				<?php 
