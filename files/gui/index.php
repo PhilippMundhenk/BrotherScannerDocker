@@ -32,10 +32,20 @@
 			<div class="title">Brother Scanner</div>
 			<div class="cut cut-long"></div>
 			<form action="/scan.php" method="get">
-				<button type="submit" name="target" value="file" class="submit"><?php $button_file ?></button>
-				<button type="submit" name="target" value="email" class="submit"><?php $button_email ?></button>
-				<button type="submit" name="target" value="image" class="submit"><?php $button_image ?></button>
-				<button type="submit" name="target" value="ocr" class="submit"><?php $button_ocr ?></button>
+				<?php 
+				   if (array_key_exists('DISABLE_GUI_SCANTOIMAGE', $_ENV) && $_ENV["DISABLE_GUI_SCANTOOCR"]) {
+						echo('<button type="submit" name="target" value="file" class="submit">'.$button_file.'</button>');
+				   }
+				   if (array_key_exists('DISABLE_GUI_SCANTOEMAIL', $_ENV) && $_ENV["DISABLE_GUI_SCANTOEMAIL"]) {
+						echo('<button type="submit" name="target" value="email" class="submit">'.$button_email.'</button>');
+				   }
+				   if (array_key_exists('DISABLE_GUI_SCANTOIMAGE', $_ENV) && $_ENV["DISABLE_GUI_SCANTOIMAGE"]) {
+						echo('<button type="submit" name="target" value="image" class="submit">'.$button_image.'</button>');
+				   }
+				   if (array_key_exists('DISABLE_GUI_SCANTOOCR', $_ENV) && $_ENV["DISABLE_GUI_SCANTOOCR"]) {
+						echo('<button type="submit" name="target" value="ocr" class="submit">'.$button_ocr.'</button>');
+				   }
+			   ?>
 			</form>
 	</div>
 </body>

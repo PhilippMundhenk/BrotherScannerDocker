@@ -14,9 +14,7 @@ if (empty($target)) {
 	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
 }
 if (in_array($target, array('file','email','image','ocr'))) {
-    exec('sudo -u NAS /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh', $output, $retVal);
-	echo("retVal=".$retVal);
-	var_dump($output);
+    $output=shell_exec('sudo -u \#'.$_ENV[UID].' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh &');
 }
 else
 {
@@ -24,9 +22,6 @@ else
 	die("Error: Thou shalt not inject unknown script names!");
 }
 
-header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
-header("Cache-Control: public"); // needed for internet explorer
-header("Content-Type: text/plain");
-die();
+echo('<html><head><meta http-equiv="Refresh" content="0; url=/" /></head></html>');
 
 ?>

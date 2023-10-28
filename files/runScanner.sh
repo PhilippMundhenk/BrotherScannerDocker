@@ -16,14 +16,16 @@ chmod -R 777 /opt/brother
 su - $USERNAME -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS"
 su - $USERNAME -c "/usr/bin/brscan-skey"
 
-echo "starting webserver for API & GUI..."
-if [[ -z ${PORT} ]]; then
-	PORT=80
-fi
-echo "running on port $PORT"
-sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
-/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
-echo "webserver started"
+if [ "$WEBSERVER" == "true" ]
+	echo "starting webserver for API & GUI..."
+	if [[ -z ${PORT} ]]; then
+		PORT=80
+	fi
+	echo "running on port $PORT"
+	sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
+	/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
+	echo "webserver started"
+}
 
 echo "capabilities:"
 scanimage -A
