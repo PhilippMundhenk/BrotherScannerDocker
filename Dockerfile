@@ -69,6 +69,7 @@ EXPOSE 80
 ADD files/gui/index.php /var/www/html
 ADD files/gui/main.css /var/www/html
 ADD files/api/scan.php /var/www/html
+ADD files/api/active.php /var/www/html
 RUN chown -R www-data /var/www/
 
 #directory for scans:
