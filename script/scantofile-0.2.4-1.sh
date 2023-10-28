@@ -76,4 +76,4 @@ fi
 echo $! > scan_pid
 echo "conversion process for $date is running in PID: "$(cat scan_pid)
 
-} > /var/log/scanner.log 2>&1
+} >> /var/log/scanner.log 2>&1

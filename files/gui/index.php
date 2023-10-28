@@ -4,25 +4,25 @@
 <link rel="stylesheet" href="main.css">
 <title>Brother Scanner</title>
 <?php
-	$button_file = $_ENV["RENAME_GUI_SCANTOFILE"]
+	$button_file = $_ENV["RENAME_GUI_SCANTOFILE"];
 	if(empty($_ENV["RENAME_GUI_SCANTOFILE"]))
 	{
-		$button_file = "Scan to file"
+		$button_file = "Scan to file";
 	}
-	$button_email = $_ENV["RENAME_GUI_SCANTOEMAIL"]
+	$button_email = $_ENV["RENAME_GUI_SCANTOEMAIL"];
 	if(empty($_ENV["RENAME_GUI_SCANTOEMAIL"]))
 	{
-		$button_email = "Scan to email"
+		$button_email = "Scan to email";
 	}
-	$button_image = $_ENV["RENAME_GUI_SCANTOIMAGE"]
+	$button_image = $_ENV["RENAME_GUI_SCANTOIMAGE"];
 	if(empty($_ENV["RENAME_GUI_SCANTOIMAGE"]))
 	{
-		$button_image = "Scan to image"
+		$button_image = "Scan to image";
 	}
-	$button_ocr = $_ENV["RENAME_GUI_SCANTOOCR"]
+	$button_ocr = $_ENV["RENAME_GUI_SCANTOOCR"];
 	if(empty($_ENV["RENAME_GUI_SCANTOOCR"]))
 	{
-		$button_ocr = "Scan to OCR"
+		$button_ocr = "Scan to OCR";
 	}
 ?>
 

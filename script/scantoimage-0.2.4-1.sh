@@ -41,4 +41,4 @@ rm /scans/$date-page*.pnm
   "${FTP_PATH}" \
   "${date}.pdf"
   
-} > /var/log/scanner.log 2>&1
+} >> /var/log/scanner.log 2>&1
