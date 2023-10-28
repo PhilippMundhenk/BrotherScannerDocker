@@ -21,7 +21,7 @@ if [[ -z ${PORT} ]]; then
 	PORT=80
 fi
 echo "running on port $PORT"
-sed 's/server.port\W*= 80/server.port = $PORT/' /etc/lighttpd/lighttpd.conf
+sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
 /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
 echo "webserver started"
 
