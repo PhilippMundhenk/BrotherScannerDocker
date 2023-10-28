@@ -20,6 +20,7 @@ RUN apt-get -y install \
 		lighttpd \
         php-cgi \
         php-curl \
+		sudo \
 		&& apt-get -y clean
 
 RUN cd /tmp && \
@@ -41,6 +42,7 @@ RUN cp /etc/lighttpd/conf-available/10-fastcgi.conf /etc/lighttpd/conf-enabled/
 RUN mkdir -p /var/run/lighttpd
 RUN touch /var/run/lighttpd/php-fastcgi.socket
 RUN chown -R www-data /var/run/lighttpd
+RUN echo 'www-user ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"

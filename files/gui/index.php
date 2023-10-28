@@ -4,24 +4,24 @@
 <link rel="stylesheet" href="main.css">
 <title>Brother Scanner</title>
 <?php
-	$button_file = $_ENV["RENAME_GUI_SCANTOFILE"];
-	if(empty($_ENV["RENAME_GUI_SCANTOFILE"]))
-	{
+	if (array_key_exists('RENAME_GUI_SCANTOFILE', $_ENV)) {
+		$button_file = $_ENV["RENAME_GUI_SCANTOFILE"];
+	} else {
 		$button_file = "Scan to file";
 	}
-	$button_email = $_ENV["RENAME_GUI_SCANTOEMAIL"];
-	if(empty($_ENV["RENAME_GUI_SCANTOEMAIL"]))
-	{
+	if (array_key_exists('RENAME_GUI_SCANTOEMAIL', $_ENV)) {
+		$button_email = $_ENV["RENAME_GUI_SCANTOEMAIL"];
+	} else {
 		$button_email = "Scan to email";
 	}
-	$button_image = $_ENV["RENAME_GUI_SCANTOIMAGE"];
-	if(empty($_ENV["RENAME_GUI_SCANTOIMAGE"]))
-	{
+	if (array_key_exists('RENAME_GUI_SCANTOIMAGE', $_ENV)) {
+		$button_image = $_ENV["RENAME_GUI_SCANTOIMAGE"];
+	} else {
 		$button_image = "Scan to image";
 	}
-	$button_ocr = $_ENV["RENAME_GUI_SCANTOOCR"];
-	if(empty($_ENV["RENAME_GUI_SCANTOOCR"]))
-	{
+	if (array_key_exists('RENAME_GUI_SCANTOIMAGE', $_ENV)) {
+		$button_ocr = $_ENV["RENAME_GUI_SCANTOOCR"];
+	} else {
 		$button_ocr = "Scan to OCR";
 	}
 ?>
@@ -31,17 +31,11 @@
 	<div class="form">
 			<div class="title">Brother Scanner</div>
 			<div class="cut cut-long"></div>
-			<form action="/scan.php?target=file" method="get">
-				<button type="submit" name="action" class="submit"><?php $button_file ?></button>
-			</form>
-			<form action="/scan.php?target=email" method="get">
-				<button type="submit" name="action" class="submit"><?php $button_email ?></button>
-			</form>
-			<form action="/scan.php?target=image" method="get">
-				<button type="submit" name="action" class="submit"><?php $button_image ?></button>
-			</form>
-			<form action="/scan.php?target=ocr" method="get">
-				<button type="submit" name="action" class="submit"><?php $button_ocr ?></button>
+			<form action="/scan.php" method="get">
+				<button type="submit" name="target" value="file" class="submit"><?php $button_file ?></button>
+				<button type="submit" name="target" value="email" class="submit"><?php $button_email ?></button>
+				<button type="submit" name="target" value="image" class="submit"><?php $button_image ?></button>
+				<button type="submit" name="target" value="ocr" class="submit"><?php $button_ocr ?></button>
 			</form>
 	</div>
 </body>

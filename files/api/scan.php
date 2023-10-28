@@ -11,10 +11,10 @@ if (!array_key_exists('target', $_GET)) {
 $target = $_GET["target"];
 if (empty($target)) {
 	header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
-	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>");
+	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
 }
 if (in_array($target, array('file','email','image','ocr'))) {
-    $output = shell_exec('/opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh >> /var/log/scanner.log 2>&1');
+    $output = exec('sudo -u NAS /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh >> /var/log/scanner.log 2>&1');
 }
 else
 {
