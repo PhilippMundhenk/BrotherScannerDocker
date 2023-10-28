@@ -2,7 +2,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="main.css">
-<title>Brother Scanner</title>
+<title>Brother Scanner <?php echo($_ENV["MODEL"]); ?></title>
 <?php
 	if (array_key_exists('RENAME_GUI_SCANTOFILE', $_ENV)) {
 		$button_file = $_ENV["RENAME_GUI_SCANTOFILE"];

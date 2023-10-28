@@ -14,7 +14,7 @@ if (empty($target)) {
 	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
 }
 if (in_array($target, array('file','email','image','ocr'))) {
-    $output=shell_exec('sudo -u \#'.$_ENV[UID].' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh &');
+    $output=shell_exec('sudo -u \#'.$_ENV[UID].' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh');
 }
 else
 {
