@@ -53,6 +53,12 @@ services:
             - UID=1000 # optional, for /scans permissions
             - GID=1000 # optional, for /scans permissions
             - TZ=Europe/Berlin # optional, for correct time in scanned filenames
+			- WEBSERVER=true # optional, activates GUI & API
+            - PORT=33355 # optional, sets port for webserver (default: 80)
+            - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
+            - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
+            - RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+            - RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
         restart: unless-stopped
         network_mode: "host"
 
