@@ -21,7 +21,7 @@ if [ "$WEBSERVER" == "true" ]; then
 	{
 		echo "<?php"
 		echo "\$UID=$UID;"
-		echo "\$MODEL=$MODEL;"
+		echo "\$MODEL=\"$MODEL\";"
 		if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
 			echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
 		fi

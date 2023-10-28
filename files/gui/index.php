@@ -3,7 +3,7 @@
 <?php include 'config.php'; ?>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="main.css">
-<title>Brother Scanner <?php echo($MODEL); ?></title>
+<title>Brother <?php echo($MODEL); ?></title>
 <?php
 	if ($RENAME_GUI_SCANTOFILE) {
 		$button_file = $RENAME_GUI_SCANTOFILE;
