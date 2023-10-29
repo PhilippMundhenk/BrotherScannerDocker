@@ -5,26 +5,42 @@ error_reporting(E_ALL);
 
 include 'config.php';
 
-if (!array_key_exists('target', $_GET)) {
-	header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
-	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>");
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $target = $_POST["target"];
+} else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        $target = $_GET["target"];
 }
 
-$target = $_GET["target"];
 if (empty($target)) {
-	header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
-	die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
+        header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
+        die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
 }
 if (in_array($target, array('file','email','image','ocr'))) {
-	//$output=shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh');
-	$handle = popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh', 'r');
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+                //return immediately
+                $handle = popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh', 'r');
+        } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+                //wait for completion
+                $output=shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh');
+        }
 }
 else
 {
-	header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
-	die("Error: Thou shalt not inject unknown script names!");
+        header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
+        die("Error: Thou shalt not inject unknown script names!");
 }
 
-echo('<html><head><meta http-equiv="Refresh" content="0; url=/" /></head></html>');
+//TODO: Fix serving of file on get
+//if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+//      $files = scandir('/scans', SCANDIR_SORT_DESCENDING);
+//      $newest_file = $files[0];
+//      header($_SERVER["SERVER_PROTOCOL"] . " 200 OK");
+//      header("Cache-Control: public"); // needed for internet explorer
+//      header("Content-Type: application/pdf");
+//      header("Content-Transfer-Encoding: Binary");
+//      header("Content-Length:".filesize($newest_file));
+//      readfile($newest_file);
+//      die();
+//}
 
 ?>

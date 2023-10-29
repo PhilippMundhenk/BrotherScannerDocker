@@ -5,22 +5,22 @@
 <link rel="stylesheet" href="main.css">
 <title>Brother <?php echo($MODEL); ?></title>
 <?php
-	if ($RENAME_GUI_SCANTOFILE) {
+	if (isset($RENAME_GUI_SCANTOFILE) && $RENAME_GUI_SCANTOFILE) {
 		$button_file = $RENAME_GUI_SCANTOFILE;
 	} else {
 		$button_file = "Scan to file";
 	}
-	if ($RENAME_GUI_SCANTOEMAIL) {
+	if (isset($RENAME_GUI_SCANTOEMAIL) && $RENAME_GUI_SCANTOEMAIL) {
 		$button_email = $RENAME_GUI_SCANTOEMAIL;
 	} else {
 		$button_email = "Scan to email";
 	}
-	if ($RENAME_GUI_SCANTOIMAGE) {
+	if (isset($RENAME_GUI_SCANTOIMAGE) && $RENAME_GUI_SCANTOIMAGE) {
 		$button_image = $RENAME_GUI_SCANTOIMAGE;
 	} else {
 		$button_image = "Scan to image";
 	}
-	if ($RENAME_GUI_SCANTOIMAGE) {
+	if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 		$button_ocr = $RENAME_GUI_SCANTOOCR;
 	} else {
 		$button_ocr = "Scan to OCR";
@@ -32,22 +32,30 @@
 	<div class="form">
 			<div class="title">Brother <?php echo($MODEL); ?></div>
 			<div class="cut cut-long"></div>
-			<form action="/scan.php" method="get">
+			<form target="hiddenFrame" action="/scan.php" method="post">
 				<?php 
-				   if ($DISABLE_GUI_SCANTOFILE != true) {
+				   if (isset($DISABLE_GUI_SCANTOFILE) && $DISABLE_GUI_SCANTOFILE != true) {
 						echo('<button type="submit" name="target" value="file" class="submit">'.$button_file.'</button>');
 				   }
-				   if ($DISABLE_GUI_SCANTOEMAIL != true) {
+				   if (isset($DISABLE_GUI_SCANTOEMAIL) && $DISABLE_GUI_SCANTOEMAIL != true) {
 						echo('<button type="submit" name="target" value="email" class="submit">'.$button_email.'</button>');
 				   }
-				   if ($DISABLE_GUI_SCANTOIMAGE != true) {
+				   if (isset($DISABLE_GUI_SCANTOIMAGE) && $DISABLE_GUI_SCANTOIMAGE != true) {
 						echo('<button type="submit" name="target" value="image" class="submit">'.$button_image.'</button>');
 				   }
-				   if ($DISABLE_GUI_SCANTOOCR != true) {
+				   if (isset($DISABLE_GUI_SCANTOOCR) && $DISABLE_GUI_SCANTOOCR != true) {
 						echo('<button type="submit" name="target" value="ocr" class="submit">'.$button_ocr.'</button>');
 				   }
 			   ?>
 			</form>
+			<iframe hidden style="" name="transFrame" id="transFrame"></iframe>
+			<div class="subtitle">Last scanned:</div>
+			<?php
+					$files = scandir("/scans", SCANDIR_SORT_DESCENDING);
+					for ($i = 0; $i < 10; $i++) {
+							echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
+					}
+			?>
 	</div>
 </body>
 </html>
