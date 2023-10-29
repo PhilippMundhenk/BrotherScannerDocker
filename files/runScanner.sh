@@ -13,6 +13,11 @@ touch /var/log/scanner.log
 chown $USERNAME /var/log/scanner.log
 env > /opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
+
+subnet=$(echo $IPADDRESS | sed 's/\([0-9]*\.[0-9]*\.\)[0-9]*\.[0-9]*/\1/')
+interface=$(ip addr show | grep -B10 $subnet | grep mtu | tail -1 | sed 's/[0-9]*: \(.*\): .*/\1/')
+echo "eth=$interface\n" >> /opt/brother/scanner/brscan-skey/brscan-skey.config
+
 su - $USERNAME -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS"
 su - $USERNAME -c "/usr/bin/brscan-skey"
 

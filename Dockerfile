@@ -21,6 +21,7 @@ RUN apt-get -y install \
         php-cgi \
         php-curl \
 		sudo \
+		iproute2 \
 		&& apt-get -y clean
 
 RUN cd /tmp && \
