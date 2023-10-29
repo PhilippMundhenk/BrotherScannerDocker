@@ -123,3 +123,27 @@ To use this option, set the following variables to your values:
 - OCR_PATH=ocr.php
 ```
 This will call the OCR service at https://192.168.1.101:8080/ocr.php.
+
+## Webserver
+This image comes with an integrated webserver, allowing you to control the scanning functions also via API or GUI.
+To activate the webserver, you need to set an according environment variable.
+By default, the image uses port 80, but you may configure that.
+Additionally, for the GUI, you can rename and hide individual functions.
+here is an example of the environment:
+```
+- WEBSERVER=true # optional, activates GUI & API
+- PORT=33355 # optional, sets port for webserver (default: 80)
+- DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
+- DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
+- RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+- RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
+```
+
+### GUI
+You can access the GUI under the IP of your container and the set port (or 80 in default case).
+With the config above, the result will look something like this:
+![Screenshot of web interface](doc/GUI.jpg)
+
+### API
+The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
+To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>
