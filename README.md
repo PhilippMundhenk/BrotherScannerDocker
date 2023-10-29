@@ -53,7 +53,7 @@ services:
             - UID=1000 # optional, for /scans permissions
             - GID=1000 # optional, for /scans permissions
             - TZ=Europe/Berlin # optional, for correct time in scanned filenames
-			- WEBSERVER=true # optional, activates GUI & API
+            - WEBSERVER=true # optional, activates GUI & API
             - PORT=33355 # optional, sets port for webserver (default: 80)
             - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
             - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
