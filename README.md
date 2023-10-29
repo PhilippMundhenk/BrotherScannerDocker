@@ -146,4 +146,4 @@ With the config above, the result will look something like this:
 
 ### API
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
-To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>
+To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>`
