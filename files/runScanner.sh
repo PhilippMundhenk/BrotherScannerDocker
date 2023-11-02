@@ -31,7 +31,7 @@ echo "-----"
 
 echo "setting up host IP:"
 sed -i 's/^ip_address=.*//' /opt/brother/scanner/brscan-skey/brscan-skey.config
-if [[ -z "$HOST_IPADDRESS" ]]
+if [[ -z "$HOST_IPADDRESS" ]]; then
 	echo "no host IP configured, using default discovery"
 else
 	echo "ip_address=$HOST_IPADDRESS" >> /opt/brother/scanner/brscan-skey/brscan-skey.config
