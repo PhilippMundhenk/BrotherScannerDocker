@@ -42,7 +42,7 @@ echo "whole config:"
 cat /opt/brother/scanner/brscan-skey/brscan-skey.config
 echo "-----"
 
-echo "setting up scanner:"
+echo "starting scanner drivers..."
 su - $USERNAME -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS"
 su - $USERNAME -c "/usr/bin/brscan-skey"
 echo "-----"
