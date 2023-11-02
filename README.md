@@ -61,8 +61,8 @@ services:
             - UID=1000 # note: network mount needs to have correct permissions!
             - GID=1000 # note: network mount needs to have correct permissions!
             - TZ=Europe/Berlin
-		restart: unless-stopped
-		network_mode: "host"
+        restart: unless-stopped
+        network_mode: "host"
 ```
 
 Note, that we do not need to specify the host IP address in this case, as we assume that the network is already available in the container.
@@ -90,21 +90,17 @@ You can configure the tool via environment variables:
 | MODEL  | mandatory | Model of your scanner (e.g., MFC-L2700DW) |
 | IPADDRESS | mandatory | IP Address of your scanner |
 | RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
-| ------------- | ------------- | ------------- |
 | FTP_USER | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_PASSWORD | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_HOST  | optional | Address of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_PATH | optional | Path of an FTP(S) server to upload the completed scan to (see below) |
-| ------------- | ------------- | ------------- |
 | SSH_USER | optional | Username for an SSH connection to trigger inotify (see below) |
 | SSH_PASSWORD | optional | Password for an SSH connection to trigger inotify (see below) |
 | SSH_HOST | optional | Address for an SSH connection to trigger inotify (see below) |
 | SSH_PATH | optional | Path for an SSH connection to trigger inotify (see below) |
-| ------------- | ------------- | ------------- |
 | OCR_SERVER | optional | Hostname of an OCR server (see below) |
 | OCR_PORT | optional | Port of an OCR server (see below) |
 | OCR_PATH | optional | Path of an OCR server (see below) |
-| ------------- | ------------- | ------------- |
 | WEBSERVER | optional | activates GUI & API (default:false) (see below) |
 | PORT | optional | sets port for webserver (default: 80) |
 | DISABLE_GUI_SCANTOFILE | optional | deactivates button "Scan to file" (default: false) |
@@ -197,8 +193,8 @@ services:
         image: ghcr.io/philippmundhenk/brotherscannerdocker
         volumes:
             - /path/on/host:/scans
-		ports:
-		    - 33355:33355
+        ports:
+            - 33355:33355
             - 54925:54925/udp # mandatory, for scanner tools
             - 54921:54921 # mandatory, for scanner tools
             - 161:161/udp # mandatory, for scanner tools
@@ -206,7 +202,7 @@ services:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
             - IPADDRESS=192.168.1.10
-			- HOST_IPADDRESS=192.168.1.20
+            - HOST_IPADDRESS=192.168.1.20
             - OCR_SERVER=localhost # optional, for OCR
             - OCR_PORT=32800 # optional, for OCR
             - OCR_PATH=ocr.php # optional, for OCR
