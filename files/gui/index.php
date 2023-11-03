@@ -34,16 +34,16 @@
 			<div class="cut cut-long"></div>
 			<form target="hiddenFrame" action="/scan.php" method="post">
 				<?php 
-				   if (isset($DISABLE_GUI_SCANTOFILE) && $DISABLE_GUI_SCANTOFILE != true) {
+				   if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
 						echo('<button type="submit" name="target" value="file" class="submit">'.$button_file.'</button>');
 				   }
-				   if (isset($DISABLE_GUI_SCANTOEMAIL) && $DISABLE_GUI_SCANTOEMAIL != true) {
+				   if (!isset($DISABLE_GUI_SCANTOEMAIL) || $DISABLE_GUI_SCANTOEMAIL != true) {
 						echo('<button type="submit" name="target" value="email" class="submit">'.$button_email.'</button>');
 				   }
-				   if (isset($DISABLE_GUI_SCANTOIMAGE) && $DISABLE_GUI_SCANTOIMAGE != true) {
+				   if (!isset($DISABLE_GUI_SCANTOIMAGE) || $DISABLE_GUI_SCANTOIMAGE != true) {
 						echo('<button type="submit" name="target" value="image" class="submit">'.$button_image.'</button>');
 				   }
-				   if (isset($DISABLE_GUI_SCANTOOCR) && $DISABLE_GUI_SCANTOOCR != true) {
+				   if (!isset($DISABLE_GUI_SCANTOOCR) || $DISABLE_GUI_SCANTOOCR != true) {
 						echo('<button type="submit" name="target" value="ocr" class="submit">'.$button_ocr.'</button>');
 				   }
 			   ?>
