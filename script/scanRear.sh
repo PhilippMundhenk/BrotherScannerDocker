@@ -10,6 +10,13 @@ if [[ $RESOLUTION ]]; then
 else
   resolution=300
 fi
+
+if [ "$USE_JPEG_COMPRESSION" = "true" ]; then
+    compression_flag="-compress JPEG -quality 80"
+else
+    compression_flag=""
+fi
+
 device=$1
 cd /scans
 date=$(ls -rd */ | grep $(date +"%Y-%m-%d") | head -1)
@@ -66,7 +73,7 @@ fi
 	
 	(
 		echo "converting to PDF for $date..."
-		gm convert -page A4+0+0 *.pnm /scans/$date.pdf	
+		gm convert -page A4+0+0 $compression_flag *.pnm /scans/$date.pdf	
 		/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date.pdf
 		
 		echo "cleaning up for $date..."
