@@ -51,11 +51,11 @@
 			<iframe hidden style="" name="transFrame" id="transFrame"></iframe>
 			<div class="subtitle">Last scanned:</div>
 			<?php
-					$files = array_diff(scandir("/scans", SCANDIR_SORT_DESCENDING), array('..', '.'));
-					for ($i = 0; $i < 10; $i++) {
-							echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
-					}
-			?>
+                                        $files = array_diff(scandir("/scans", SCANDIR_SORT_DESCENDING), array('..', '.'));
+                                        for ($i = 0; $i < min(10, count($files)); $i++) {
+                                                        echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
+                                        }
+                        ?>
 	</div>
 </body>
 </html>
