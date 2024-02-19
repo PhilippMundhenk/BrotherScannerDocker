@@ -5,14 +5,10 @@ error_reporting(E_ALL);
 
 include 'config.php';
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $target = $_POST["target"];
-} else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-        $target = $_GET["target"];
-}
+$target = $_POST["target"] ?? ($_GET["target"] ?? '');
 
 if (empty($target)) {
-        header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
+        http_reponse_code(400);
         die("Error: No scanning function selected (try append: ?target=<file|email|image|ocr>)");
 }
 if (in_array($target, array('file','email','image','ocr'))) {
@@ -26,7 +22,7 @@ if (in_array($target, array('file','email','image','ocr'))) {
 }
 else
 {
-        header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
+        http_reponse_code(400);
         die("Error: Thou shalt not inject unknown script names!");
 }
 
