@@ -51,7 +51,7 @@
 			<iframe hidden style="" name="transFrame" id="transFrame"></iframe>
 			<div class="subtitle">Last scanned:</div>
 			<?php
-					$files = scandir("/scans", SCANDIR_SORT_DESCENDING);
+					$files = array_diff(scandir("/scans", SCANDIR_SORT_DESCENDING), array('..', '.'));
 					for ($i = 0; $i < 10; $i++) {
 							echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
 					}
