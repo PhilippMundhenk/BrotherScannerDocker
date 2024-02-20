@@ -48,6 +48,12 @@ else
 fi
 echo "-----"
 
+echo "setting up username:"
+sed -i 's/^user=.*//' /opt/brother/scanner/brscan-skey/brscan-skey.config
+echo "user=${USERNAME:-docker}" >> /opt/brother/scanner/brscan-skey/brscan-skey.config
+echo "using username: ${USERNAME:-docker}"
+echo "-----"
+
 echo "whole config:"
 cat /opt/brother/scanner/brscan-skey/brscan-skey.config
 echo "-----"
