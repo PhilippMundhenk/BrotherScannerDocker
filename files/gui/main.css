@@ -137,6 +137,10 @@ body {
   /* outline: 0; */
   text-align: center;
   width: 100%;
+  justify-content: space-evenly;
+  flex-direction: row;
+  align-items: center;
+  transition: all 0.5s;
 }
 
 .submit:active {
@@ -185,4 +189,33 @@ body {
 }
 .hidden {
 	display: none;
+}
+
+.submit::after {
+  content: '';
+  display: inline-block;
+  width: 0px;
+  height: 0px;
+  border-radius: 50%;
+  transition: all 0.5s;
+
+}
+.loading {
+  display: flex;
+}
+.loading::after {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #808097;
+  border-top-color: white;
+  animation: rotating 1s linear infinite;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

@@ -4,31 +4,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="main.css">
 <title>Brother <?php echo($MODEL); ?></title>
-<?php
-		$button_file = $RENAME_GUI_SCANTOFILE ?? "Scan to file";
-		$button_email = $RENAME_GUI_SCANTOEMAIL ?? "Scan to email";
-		$button_image = $RENAME_GUI_SCANTOIMAGE ?? "Scan to image";
-		$button_ocr = $RENAME_GUI_SCANTOOCR ?? "Scan to OCR";
-?>
 	<script>
-		let active = true;
+		let state = "offline";
 		let init_done = false;
-		function start_scan(target) {
-			if (active) {
+		async function start_scan(target, self) {
+			if (state !== "online") {
 				return;
 			}
 			// assume command succeeds
-			active = true;
+			state = "scanning";
 			lock_ui(true, false);
+			self.classList.toggle('loading', true);
 			fetch("/scan.php?target=" + target, { method: "POST" });
 		}
 		function lock_ui(lock, is_init) {
 			console.log("buttons " + (lock ? 'locked' : 'unlocked'));
 			if (!is_init) {
-				document.querySelector("#status").innerText = (active ? 'Scanning' : 'Ready to scan');
-				document.querySelector(".scanner").classList.toggle('hidden', !active);
+				document.querySelector("#status").innerText = (state === "scanning" ? 'Scanning' : (state === "online" ? 'Ready to scan' : "Offline"));
+				document.querySelector(".scanner").classList.toggle('hidden', (state !== "scanning"));
 			}
 			document.querySelectorAll(".submit").forEach(e => e.disabled = lock);
+			if(!lock) {
+				document.querySelectorAll(".submit").forEach(e => e.classList.remove('loading'));
+			}
 		}
 		async function fetch_files() {
 			//todo: maybe compare and merge changes
@@ -39,12 +37,12 @@
 		}
 		async function init() {
 			// get active state from backend
-			const response = await fetch("/active.php");
-			const new_active = ((await response.text()) ?? 'false') === 'true';
-			if (new_active != active || !init_done) {
-				active = new_active;
-				// lock buttons if active
-				lock_ui(active, false);
+			const response = await fetch("/status.php");
+			const new_state = await response.text()
+			if (new_state != state || !init_done) {
+				state = new_state;
+				// lock buttons if offline or scanning
+				lock_ui(!(state === "online"), false);
 			}
 			await fetch_files();
 			init_done = true;
@@ -60,18 +58,16 @@
 			<div class="scanner-wrapper"><div class="scanner hidden"></div></div>
 			<div class="cut cut-long"></div>
 				<?php 
-				   if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
-						echo('<button onclick="start_scan(\'file\')" class="submit">'.$button_file.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOEMAIL) || $DISABLE_GUI_SCANTOEMAIL != true) {
-						echo('<button onclick="start_scan(\'email\')" class="submit">'.$button_email.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOIMAGE) || $DISABLE_GUI_SCANTOIMAGE != true) {
-						echo('<button onclick="start_scan(\'image\')" class="submit">'.$button_image.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOOCR) || $DISABLE_GUI_SCANTOOCR != true) {
-						echo('<button onclick="start_scan(\'ocr\')" class="submit">'.$button_ocr.'</button>');
-				   }
+					$labels = array(
+						'file' => $WEBSERVER_LABEL_SCANTOFILE,
+						'email' => $WEBSERVER_LABEL_SCANTOEMAIL,
+						'image' => $WEBSERVER_LABEL_SCANTOIMAGE,
+						'ocr' => $WEBSERVER_LABEL_SCANTOOCR
+					);
+					$labels = array_filter($labels, function($v) { return $v !== null && strlen($v) !== 0; });
+					foreach ($labels as $func => $label) {
+						echo('<button onclick="start_scan(\''. $func .'\', this)" class="submit">'.$label.'</button>');
+					}
 			   ?>
 			<div class="subtitle">Last scanned:</div>
 			<div id="files">

@@ -101,16 +101,13 @@ You can configure the tool via environment variables:
 | OCR_SERVER | optional | Hostname of an OCR server (see below) |
 | OCR_PORT | optional | Port of an OCR server (see below) |
 | OCR_PATH | optional | Path of an OCR server (see below) |
-| WEBSERVER | optional | activates GUI & API (default:false) (see below) |
-| PORT | optional | sets port for webserver (default: 80) |
-| DISABLE_GUI_SCANTOFILE | optional | deactivates button "Scan to file" (default: false) |
-| DISABLE_GUI_SCANTOEMAIL | optional | deactivates button "Scan to e-mail" |
-| DISABLE_GUI_SCANTOIMAGE | optional | deactivates button "Scan to image" |
-| DISABLE_GUI_SCANTOOCR | optional | deactivates button "Scan to OCR" |
-| RENAME_GUI_SCANTOFILE="Scan front pages" | optional | renames GUI button "Scan to file" to "Scan front pages" |
-| RENAME_GUI_SCANTOEMAIL="Scan rear pages" | optional | renames GUI button "Scan to email" to "Scan rear pages" |
-| RENAME_GUI_SCANTOIMAGE="Scan photo" | optional | renames GUI button "Scan to image" to "Scan photo" |
-| RENAME_GUI_SCANTOOCR="Scan High-Res" | optional | renames GUI button "Scan to OCR" to "Scan High-Res" |
+| WEBSERVER_ENABLE | optional | activates GUI & API (default:false) (see below) |
+| WEBSERVER_PING_ENABLE | optional | activates ping service to check if scanner offline |
+| WEBSERVER_PORT | optional | sets port for webserver (default: 80) |
+| WEBSERVER_LABEL_SCANTOFILE | optional | empty to hide button (default: "Scan to file") |
+| WEBSERVER_LABEL_SCANTOEMAIL | optional | empty to hide button (default: "Scan to email") |
+| WEBSERVER_LABEL_SCANTOIMAGE | optional | empty to hide button (default: "Scan to image") |
+| WEBSERVER_LABEL_SCANTOOCR | optional | empty to hide button (default: "Scan to OCR") |
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
 
 ### FTPS upload
@@ -161,12 +158,13 @@ By default, the image uses port 80, but you may configure that.
 Additionally, for the GUI, you can rename and hide individual functions.
 here is an example of the environment:
 ```
-- WEBSERVER=true # optional, activates GUI & API
-- PORT=33355 # optional, sets port for webserver (default: 80)
-- DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
-- DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
-- RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
-- RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
+- WEBSERVER_ENABLE= # optional, activates GUI & API
+- WEBSERVER_PING_ENABLE= # optional, if enabled scanner status is `online`, `offline`, `scanning` (see status.php)
+- WEBSERVER_PORT=33355 # optional, sets port for webserver (default: 80)
+- WEBSERVER_LABEL_SCANTOIMAGE= # optional, hides button "Scan to image"
+- WEBSERVER_LABEL_SCANTOOCR= # optional, hides button "Scan to OCR"
+- WEBSERVER_LABEL_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+- WEBSERVER_LABEL_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
 ```
 
 #### GUI
@@ -180,7 +178,7 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 #### API
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
 To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>`
-Also check out the endpoints `list.php`, `download.php`, `active.php`.
+Also check out the endpoints `list.php`, `listfiles.php`, `download.php`, `active.php` and `status.php`.
 Maybe one day an OpenAPI Spec will be included.
 
 ## Full Docker Compose Example
@@ -195,10 +193,7 @@ services:
         volumes:
             - /path/on/host:/scans
         ports:
-            - 33355:33355
-            - 54925:54925/udp # mandatory, for scanner tools
-            - 54921:54921 # mandatory, for scanner tools
-            - 161:161/udp # mandatory, for scanner tools
+            - 33355:33355 # example webserver port
         environment:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
@@ -210,12 +205,13 @@ services:
             - UID=1000 # optional, for /scans permissions
             - GID=1000 # optional, for /scans permissions
             - TZ=Europe/Berlin # optional, for correct time in scanned filenames
-            - WEBSERVER=true # optional, activates GUI & API
+            - WEBSERVER_ENABLE= # optional, activates GUI & API
+            - WEBSERVER_PING_ENABLE= # optional, activates ping service to check if scanner offline
             - PORT=33355 # optional, sets port for webserver (default: 80)
-            - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
-            - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
-            - RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
-            - RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
+            - WEBSERVER_LABEL_SCANTOIMAGE= # optional, deactivates button "Scan to image"
+            - WEBSERVER_LABEL_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
+            - WEBSERVER_LABEL_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+            - WEBSERVER_LABEL_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
         restart: unless-stopped
 
     # optional, for OCR

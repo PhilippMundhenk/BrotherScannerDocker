@@ -3,7 +3,8 @@
 # $2 = friendly name
 
 #override environment, as brscan is screwing it up:
-export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
+#export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
+source /opt/brother/scanner/shell_env.txt
 
 if [[ $RESOLUTION ]]; then
   resolution=$RESOLUTION
@@ -33,6 +34,7 @@ rm scan_pid
 #scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name=$device --resolution=$resolution --batch=$output_file"
 scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --resolution=$resolution --batch=$output_file"
 
+#TODO: remove one, isn't this known at build time?
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
@@ -73,7 +75,9 @@ fi
 	
 	(
 		echo "converting to PDF for $date..."
-		gm convert -page A4+0+0 $compression_flag *.pnm /scans/$date.pdf	
+		gm convert -page A4+0+0 $compression_flag *.pnm /scans/$date.pdf
+		#change ownership to target user/group
+		chown $UID:$GID /scans/$date.pdf
 		/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date.pdf
 		
 		echo "cleaning up for $date..."
@@ -85,7 +89,9 @@ fi
 		else
 			echo "starting OCR for $date..."
 			(
-				curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH} 
+				curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/$date-ocr.pdf ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH}
+				#change ownership to target user/group
+				chown $UID:$GID /scans/$date-ocr.pdf
 				/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date-ocr.pdf
 
 				/opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
