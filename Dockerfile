@@ -42,9 +42,17 @@ RUN cd /tmp && \
 	dpkg -i /tmp/brscan-skey-0.3.1-2.amd64.deb && \
 	rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
-RUN cp /etc/lighttpd/conf-available/05-auth.conf /etc/lighttpd/conf-enabled/
-RUN cp /etc/lighttpd/conf-available/15-fastcgi-php.conf /etc/lighttpd/conf-enabled/
-RUN cp /etc/lighttpd/conf-available/10-fastcgi.conf /etc/lighttpd/conf-enabled/
+RUN lighty-enable-mod auth || true; \
+    lighty-enable-mod fastcgi || true; \
+    lighty-enable-mod fastcgi-php || true; \
+    lighty-enable-mod access || true
+
+RUN cat <<EOF >> /etc/lighttpd/lighttpd.conf
+\$HTTP["url"] =~ "^/lib" {
+	url.access-deny = ("")
+}
+EOF
+
 RUN mkdir -p /var/run/lighttpd
 RUN touch /var/run/lighttpd/php-fastcgi.socket
 RUN chown -R www-data /var/run/lighttpd

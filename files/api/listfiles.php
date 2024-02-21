@@ -1,12 +1,16 @@
 <?php
+include_once(__DIR__."/lib/lib.php");
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-    $files = array_diff(scandir("/scans", SCANDIR_SORT_DESCENDING), array('..', '.'));
+
+    $files = getFileList($SCANS_DIR, GETFILELIST_SORT_CREATEDATE_DESC);
     for ($i = 0; $i < min(10, count($files)); $i++) {
-            echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
+            $replaced = str_replace($SCANS_DIR."/", "", $file[i]);
+            echo "<a class='listitem' href=/download.php?file=" . $replaced . ">" . $replaced . "</a><br>";
     }
 }
 else {
-    http_reponse_code(405);
+    http_response_code(405);
     die("Error: Method not allowed!");
 }
 ?>

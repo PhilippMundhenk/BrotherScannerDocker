@@ -109,8 +109,8 @@ if [ -n "${WEBSERVER_ENABLE+x}" ]; then
 		done
 		echo "?>"
 		
-	} > /var/www/html/config.php
-	chown www-data /var/www/html/config.php
+	} > /var/www/html/lib/config.php
+	chown www-data /var/www/html/lib/config.php
 	echo "running on port ${WEBSERVER_PORT:-80}"
 	sed -i "s/server.port\W*= 80/server.port = ${WEBSERVER_PORT:-80}/" /etc/lighttpd/lighttpd.conf
 	/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf

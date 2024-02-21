@@ -1,6 +1,6 @@
+<?php include(__DIR__.'/lib/config.php'); ?>
 <html>
 <head>
-<?php include 'config.php'; ?>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="main.css">
 <title>Brother <?php echo($MODEL); ?></title>
@@ -71,12 +71,6 @@
 			   ?>
 			<div class="subtitle">Last scanned:</div>
 			<div id="files">
-			<?php
-					$files = array_diff(scandir("/scans", SCANDIR_SORT_DESCENDING), array('..', '.'));
-					for ($i = 0; $i < min(10, count($files)); $i++) {
-							echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
-					}
-			?>
 			</div>
 	</div>
 </body>
