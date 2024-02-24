@@ -25,7 +25,6 @@ services:
             - /path/on/host:/scans 
         ports:
             - 54925:54925/udp # mandatory, for scanner tools
-            - 54921:54921 # mandatory, for scanner tools
             - 161:161/udp # mandatory, for scanner tools
         environment:
             - NAME=Scanner
@@ -195,6 +194,7 @@ services:
             - /path/on/host:/scans
         ports:
             - 33355:33355 # example webserver port
+            - 54925:54925/udp # mandatory, for scanner tools
         environment:
             - NAME=Scanner
             - MODEL=MFC-L2700DW

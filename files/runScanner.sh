@@ -20,7 +20,6 @@ mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
 chmod 777 /var/log/scanner.log
-env > /opt/brother/scanner/env.txt
 export > /opt/brother/scanner/shell_env.txt
 chmod -R 777 /opt/brother
 echo "-----"

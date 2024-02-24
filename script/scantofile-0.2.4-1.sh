@@ -31,29 +31,16 @@ echo "filename: "$output_file
 #sthg is wrong with device name, probably escaping, use default printer:
 #scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name=$device --resolution=$resolution --batch=$output_file"
 scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --resolution=$resolution --batch=$output_file"
-#TODO: remove one, isn't this known at build time?
-if [ "`which usleep  2>/dev/null `" != '' ];then
-    usleep 100000
-else
-    sleep  0.1
-fi
+sleep  0.1
 $($scan_cmd)
 if [ ! -s $filename_base"0001.pnm" ];then
-  if [ "`which usleep  2>/dev/null `" != '' ];then
-    usleep 1000000
-  else
-    sleep  1
-  fi
+  sleep 1
   $($scan_cmd)
 fi
 
 #only convert when no back pages are being scanned:
 (
-	if [ "`which usleep  2>/dev/null `" != '' ];then
-		usleep 120000000
-	else
-		sleep  120
-	fi
+	sleep  120	
 	
 	(
 		echo "converting to PDF for $date..."

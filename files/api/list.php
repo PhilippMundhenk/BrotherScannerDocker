@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         
         $num = $_GET["num"] ?? count($files);
         for ($i = 0; $i < $num; $i++) {
-                echo str_replace($SCANS_DIR."/", "", $file[i])."<br>";
+                echo str_replace($SCANS_DIR."/", "", $files[$i])."<br>";
         }
 } else {
         http_response_code(405);
