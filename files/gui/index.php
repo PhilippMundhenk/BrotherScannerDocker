@@ -20,7 +20,7 @@
 		function lock_ui(lock, is_init) {
 			console.log("buttons " + (lock ? 'locked' : 'unlocked'));
 			if (!is_init) {
-				document.querySelector("#status").innerText = (state === "scanning" ? 'Scanning' : (state === "online" ? 'Ready to scan' : "Offline"));
+				document.querySelector("#status").innerText = (state === "scanning" ? 'Scanning' : (state === "online" ? 'Ready to scan' : (state === "offline" ? "Offline" : "Unknown (ping disabled)"));
 				document.querySelector(".scanner").classList.toggle('hidden', (state !== "scanning"));
 			}
 			document.querySelectorAll(".submit").forEach(e => e.disabled = lock);
