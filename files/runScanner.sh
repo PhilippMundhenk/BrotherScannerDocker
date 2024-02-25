@@ -85,8 +85,8 @@ echo "-----"
 echo "setting up webserver:"
 
 #backwards compatibility
-$WEBSEVER_ENABLE = $WEBSERVER
-$WEBSERVER_PORT = $PORT
+WEBSERVER_ENABLE="$WEBSERVER"
+WEBSERVER_PORT="$PORT"
 
 if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
 
