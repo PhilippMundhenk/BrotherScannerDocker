@@ -9,6 +9,7 @@ if(!empty($output)) {
 } else {
 	if (!file_exists($status_file)) {
 		echo("unknown");
+        return;
 	}
     if (str_contains(file_get_contents($status_file), '1')) {
         echo("online");

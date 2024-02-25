@@ -8,7 +8,7 @@
 		let state = "offline";
 		let init_done = false;
 		async function start_scan(target, self) {
-			if (state !== "online") {
+			if (state !== "online" && state !== "unknown") {
 				return;
 			}
 			// assume command succeeds
@@ -20,7 +20,15 @@
 		function lock_ui(lock, is_init) {
 			console.log("buttons " + (lock ? 'locked' : 'unlocked'));
 			if (!is_init) {
-				document.querySelector("#status").innerText = (state === "scanning" ? 'Scanning' : (state === "online" ? 'Ready to scan' : (state === "offline" ? "Offline" : "Unknown (ping disabled)")));
+
+				const statusToLabel = {
+					"scanning": "Scanning",
+					"online": "Ready to scan",
+					"offline": "Offline",
+					"unknown": "Unknown (ping disabled)"
+				};
+				
+				document.querySelector("#status").innerText = statusToLabel[state];
 				document.querySelector(".scanner").classList.toggle('hidden', (state !== "scanning"));
 			}
 			document.querySelectorAll(".submit").forEach(e => e.disabled = lock);
@@ -42,7 +50,7 @@
 			if (new_state != state || !init_done) {
 				state = new_state;
 				// lock buttons if offline or scanning
-				lock_ui(!(state === "online"), false);
+				lock_ui(!(state === "online" || state === "unknown"), false);
 			}
 			await fetch_files();
 			init_done = true;
