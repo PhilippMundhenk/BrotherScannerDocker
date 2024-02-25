@@ -1,7 +1,8 @@
 #!/bin/bash
 
 $WEBSERVER_DEFAULT=true
-$WEBSERVER_PING_DEFAULT=false
+$WEBSERVER_PING_DEFAULT=true
+$WEBSERVER_PING_INTERVAL_DEFAULT=60
 $PORT_DEFAULT=80
 
 mandatory_vars=(NAME MODEL IPADDRESS)
@@ -99,7 +100,7 @@ if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
 				else
 					echo "0" > /var/www/html/reachable.txt
 				fi
-				sleep 1
+				sleep "${WEBSERVER_PING_INTERVAL:-$WEBSERVER_PING_INTERVAL_DEFAULT}"
 			done
 		) &
 		

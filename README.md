@@ -105,6 +105,7 @@ You can configure the tool via environment variables:
 | ~~WEBSERVER~~ | deprecated | replaced by WEBSERVER_ENABLE |
 | WEBSERVER_ENABLE | optional | activates GUI & API (default:true) (see below) |
 | WEBSERVER_PING_ENABLE | optional | activates ping service to check if scanner offline |
+| WEBSERVER_PING_INTERVAL | optional | sets interval how often to ping the scanner |
 | ~~PORT~~ | deprecated | replaced by WEBSERVER_PORT |
 | WEBSERVER_PORT | optional | sets port for webserver (default: 80) |
 | WEBSERVER_LABEL_SCANTOFILE | optional | empty to hide button (default: "Scan to file") |
