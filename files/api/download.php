@@ -3,7 +3,6 @@ include_once(__DIR__."/lib/lib.php");
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
-
         if(array_key_exists("file", $_GET)) {
                 $filename = $_GET["file"];
                 $filepath=$SCANS_DIR . $filename;

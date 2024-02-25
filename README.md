@@ -102,17 +102,25 @@ You can configure the tool via environment variables:
 | OCR_SERVER | optional | Hostname of an OCR server (see below) |
 | OCR_PORT | optional | Port of an OCR server (see below) |
 | OCR_PATH | optional | Path of an OCR server (see below) |
-| ~~WEBSERVER~~ | deprecated | replaced by WEBSERVER_ENABLE |
 | WEBSERVER_ENABLE | optional | activates GUI & API (default:true) (see below) |
 | WEBSERVER_PING_ENABLE | optional | activates ping service to check if scanner offline |
 | WEBSERVER_PING_INTERVAL | optional | sets interval how often to ping the scanner |
-| ~~PORT~~ | deprecated | replaced by WEBSERVER_PORT |
 | WEBSERVER_PORT | optional | sets port for webserver (default: 80) |
 | WEBSERVER_LABEL_SCANTOFILE | optional | empty to hide button (default: "Scan to file") |
 | WEBSERVER_LABEL_SCANTOEMAIL | optional | empty to hide button (default: "Scan to email") |
 | WEBSERVER_LABEL_SCANTOIMAGE | optional | empty to hide button (default: "Scan to image") |
 | WEBSERVER_LABEL_SCANTOOCR | optional | empty to hide button (default: "Scan to OCR") |
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
+| ~~WEBSERVER~~ | deprecated | replaced by WEBSERVER_ENABLE |
+| ~~PORT~~ | deprecated | replaced by WEBSERVER_PORT |
+| ~~DISABLE_GUI_SCANTOFILE~~ | deprecated | use WEBSERVER_LABEL_SCANTOFILE instead |
+| ~~DISABLE_GUI_SCANTOEMAIL~~ | deprecated | use WEBSERVER_LABEL_SCANTOEMAIL instead |
+| ~~DISABLE_GUI_SCANTOIMAGE~~ | deprecated | use WEBSERVER_LABEL_SCANTOIMAGE instead |
+| ~~DISABLE_GUI_SCANTOOCR~~ | deprecated | use WEBSERVER_LABEL_SCANTOOCR instead |
+| ~~RENAME_GUI_SCANTOFILE="Scan front pages"~~ | deprecated | use WEBSERVER_LABEL_SCANTOFILE instead |
+| ~~RENAME_GUI_SCANTOEMAIL="Scan rear pages"~~ | deprecated | use WEBSERVER_LABEL_SCANTOEMAIL instead |
+| ~~RENAME_GUI_SCANTOIMAGE="Scan photo"~~ | deprecated | use WEBSERVER_LABEL_SCANTOIMAGE instead |
+| ~~RENAME_GUI_SCANTOOCR="Scan High-Res"~~ | deprecated | use WEBSERVER_LABEL_SCANTOOCR instead |
 
 ### FTPS upload
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
