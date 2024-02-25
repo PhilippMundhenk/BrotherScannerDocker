@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                         readfile($filepath);
                 } else {
                         http_response_code(404);
-                        die("Error: File does not exist!");
+                        die("Error: File does not exist! Path: $filepath");
                 }
         } else {
                 http_response_code(400);
