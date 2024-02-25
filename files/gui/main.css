@@ -1,21 +1,21 @@
-#based on https://codepen.io/ainalem/pen/GRqPwoz
+/*based on https://codepen.io/ainalem/pen/GRqPwoz */
 
 body {
   align-items: center;
   background-color: #000;
   display: flex;
   justify-content: center;
-  height: 100vh;
+  height: 100dvh;
 }
 
 .form {
   background-color: #15172b;
   border-radius: 20px;
   box-sizing: border-box;
-#  height: 550px;
-#  height: 100%;
+  /* height: 550px; */
+  /* height: 100%; */
   padding: 20px;
-#  width: 320px;
+  /* width: 320px; */
 }
 
 .title {
@@ -134,11 +134,88 @@ body {
   font-size: 18px;
   height: 50px;
   margin-top: 30px;
-  // outline: 0;
+  /* outline: 0; */
   text-align: center;
   width: 100%;
+  justify-content: space-evenly;
+  flex-direction: row;
+  align-items: center;
+  transition: all 0.5s;
 }
 
 .submit:active {
   background-color: #06b;
+}
+.submit:disabled {
+	cursor: unset;
+	background-color: #00558a!important;
+}
+
+@media (prefers-color-scheme: dark) {
+	body {
+		background-color: #07070e;
+	}
+}
+.scanner-wrapper {
+	margin-top: 1rem;
+	--scanner-height: 65px;
+	--scanner-width: 40px;
+	height: var(--scanner-height);
+	width: 100%;
+}
+.scanner {
+	position: relative;
+	height: 100%;
+	width: var(--scanner-width);
+	border: 2px solid white;
+	background-image: repeating-linear-gradient(0deg, #b6b6b6, #b6b6b6 1px, transparent 1px, transparent);
+	background-size: 6px 6px;
+}
+.scanner::after {
+	--scanner-line-width: calc(var(--scanner-width) * 1.4);
+	content: ' ';
+	position: absolute;
+	width: var(--scanner-line-width);
+	top: 0;
+	left: calc((var(--scanner-width) - var(--scanner-line-width)) / 2);
+	height: 3px;
+	background-color: red;
+	animation: scanning 0.8s linear infinite;
+}
+@keyframes scanning {
+	50% {
+		transform: translate(0, var(--scanner-height));
+	}
+}
+.hidden {
+	display: none;
+}
+
+.submit::after {
+  content: '';
+  display: inline-block;
+  width: 0px;
+  height: 0px;
+  border-radius: 50%;
+  transition: all 0.5s;
+
+}
+.loading {
+  display: flex;
+}
+.loading::after {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #808097;
+  border-top-color: white;
+  animation: rotating 1s linear infinite;
+}
+
+@keyframes rotating {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

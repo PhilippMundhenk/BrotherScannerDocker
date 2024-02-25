@@ -4,8 +4,8 @@
 
 {
 #override environment, as brscan is screwing it up:
-export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
-
+#export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
+source /opt/brother/scanner/shell_env.txt
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
 /bin/bash $SCRIPTPATH/scanRear.sh $@
 
