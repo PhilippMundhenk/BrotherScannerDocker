@@ -1,9 +1,9 @@
 #!/bin/bash
 
-$WEBSERVER_DEFAULT=true
-$WEBSERVER_PING_DEFAULT=true
-$WEBSERVER_PING_INTERVAL_DEFAULT=60
-$PORT_DEFAULT=80
+WEBSERVER_DEFAULT=true
+WEBSERVER_PING_DEFAULT=true
+WEBSERVER_PING_INTERVAL_DEFAULT=60
+PORT_DEFAULT=80
 
 mandatory_vars=(NAME MODEL IPADDRESS)
 missing=0
@@ -85,6 +85,7 @@ echo "-----"
 
 echo "setting up webserver:"
 
+#--------------------------------------------------------
 #backwards compatibility
 WEBSERVER_ENABLE="$WEBSERVER"
 WEBSERVER_PORT="$PORT"
@@ -104,6 +105,7 @@ fi
 if [ "${DISABLE_GUI_SCANTOOCR:-false}" ]; then
 	WEBSERVER_LABEL_SCANTOOCR=""
 fi
+#--------------------------------------------------------
 
 if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
 
