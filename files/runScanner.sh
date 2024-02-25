@@ -110,6 +110,7 @@ fi
 if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
 
 	if [ "${WEBSERVER_PING_ENABLE:-$WEBSERVER_PING_DEFAULT}" ]; then
+	    WEBSERVER_PING_ENABLE=true
 		echo "enabling ping status"
 		(
 			while true; do
