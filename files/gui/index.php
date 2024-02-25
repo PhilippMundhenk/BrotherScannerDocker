@@ -1,62 +1,77 @@
+<?php include(__DIR__.'/lib/config.php'); ?>
 <html>
 <head>
-<?php include 'config.php'; ?>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="main.css">
 <title>Brother <?php echo($MODEL); ?></title>
-<?php
-	if (isset($RENAME_GUI_SCANTOFILE) && $RENAME_GUI_SCANTOFILE) {
-		$button_file = $RENAME_GUI_SCANTOFILE;
-	} else {
-		$button_file = "Scan to file";
-	}
-	if (isset($RENAME_GUI_SCANTOEMAIL) && $RENAME_GUI_SCANTOEMAIL) {
-		$button_email = $RENAME_GUI_SCANTOEMAIL;
-	} else {
-		$button_email = "Scan to email";
-	}
-	if (isset($RENAME_GUI_SCANTOIMAGE) && $RENAME_GUI_SCANTOIMAGE) {
-		$button_image = $RENAME_GUI_SCANTOIMAGE;
-	} else {
-		$button_image = "Scan to image";
-	}
-	if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
-		$button_ocr = $RENAME_GUI_SCANTOOCR;
-	} else {
-		$button_ocr = "Scan to OCR";
-	}
-?>
-
+	<script>
+		let state = "offline";
+		let init_done = false;
+		async function start_scan(target, self) {
+			if (state !== "online") {
+				return;
+			}
+			// assume command succeeds
+			state = "scanning";
+			lock_ui(true, false);
+			self.classList.toggle('loading', true);
+			fetch("/scan.php?target=" + target, { method: "POST" });
+		}
+		function lock_ui(lock, is_init) {
+			console.log("buttons " + (lock ? 'locked' : 'unlocked'));
+			if (!is_init) {
+				document.querySelector("#status").innerText = (state === "scanning" ? 'Scanning' : (state === "online" ? 'Ready to scan' : "Offline"));
+				document.querySelector(".scanner").classList.toggle('hidden', (state !== "scanning"));
+			}
+			document.querySelectorAll(".submit").forEach(e => e.disabled = lock);
+			if(!lock) {
+				document.querySelectorAll(".submit").forEach(e => e.classList.remove('loading'));
+			}
+		}
+		async function fetch_files() {
+			//todo: maybe compare and merge changes
+			const response = await fetch("/listfiles.php");
+			const raw_html = (await response.text()) ?? '';
+			//put into files section
+			document.querySelector("#files").innerHTML = raw_html;
+		}
+		async function init() {
+			// get active state from backend
+			const response = await fetch("/status.php");
+			const new_state = await response.text()
+			if (new_state != state || !init_done) {
+				state = new_state;
+				// lock buttons if offline or scanning
+				lock_ui(!(state === "online"), false);
+			}
+			await fetch_files();
+			init_done = true;
+			// wait 1s
+			setTimeout(init, 1000);
+		}
+	</script>
 </head>
-<body>
+<body onload="lock_ui(true, true); init();">
 	<div class="form">
 			<div class="title">Brother <?php echo($MODEL); ?></div>
+			<div class="subtitle">Status: <span class="status" id="status">Loading...</span></div>
+			<div class="scanner-wrapper"><div class="scanner hidden"></div></div>
 			<div class="cut cut-long"></div>
-			<form target="hiddenFrame" action="/scan.php" method="post">
 				<?php 
-				   if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
-						echo('<button type="submit" name="target" value="file" class="submit">'.$button_file.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOEMAIL) || $DISABLE_GUI_SCANTOEMAIL != true) {
-						echo('<button type="submit" name="target" value="email" class="submit">'.$button_email.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOIMAGE) || $DISABLE_GUI_SCANTOIMAGE != true) {
-						echo('<button type="submit" name="target" value="image" class="submit">'.$button_image.'</button>');
-				   }
-				   if (!isset($DISABLE_GUI_SCANTOOCR) || $DISABLE_GUI_SCANTOOCR != true) {
-						echo('<button type="submit" name="target" value="ocr" class="submit">'.$button_ocr.'</button>');
-				   }
-			   ?>
-			</form>
-			<iframe hidden style="" name="transFrame" id="transFrame"></iframe>
-			<div class="subtitle">Last scanned:</div>
-			<?php
-					$files = scandir("/scans", SCANDIR_SORT_DESCENDING);
-					for ($i = 0; $i < 10; $i++) {
-							echo "<a class='listitem' href=/download.php?file=".$files[$i].">".$files[$i]."</a><br>";
+					$labels = array(
+						'file' => $WEBSERVER_LABEL_SCANTOFILE,
+						'email' => $WEBSERVER_LABEL_SCANTOEMAIL,
+						'image' => $WEBSERVER_LABEL_SCANTOIMAGE,
+						'ocr' => $WEBSERVER_LABEL_SCANTOOCR
+					);
+					$labels = array_filter($labels, function($v) { return $v !== null && strlen($v) !== 0; });
+					foreach ($labels as $func => $label) {
+						echo('<button onclick="start_scan(\''. $func .'\', this)" class="submit">'.$label.'</button>');
 					}
-			?>
+			   ?>
+			<div class="subtitle">Last scanned:</div>
+			<div id="files">
+			</div>
 	</div>
 </body>
 </html>
-
