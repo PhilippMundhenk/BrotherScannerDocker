@@ -25,6 +25,7 @@ services:
             - /path/on/host:/scans 
         ports:
             - 54925:54925/udp # mandatory, for scanner tools
+            - 54921:54921 # mandatory, for scanner tools
             - 161:161/udp # mandatory, for scanner tools
         environment:
             - NAME=Scanner
