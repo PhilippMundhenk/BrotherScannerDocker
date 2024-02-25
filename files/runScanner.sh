@@ -107,9 +107,9 @@ if [ "${DISABLE_GUI_SCANTOOCR:-false}" ]; then
 fi
 #--------------------------------------------------------
 
-if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
+if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" = "true" ]; then
 	WEBSERVER_PING_ENABLE="${WEBSERVER_PING_ENABLE:-$WEBSERVER_PING_DEFAULT}"
-	if [ "${WEBSERVER_PING_ENABLE:-$WEBSERVER_PING_DEFAULT}" ]; then
+	if [ "${WEBSERVER_PING_ENABLE:-$WEBSERVER_PING_DEFAULT}" = "true" ]; then
 		echo "enabling ping status"
 		(
 			while true; do
