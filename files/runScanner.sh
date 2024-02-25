@@ -1,5 +1,9 @@
 #!/bin/bash
 
+$WEBSERVER_DEFAULT=true
+$WEBSERVER_PING_DEFAULT=false
+$PORT_DEFAULT=80
+
 mandatory_vars=(NAME MODEL IPADDRESS)
 missing=0
 for var in "${mandatory_vars[@]}"
@@ -80,9 +84,13 @@ echo "-----"
 
 echo "setting up webserver:"
 
-if [ "${WEBSERVER:-true}" ]; then
+#backwards compatibility
+$WEBSEVER_ENABLE = $WEBSERVER
+$WEBSERVER_PORT = $PORT
 
-	if [ "${WEBSERVER_PING_ENABLE:-false}" ]; then
+if [ "${WEBSERVER_ENABLE:-$WEBSERVER_DEFAULT}" ]; then
+
+	if [ "${WEBSERVER_PING_ENABLE:-$WEBSERVER_PING_DEFAULT}" ]; then
 		echo "enabling ping status"
 		(
 			while true; do
@@ -110,8 +118,8 @@ if [ "${WEBSERVER:-true}" ]; then
 		
 	} > /var/www/html/lib/config.php
 	chown www-data /var/www/html/lib/config.php
-	echo "running on port ${WEBSERVER_PORT:-80}"
-	sed -i "s/server.port\W*= 80/server.port = ${WEBSERVER_PORT:-80}/" /etc/lighttpd/lighttpd.conf
+	echo "running on port ${WEBSERVER_PORT:-$PORT_DEFAULT}"
+	sed -i "s/server.port\W*= 80/server.port = ${WEBSERVER_PORT:-$PORT_DEFAULT}/" /etc/lighttpd/lighttpd.conf
 	/usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
 	echo "webserver started"
 else
