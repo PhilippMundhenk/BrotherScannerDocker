@@ -80,9 +80,9 @@ echo "-----"
 
 echo "setting up webserver:"
 
-if [ -n "${WEBSERVER_ENABLE+x}" ]; then
+if [ "${WEBSERVER:-true}" ]; then
 
-	if [ -n "${WEBSERVER_PING_ENABLE+x}" ]; then
+	if [ "${WEBSERVER_PING_ENABLE:-false}" ]; then
 		echo "enabling ping status"
 		(
 			while true; do
