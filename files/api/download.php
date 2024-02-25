@@ -5,7 +5,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
         if(array_key_exists("file", $_GET)) {
                 $filename = $_GET["file"];
-                $filepath=$SCANS_DIR . $filename;
+                $filepath=$SCANS_DIR . '/' . $filename;
                 if(file_exists($filepath) && is_sub_path($filepath, $SCANS_DIR)) {
                         header("Content-type: " . (mime_content_type($filepath) || 'application/octet-stream'));
                         header("Content-Disposition: attachment; filename=\"" . $filename . "\"");
