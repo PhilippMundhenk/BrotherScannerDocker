@@ -101,8 +101,10 @@ You can configure the tool via environment variables:
 | OCR_SERVER | optional | Hostname of an OCR server (see below) |
 | OCR_PORT | optional | Port of an OCR server (see below) |
 | OCR_PATH | optional | Path of an OCR server (see below) |
-| WEBSERVER_ENABLE | optional | activates GUI & API (default:false) (see below) |
+| ~~WEBSERVER~~ | deprecated | replaced by WEBSERVER_ENABLE |
+| WEBSERVER_ENABLE | optional | activates GUI & API (default:true) (see below) |
 | WEBSERVER_PING_ENABLE | optional | activates ping service to check if scanner offline |
+| ~~PORT~~ | deprecated | replaced by WEBSERVER_PORT |
 | WEBSERVER_PORT | optional | sets port for webserver (default: 80) |
 | WEBSERVER_LABEL_SCANTOFILE | optional | empty to hide button (default: "Scan to file") |
 | WEBSERVER_LABEL_SCANTOEMAIL | optional | empty to hide button (default: "Scan to email") |
