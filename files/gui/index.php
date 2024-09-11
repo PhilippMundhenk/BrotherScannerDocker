@@ -32,7 +32,7 @@
 	<div class="form">
 			<div class="title">Brother <?php echo($MODEL); ?></div>
 			<div class="cut cut-long"></div>
-			<form target="hiddenFrame" action="/scan.php" method="post">
+			<form target="transFrame" action="/scan.php" method="post">
 				<?php 
 				   if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
 						echo('<button type="submit" name="target" value="file" class="submit">'.$button_file.'</button>');

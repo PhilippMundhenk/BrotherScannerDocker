@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+    brother-scanner:
+        image: ghcr.io/philippmundhenk/brotherscannerdocker
+        volumes:
+            - /path/on/host:/scans
+        ports:
+            - 33355:33355
+            - 54925:54925/udp # mandatory, for scanner tools
+            - 54921:54921 # mandatory, for scanner tools
+            - 161:161/udp # mandatory, for scanner tools
+        environment:
+            - NAME=Scanner
+            - MODEL=MFC-L2700DW
+            - IPADDRESS=192.168.1.10
+            - HOST_IPADDRESS=192.168.1.20
+            - OCR_SERVER=localhost # optional, for OCR
+            - OCR_PORT=32800 # optional, for OCR
+            - OCR_PATH=ocr.php # optional, for OCR
+            - UID=1000 # optional, for /scans permissions
+            - GID=1000 # optional, for /scans permissions
+            - TZ=Europe/Berlin # optional, for correct time in scanned filenames
+            - WEBSERVER=true # optional, activates GUI & API
+            - PORT=33355 # optional, sets port for webserver (default: 80)
+            - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
+            - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
+            - RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+            - RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
+        restart: unless-stopped
+
+    # optional, for OCR
+    ocr:
+      image: ghcr.io/philippmundhenk/tesseractocrmicroservice
+      restart: unless-stopped
+      ports:
+          - 32800:80
