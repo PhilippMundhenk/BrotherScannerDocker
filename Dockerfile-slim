@@ -1,0 +1,49 @@
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata \
+    apt-utils \
+    sane \
+    sane-utils \
+    ghostscript \
+    netpbm \
+    wget \
+    graphicsmagick \
+    curl \
+    ssh \
+    sshpass \
+    lighttpd \
+    php-cgi \
+    php-curl \
+    sudo \
+    iproute2 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Brother Scanner Drivers
+RUN wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb --no-check-certificate && \
+    dpkg -i brscan4-0.4.11-1.amd64.deb && \
+    rm brscan4-0.4.11-1.amd64.deb && \
+    wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.1-2.amd64.deb --no-check-certificate && \
+    dpkg -i brscan-skey-0.3.1-2.amd64.deb && \
+    rm brscan-skey-0.3.1-2.amd64.deb
+
+COPY files/gui /var/www/html
+COPY files/api /var/www/html
+COPY script /opt/brother/scanner/brscan-skey/script
+
+RUN chown -R www-data /var/www/ && \
+    cp /etc/lighttpd/conf-available/05-auth.conf /etc/lighttpd/conf-enabled/ && \
+    cp /etc/lighttpd/conf-available/15-fastcgi-php.conf /etc/lighttpd/conf-enabled/ && \
+    cp /etc/lighttpd/conf-available/10-fastcgi.conf /etc/lighttpd/conf-enabled/ && \
+    mkdir -p /var/run/lighttpd && \
+    touch /var/run/lighttpd/php-fastcgi.socket && \
+    chown -R www-data /var/run/lighttpd && \
+    echo 'www-data ALL=(NAS) NOPASSWD:ALL' >> /etc/sudoers
+
+ENV NAME="Scanner" MODEL="MFC-L2700DW" IPADDRESS="192.168.1.123" USERNAME="NAS"
+EXPOSE 54925 54921 80
+
+VOLUME /scans
+CMD ["/opt/brother/runScanner.sh"]
