@@ -112,6 +112,9 @@ You can configure the tool via environment variables:
 | RENAME_GUI_SCANTOIMAGE="Scan photo" | optional | renames GUI button "Scan to image" to "Scan photo" |
 | RENAME_GUI_SCANTOOCR="Scan High-Res" | optional | renames GUI button "Scan to OCR" to "Scan High-Res" |
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
+| TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+| TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+
 
 ### FTPS upload
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
