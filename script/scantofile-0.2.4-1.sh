@@ -27,23 +27,23 @@ filename_base=/scans/$date/$date"-front-page"
 output_file=$filename_base"%04d.pnm"
 echo "filename: "$output_file
 
-#sthg is wrong with device name, probably escaping, use default printer:
-#scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name=$device --resolution=$resolution --batch=$output_file"
-scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --resolution=$resolution --batch=$output_file"
+function scan_cmd() {
+  scanimage -l 0 -t 0 -x 215 -y 297 "--device-name=$1" "--resolution=$2" "--batch=$3"
+}
 
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
     sleep  0.1
 fi
-$($scan_cmd)
+scan_cmd "$device" "$resolution" "$output_file"
 if [ ! -s $filename_base"0001.pnm" ];then
   if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 1000000
   else
     sleep  1
   fi
-  $($scan_cmd)
+  scan_cmd "$device" "$resolution" "$output_file"
 fi
 
 #only convert when no back pages are being scanned:
@@ -53,16 +53,16 @@ fi
 	else
 		sleep  120
 	fi
-	
+
 	(
 		echo "converting to PDF for $date..."
 		gm convert -page A4+0+0 $compression_flag $filename_base*.pnm /scans/$date.pdf
 		/opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" $date.pdf
-	
+
 		echo "cleaning up for $date..."
 		cd /scans
 		rm -rf $date
-	
+
 		if [ -z "${OCR_SERVER}" ] || [ -z "${OCR_PORT}" ] || [ -z "${OCR_PATH}" ]; then
 			echo "OCR environment variables not set, skipping OCR."
 		else

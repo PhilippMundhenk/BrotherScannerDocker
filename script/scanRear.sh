@@ -29,30 +29,30 @@ cd /scans/$date
 kill -9 `cat scan_pid`
 rm scan_pid
 
-#sthg is wrong with device name, probably escaping, use default printer:
-#scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --device-name=$device --resolution=$resolution --batch=$output_file"
-scan_cmd="scanimage -l 0 -t 0 -x 215 -y 297 --resolution=$resolution --batch=$output_file"
+function scan_cmd() {
+  scanimage -l 0 -t 0 -x 215 -y 297 "--device-name=$1" "--resolution=$2" "--batch=$3"
+}
 
 if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 100000
 else
     sleep  0.1
 fi
-$($scan_cmd)
+scan_cmd "$device" "$resolution" "$output_file"
 if [ ! -s $filename_base"0001.pnm" ];then
   if [ "`which usleep  2>/dev/null `" != '' ];then
     usleep 1000000
   else
     sleep  1
   fi
-  $($scan_cmd)
+  scan_cmd "$device" "$resolution" "$output_file"
 fi
 
 (
 	#rename pages:
 	numberOfPages=$(find . -maxdepth 1  -name "*front-page*" | wc -l)
 	echo "number of pages scanned: "$numberOfPages
-	
+
 	cnt=0
 	for filename in *front*.pnm; do
 	        cnt=$((cnt+1))
