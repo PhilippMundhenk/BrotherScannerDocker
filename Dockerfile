@@ -22,6 +22,7 @@ RUN apt-get -y install \
         php-curl \
 		sudo \
 		iproute2 \
+		jq \
 		&& apt-get -y clean
 
 RUN cd /tmp && \
