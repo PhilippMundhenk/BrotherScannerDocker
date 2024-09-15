@@ -175,7 +175,8 @@ here is an example of the environment:
 #### GUI
 You can access the GUI under the IP of your container and the set port (or 80 in default case).
 With the full config example below, the result will look something like this:
-![Screenshot of web interface](doc/GUI.jpg)
+![Screenshot of main web interface](doc/gui-main.jpg)  
+![Screenshot of file list web interface](doc/gui-filelist.jpg)
 
 Note that the interface does not block when pressing a button.
 Thus, make sure to wait for your scan to complete, before pressing another button.
