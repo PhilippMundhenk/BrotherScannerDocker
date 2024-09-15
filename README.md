@@ -112,6 +112,9 @@ You can configure the tool via environment variables:
 | RENAME_GUI_SCANTOIMAGE="Scan photo" | optional | renames GUI button "Scan to image" to "Scan photo" |
 | RENAME_GUI_SCANTOOCR="Scan High-Res" | optional | renames GUI button "Scan to OCR" to "Scan High-Res" |
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
+| TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+| TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+
 
 ### FTPS upload
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
@@ -172,7 +175,8 @@ here is an example of the environment:
 #### GUI
 You can access the GUI under the IP of your container and the set port (or 80 in default case).
 With the full config example below, the result will look something like this:
-![Screenshot of web interface](doc/GUI.jpg)
+![Screenshot of main web interface](doc/gui-main.jpg)  
+![Screenshot of file list web interface](doc/gui-filelist.jpg)
 
 Note that the interface does not block when pressing a button.
 Thus, make sure to wait for your scan to complete, before pressing another button.

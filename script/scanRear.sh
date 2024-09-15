@@ -45,6 +45,7 @@ if [ ! -s "${filename_base}0001.pnm" ]; then
 fi
 
 (
+
   #rename pages:
   numberOfPages=$(find . -maxdepth 1 -name "*front-page*" | wc -l)
   echo "number of pages scanned: $numberOfPages"
@@ -71,6 +72,7 @@ fi
     echo "converting to PDF for $date..."
     gm convert ${gm_opts[@]} ./*.pnm "/scans/${date}.pdf"
     /opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${date}.pdf"
+    /opt/brother/scanner/brscan-skey/script/trigger_telegram.sh "$date.pdf (rear) scanned"
 
     echo "cleaning up for $date..."
     cd /scans || exit
@@ -83,7 +85,7 @@ fi
       (
         curl -F "userfile=@/scans/$date.pdf" -H "Expect:" -o /scans/"$date"-ocr.pdf "${OCR_SERVER}":"${OCR_PORT}"/"${OCR_PATH}"
         /opt/brother/scanner/brscan-skey/script/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${date}-ocr.pdf"
-
+        /opt/brother/scanner/brscan-skey/script/trigger_telegram.sh "$date-ocr.pdf (rear) OCR finished"
         /opt/brother/scanner/brscan-skey/script/sendtoftps.sh \
           "${FTP_USER}" \
           "${FTP_PASSWORD}" \
