@@ -101,11 +101,13 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
         function set_state_idle() {
             $('#status-image').html('<i class="far fa-smile fa-fw fa-10x"></i>');
             $('#status-text').text('Ready to scan');
+            $('.trigger-scan').removeClass('disabled');
         }
 
         function set_state_waiting() {
             $('#status-image').html('<i class="fas fa-hourglass-half fa-fw fa-10x"></i>');
             $('#status-text').text('Waiting for rear pages');
+            $('.trigger-scan').removeClass('disabled');
         }
 
         function set_state_scan() {
@@ -114,11 +116,13 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                 $('#status-image').html(spinnerimage);
             }
             $('#status-text').text('Scan in progress');
+            $('.trigger-scan').addClass('disabled');
         }
 
         function set_state_ocr() {
             $('#status-image').html('<i class="fas fa-brain fa-fw fa-10x"></i>');
             $('#status-text').text('OCR in progress');
+            $('.trigger-scan').removeClass('disabled');
         }
 
         function set_state(state) {
@@ -143,6 +147,8 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
         $(document).ready(function() {
 
             $('.trigger-scan').click(function() {
+                $(this).focus()
+                $(this).blur();
                 var target = $(this).data('trigger');
                 $.post('/scan.php', {
                     target: target
@@ -157,6 +163,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
 
                     let state = 'idle';
+                    
 
                     if (data.ocr && data.waiting && !data.scan) {
                         state = 'ocr';
