@@ -34,8 +34,8 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href=" https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css ">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+    <link rel="stylesheet" href="/assets/bootstrap.5.1.3/bootstrap.min.css ">
+    <link rel="stylesheet" href="/assets/fontawesome.5.15.4/css/all.min.css">
     <!-- Plugins -->
 </head>
 
@@ -93,115 +93,111 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
         </div>
     </div>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous">
-    </script>
+    <script src="/assets/jquery.3.7.1/jquery.min.js"></script>
+    <script src="/assets/bootstrap.5.1.3/bootstrap.bundle.min.js"></script>
 
 
     <script>
-    function set_state_idle() {
-        $('#status-image').html('<i class="far fa-smile fa-fw fa-10x"></i>');
-        $('#status-text').text('Ready to scan');
-    }
-
-    function set_state_waiting() {
-        $('#status-image').html('<i class="fas fa-hourglass-half fa-fw fa-10x"></i>');
-        $('#status-text').text('Waiting for rear pages');
-    }
-
-    function set_state_scan() {
-        let spinnerimage = '<i class="fas fa-spinner fa-spin fa-fw fa-10x"></i>';
-        if (spinnerimage != $('#status-image').html()) {
-            $('#status-image').html(spinnerimage);
+        function set_state_idle() {
+            $('#status-image').html('<i class="far fa-smile fa-fw fa-10x"></i>');
+            $('#status-text').text('Ready to scan');
         }
-        $('#status-text').text('Scan in progress');
-    }
 
-    function set_state_ocr() {
-        $('#status-image').html('<i class="fas fa-brain fa-fw fa-10x"></i>');
-        $('#status-text').text('OCR in progress');
-    }
-
-    function set_state(state) {
-        switch (state) {
-            case 'idle':
-                set_state_idle();
-                break;
-            case 'waiting':
-                set_state_waiting();
-                break;
-            case 'scan':
-                set_state_scan();
-                break;
-            case 'ocr':
-                set_state_ocr();
-                break;
-            default:
-                set_state_idle();
+        function set_state_waiting() {
+            $('#status-image').html('<i class="fas fa-hourglass-half fa-fw fa-10x"></i>');
+            $('#status-text').text('Waiting for rear pages');
         }
-    }
 
-    $(document).ready(function() {
+        function set_state_scan() {
+            let spinnerimage = '<i class="fas fa-spinner fa-spin fa-fw fa-10x"></i>';
+            if (spinnerimage != $('#status-image').html()) {
+                $('#status-image').html(spinnerimage);
+            }
+            $('#status-text').text('Scan in progress');
+        }
 
-        $('.trigger-scan').click(function() {
-            var target = $(this).data('trigger');
-            $.post('/scan.php', {
-                target: target
-            }, function(data) {
-                console.log(data);
+        function set_state_ocr() {
+            $('#status-image').html('<i class="fas fa-brain fa-fw fa-10x"></i>');
+            $('#status-text').text('OCR in progress');
+        }
+
+        function set_state(state) {
+            switch (state) {
+                case 'idle':
+                    set_state_idle();
+                    break;
+                case 'waiting':
+                    set_state_waiting();
+                    break;
+                case 'scan':
+                    set_state_scan();
+                    break;
+                case 'ocr':
+                    set_state_ocr();
+                    break;
+                default:
+                    set_state_idle();
+            }
+        }
+
+        $(document).ready(function() {
+
+            $('.trigger-scan').click(function() {
+                var target = $(this).data('trigger');
+                $.post('/scan.php', {
+                    target: target
+                }, function(data) {
+                    console.log(data);
+                });
             });
+
+            // listen to action.php for status changes
+            setInterval(function() {
+                $.get('/active.php', function(data) {
+
+
+                    let state = 'idle';
+
+                    if (data.ocr && data.waiting && !data.scan) {
+                        state = 'ocr';
+                    } else if (data.scan && data.waiting) {
+                        state = 'scan';
+                    } else if (data.scan) {
+                        state = 'scan';
+                    } else if (data.ocr && !data.scan) {
+                        state = 'ocr';
+                    } else if (!data.ocr && !data.scan && data.waiting) {
+                        state = 'waiting';
+                    } else if (!data.ocr && !data.scan && !data.waiting) {
+                        state = 'idle';
+                    }
+                    set_state(state);
+                });
+            }, 1000);
+
         });
 
-        // listen to action.php for status changes
-        setInterval(function() {
-            $.get('/active.php', function(data) {
+        $(document).ready(function() {
 
+            $('#triggerFiles').on('click', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: '/list.php',
+                    method: 'GET',
+                    success: function(response) {
+                        // Populate the Offcanvas with the response content
+                        $('#offcanvasContent').html(response);
 
-                let state = 'idle';
-
-                if (data.ocr && data.waiting && !data.scan) {
-                    state = 'ocr';
-                } else if (data.scan && data.waiting) {
-                    state = 'scan';
-                } else if (data.scan) {
-                    state = 'scan';
-                } else if (data.ocr && !data.scan) {
-                    state = 'ocr';
-                } else if (!data.ocr && !data.scan && data.waiting) {
-                    state = 'waiting';
-                } else if (!data.ocr && !data.scan && !data.waiting) {
-                    state = 'idle';
-                }
-                set_state(state);
-            });
-        }, 1000);
-
-    });
-
-
-
-    $(document).ready(function() {
-
-        $('#triggerFiles').on('click', function(e) {
-            e.preventDefault();
-            $.ajax({
-                url: '/list.php',
-                method: 'GET',
-                success: function(response) {
-                    // Populate the Offcanvas with the response content
-                    $('#offcanvasContent').html(response);
-
-                    // Show the Offcanvas
-                    var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
-                    offcanvas.show();
-                },
-                error: function(xhr, status, error) {
-                    console.error('Failed to load content:', error);
-                }
+                        // Show the Offcanvas
+                        var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
+                        offcanvas.show();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to load content:', error);
+                    }
+                });
             });
         });
-    });
     </script>
 
 
