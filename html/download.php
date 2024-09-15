@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 $filename="/scans/".$file;
                 if(file_exists($filename)) {
                         header("Content-type:application/pdf");
-                        header("Content-Disposition:attachment;filename=\"scan.pdf\"");
+                        header("Content-Disposition:attachment;filename=\"$file\"");
                         readfile($filename);
                 } else {
                         header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
