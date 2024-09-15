@@ -1,5 +1,4 @@
 #!/bin/bash
-# $1 = text
 
 # Check if TELEGRAM_TOKEN and TELEGRAM_CHATID are both set
 if [ -z "${TELEGRAM_TOKEN}" ] || [ -z "${TELEGRAM_CHATID}" ]; then
@@ -7,11 +6,15 @@ if [ -z "${TELEGRAM_TOKEN}" ] || [ -z "${TELEGRAM_CHATID}" ]; then
   exit 1
 fi
 
-TELEGRAM_URL="https://api.telegram.org/${TELEGRAM_TOKEN}/sendMessage"
-TELEGRAM_TEXT="Scanner: $1"
+# Use the environment variables TELEGRAM_TOKEN and TELEGRAM_CHATID
+TOKEN="$TELEGRAM_TOKEN"
+CHAT_ID="$TELEGRAM_CHATID"
 
+# The message is passed as a parameter
+MESSAGE="Scanner: $1"
 
-# Send message via Telegram API
-curl --silent "${TELEGRAM_URL}?chat_id=${TELEGRAM_CHATID}&text=scanner" > /dev/null
-echo "${TELEGRAM_URL}?chat_id=${TELEGRAM_CHATID}&text=${TELEGRAM_TEXT}"
-echo "Message sent to Telegram chat"
+# URL encode the message to handle spaces and special characters
+ENCODED_MESSAGE=$(echo "$MESSAGE" | jq -sRr @uri)
+
+# Send the message using wget
+wget -qO- --post-data="chat_id=$CHAT_ID&text=$ENCODED_MESSAGE" "https://api.telegram.org/$TOKEN/sendMessage" > /dev/null
