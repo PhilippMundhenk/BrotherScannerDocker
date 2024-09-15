@@ -1,9 +1,9 @@
-.PHONY: brotherscanner brotherscanner-slim
+.PHONY: brotherscanner update-container
 
 build: brotherscanner
 
 brotherscanner:
 	docker build --no-cache -t brotherscanner -f Dockerfile .
 
-brotherscanner-slim:
-	docker build --no-cache -t brotherscanner-slim -f Dockerfile-slim .
+update-container:
+	./update-container.sh
