@@ -38,7 +38,7 @@ foreach ($filesWithMtime as $file => $attributes) {
   <a href="/download.php?file=<?php echo $file; ?>" class="list-group-item list-group-item-action py-3 lh-tight" target="_blank"aria-current="true">
     <div class="d-flex w-100 align-items-center justify-content-between">
       <strong class="mb-1"><?php echo $file; ?></strong>
-      <small><?php echo date('D', $mtime); ?></small>
+      <small><?php echo date('D', $attributes['mtime']); ?></small>
     </div>
     <div class="col-12 mb-1 small"><?php echo number_format($attributes['size']); ?> Bytes</div>
   </a>
