@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+    brother-scanner:
+        image: ghcr.io/philippmundhenk/brotherscannerdocker
+        volumes:
+            - /path/on/host:/scans
+        ports:
+            - 33355:33355
+            - 54925:54925/udp # mandatory, for scanner tools
+            - 54921:54921 # mandatory, for scanner tools
+            - 161:161/udp # mandatory, for scanner tools
+        environment:
+            - NAME=Scanner
+            - MODEL=MFC-L2700DW
+            - IPADDRESS=192.168.188.133 # scanner IP address
+            - UID=1000 # note: network mount needs to have correct permissions!
+            - GID=1000 # note: network mount needs to have correct permissions!
+            - TZ=Europe/Berlin
+            - HOST_IPADDRESS=192.168.188.117
+            - WEBSERVER=true
+            - RENAME_GUI_SCANTOFILE="Scan front pages"
+            - RENAME_GUI_SCANTOEMAIL="Scan rear pages"
+            - DISABLE_GUI_SCANTOOCR=true
+            - DISABLE_GUI_SCANTOIMAGE=true
+            - OCR_SERVER=192.168.188.117
+            - OCR_PORT=3217
+            - OCR_PATH=ocr.php
+            - TELEGRAM_TOKEN="" # note: keep the word bot in the string
+            - TELEGRAM_CHATID=127585497 # note: target chat id. can be person or group
+        restart: unless-stopped
+
+    # optional, for OCR
+    ocr:
+      image: ghcr.io/philippmundhenk/tesseractocrmicroservice
+      restart: unless-stopped
+      ports:
+          - 3217:80

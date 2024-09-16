@@ -1,7 +1,7 @@
 #FROM ubuntu:16.04
 FROM ubuntu:22.04
 
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get update && apt-get -y install tzdata && apt-get -y clean
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install tzdata && apt-get -y clean
 
 RUN apt-get update && apt-get install -y --no-install-recommends apt-utils && apt-get -y clean
 
@@ -22,6 +22,7 @@ RUN apt-get -y install \
         php-curl \
 		sudo \
 		iproute2 \
+		jq \
 		&& apt-get -y clean
 
 RUN cd /tmp && \
@@ -50,16 +51,21 @@ ENV MODEL="MFC-L2700DW"
 ENV IPADDRESS="192.168.1.123"
 ENV USERNAME="NAS"
 
-#only set these variables, if inotify needs to be triggered (e.g., for Synology Drive):
+#only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive):
 ENV SSH_USER=""
 ENV SSH_PASSWORD=""
 ENV SSH_HOST=""
 ENV SSH_PATH=""
 
-#only set these variables, if you need FTP upload:
+#only set these variables in the compose file, if you need FTP upload:
 ENV FTP_USER=""
 ENV FTP_PASSWORD=""
 ENV FTP_HOST=""
+
+#only set these variables in the compose file, if you need Telegram notifications:
+ENV TELEGRAM_TOKEN=""
+ENV TELEGRAM_CHATID=""
+
 # Make sure this ends in a slash.
 ENV FTP_PATH="/scans/" 
 
@@ -67,14 +73,14 @@ EXPOSE 54925
 EXPOSE 54921
 EXPOSE 80
 
-ADD files/gui/index.php /var/www/html
-ADD files/gui/main.css /var/www/html
-ADD files/api/scan.php /var/www/html
-ADD files/api/active.php /var/www/html
-ADD files/api/list.php /var/www/html
-ADD files/api/download.php /var/www/html
+#ADD files/gui/index.php /var/www/html
+#ADD files/gui/main.css /var/www/html
+#ADD files/api/scan.php /var/www/html
+#ADD files/api/active.php /var/www/html
+#ADD files/api/list.php /var/www/html
+#ADD files/api/download.php /var/www/html
+COPY html /var/www/html
 RUN chown -R www-data /var/www/
-
 #directory for scans:
 VOLUME /scans
 
