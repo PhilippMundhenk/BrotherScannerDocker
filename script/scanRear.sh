@@ -22,7 +22,7 @@ output_file="${filename_base}%04d.pnm"
 
 cd "/tmp/${date}" || exit
 
-kill -9 "$(cat scan_pid)"
+pkill -P "$(cat scan_pid)"
 rm scan_pid
 
 #sthg is wrong with device name, probably escaping, use default printer:
