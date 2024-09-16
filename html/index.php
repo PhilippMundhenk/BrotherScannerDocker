@@ -36,7 +36,13 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="/assets/bootstrap.5.1.3/bootstrap.min.css ">
     <link rel="stylesheet" href="/assets/fontawesome.5.15.4/css/all.min.css">
-    <!-- Plugins -->
+    
+    <style>
+        /* prevent persistent highlight after click to scan */
+        .trigger-scan:focus, .trigger-scan:active:focus {
+            box-shadow: none !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -146,18 +152,18 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
         $(document).ready(function() {
 
+
             $('.trigger-scan').click(function() {
-                $(this).focus()
-                $(this).blur();
                 var target = $(this).data('trigger');
                 $.post('/scan.php', {
                     target: target
                 }, function(data) {
                     console.log(data);
+                    $('.trigger-scan').blur();
                 });
             });
 
-            // listen to action.php for status changes
+
             setInterval(function() {
                 $.get('/active.php', function(data) {
 
@@ -182,10 +188,20 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                 });
             }, 1000);
 
-        });
 
-        $(document).ready(function() {
-
+            /**
+             * Event handler for the click event on the element with ID 'triggerFiles'.
+             * Prevents the default action and performs an AJAX GET request to '/list.php'.
+             * 
+             * On successful response:
+             * - Populates the Offcanvas element with ID 'offcanvasContent' with the response content.
+             * - Displays the Offcanvas element with ID 'offcanvasFiles'.
+             * 
+             * On error:
+             * - Logs an error message to the console.
+             * 
+             * @param {Event} e - The click event object.
+             */
             $('#triggerFiles').on('click', function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -204,6 +220,8 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                     }
                 });
             });
+
+
         });
     </script>
 

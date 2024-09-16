@@ -3,6 +3,7 @@
 # $2 = friendly name
 
 {
+echo "scantoemail.sh triggered"
 #override environment, as brscan is screwing it up:
 export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
 
