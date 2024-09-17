@@ -54,6 +54,7 @@ if [ "$WEBSERVER" == "true" ]; then
 		echo "<?php"
 		echo "\$UID=$UID;"
 		echo "\$MODEL=\"$MODEL\";"
+		echo "\$TZ=\"$TZ\";"
 		if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
 			echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
 		fi
@@ -78,10 +79,25 @@ if [ "$WEBSERVER" == "true" ]; then
 		if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
 			echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
 		fi
+		if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+			echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+		fi
 		echo "?>"
 		
-	} > /var/www/html/config.php
-	chown www-data /var/www/html/config.php
+	} > /var/www/private/config.php
+	chown www-data /var/www/private/config.php
+
+# Rewrite-Regeln zur Lighttpd-Konfiguration hinzufügen
+	cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+server.modules += ( "mod_rewrite" )
+
+url.rewrite-if-not-file = (
+    "^/(.*)$" => "/index.php"
+)
+
+EOL
+
 	if [[ -z ${PORT} ]]; then
 		PORT=80
 	fi

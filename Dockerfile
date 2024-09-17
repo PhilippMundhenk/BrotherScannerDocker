@@ -73,13 +73,8 @@ EXPOSE 54925
 EXPOSE 54921
 EXPOSE 80
 
-#ADD files/gui/index.php /var/www/html
-#ADD files/gui/main.css /var/www/html
-#ADD files/api/scan.php /var/www/html
-#ADD files/api/active.php /var/www/html
-#ADD files/api/list.php /var/www/html
-#ADD files/api/download.php /var/www/html
-COPY html /var/www/html
+# Copy the web files to the web directory
+COPY www /var/www
 RUN chown -R www-data /var/www/
 #directory for scans:
 VOLUME /scans

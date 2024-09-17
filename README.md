@@ -114,6 +114,7 @@ You can configure the tool via environment variables:
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
 | TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
 | TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+| ALLOW_GUI_FILEOPERATIONS | optional | true/false. Let you delete and rename files in files list  |
 
 
 ### FTPS upload
