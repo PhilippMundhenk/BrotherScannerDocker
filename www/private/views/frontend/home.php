@@ -1,5 +1,4 @@
 <?php 
-echo get_include_path();
 include('config.php');
 require_once('helper.php');
 
@@ -28,17 +27,8 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 <html>
 
 <head>
-    <meta charset="UTF-8">
+    <?php include('views/frontend/common-head.php'); ?>
     <title>Brother <?php echo($MODEL); ?></title>
-
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <link rel="icon" href="favicon.ico">
-    <link rel="stylesheet" href="/assets/bootstrap.5.1.3/bootstrap.min.css ">
-    <link rel="stylesheet" href="/assets/fontawesome.5.15.4/css/all.min.css">
-    
     <style>
         /* prevent persistent highlight after click to scan */
         .trigger-scan:focus, .trigger-scan:active:focus {
@@ -85,7 +75,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
         </div>
     </section>
 
-
+    <!-- Offcanvas -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFiles" aria-labelledby="offcanvasFilesLabel">
 	
         <div class="offcanvas-header">
@@ -101,131 +91,21 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
         </div>
     </div>
 
-    <script src="/assets/jquery.3.7.1/jquery.min.js"></script>
-    <script src="/assets/bootstrap.5.1.3/bootstrap.bundle.min.js"></script>
+    <!-- AJAX Modal -->
+    <div class="modal" id="ajax_modal" tabindex="-1" aria-labelledby="ajax_modalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content" id="ajax_modal_content">
+
+            </div>
+        </div>
+    </div>
 
 
-    <script>
-        function set_state_idle() {
-            $('#status-image').html('<i class="far fa-smile fa-fw fa-10x"></i>');
-            $('#status-text').text('Ready to scan');
-            $('.trigger-scan').removeClass('disabled');
-        }
 
-        function set_state_waiting() {
-            $('#status-image').html('<i class="fas fa-hourglass-half fa-fw fa-10x"></i>');
-            $('#status-text').text('Waiting for rear pages');
-            $('.trigger-scan').removeClass('disabled');
-        }
-
-        function set_state_scan() {
-            let spinnerimage = '<i class="fas fa-spinner fa-spin fa-fw fa-10x"></i>';
-            if (spinnerimage != $('#status-image').html()) {
-                $('#status-image').html(spinnerimage);
-            }
-            $('#status-text').text('Scan in progress');
-            $('.trigger-scan').addClass('disabled');
-        }
-
-        function set_state_ocr() {
-            $('#status-image').html('<i class="fas fa-brain fa-fw fa-10x"></i>');
-            $('#status-text').text('OCR in progress');
-            $('.trigger-scan').removeClass('disabled');
-        }
-
-        function set_state(state) {
-            switch (state) {
-                case 'idle':
-                    set_state_idle();
-                    break;
-                case 'waiting':
-                    set_state_waiting();
-                    break;
-                case 'scan':
-                    set_state_scan();
-                    break;
-                case 'ocr':
-                    set_state_ocr();
-                    break;
-                default:
-                    set_state_idle();
-            }
-        }
-
-        $(document).ready(function() {
+    <?php include('views/frontend/common-javascript.php'); ?>
 
 
-            $('.trigger-scan').click(function() {
-                var target = $(this).data('trigger');
-                $.post('/api/scanner/scanto', {
-                    target: target
-                }, function(data) {
-                    console.log(data);
-                    $('.trigger-scan').blur();
-                });
-            });
-
-
-            setInterval(function() {
-                $.get('/api/scanner/status', function(data) {
-
-
-                    let state = 'idle';
-                    
-
-                    if (data.ocr && data.waiting && !data.scan) {
-                        state = 'ocr';
-                    } else if (data.scan && data.waiting) {
-                        state = 'scan';
-                    } else if (data.scan) {
-                        state = 'scan';
-                    } else if (data.ocr && !data.scan) {
-                        state = 'ocr';
-                    } else if (!data.ocr && !data.scan && data.waiting) {
-                        state = 'waiting';
-                    } else if (!data.ocr && !data.scan && !data.waiting) {
-                        state = 'idle';
-                    }
-                    set_state(state);
-                });
-            }, 1000);
-
-
-            /**
-             * Event handler for the click event on the element with ID 'triggerFiles'.
-             * Prevents the default action and performs an AJAX GET request to '//list-files'.
-             * 
-             * On successful response:
-             * - Populates the Offcanvas element with ID 'offcanvasContent' with the response content.
-             * - Displays the Offcanvas element with ID 'offcanvasFiles'.
-             * 
-             * On error:
-             * - Logs an error message to the console.
-             * 
-             * @param {Event} e - The click event object.
-             */
-            $('#triggerFiles').on('click', function(e) {
-                e.preventDefault();
-                $.ajax({
-                    url: '/list-files',
-                    method: 'GET',
-                    success: function(response) {
-                        // Populate the Offcanvas with the response content
-                        $('#offcanvasContent').html(response);
-
-                        // Show the Offcanvas
-                        var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
-                        offcanvas.show();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Failed to load content:', error);
-                    }
-                });
-            });
-
-
-        });
-    </script>
+    <script src="/assets/scripts.min.js"></script>
 
 
 </body>

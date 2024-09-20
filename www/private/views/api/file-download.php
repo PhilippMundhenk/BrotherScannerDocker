@@ -2,24 +2,20 @@
 include('config.php');
 require_once('helper.php');
 
+#'/scans/'
+
 if(!isset($file)) {
         send_json_error(400, "No file specified");
 }
 
-if(str_contains($file, "..") || str_contains($file, "/")) {
-        send_json_error(400, "Invalid file specified");
-}
+$file_info = file_get_verified_fileinfo('/scans/', urldecode($file));
+$full_path = $file_info['full_path'];
+$filename = $file_info['file'];
+$mimetype = $file_info['mimetype'];
 
-$filename="/scans/".$file;
-
-if(!file_exists($filename)){
-        send_json_error(400, "File does not exist");
-}
-
-
-header("Content-type:application/pdf");
-header("Content-Disposition:attachment;filename=\"$file\"");
-readfile($filename);
+header("Content-type:$mimetype");
+header("Content-Disposition:attachment;filename=\"$filename\"");
+readfile($full_path);
 die();
 
 ?>
