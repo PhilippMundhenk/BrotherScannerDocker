@@ -15,6 +15,7 @@
 
   # device=$1
   date=$(date +%Y-%m-%d-%H-%M-%S)
+  tmp_dir="/tmp/$date"
 
   mkdir -p "/tmp/$date"
   cd "/tmp/$date" || exit
@@ -57,7 +58,7 @@
 
       echo "cleaning up for $date..."
       cd /scans || exit
-      rm -rf "$date"
+      rm -rf "$tmp_dir"
 
       if [ -z "${OCR_SERVER}" ] || [ -z "${OCR_PORT}" ] || [ -z "${OCR_PATH}" ]; then
         echo "OCR environment variables not set, skipping OCR."
