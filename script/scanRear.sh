@@ -15,8 +15,10 @@ fi
 device="$1"
 script_dir="/opt/brother/scanner/brscan-skey/script"
 
+set -e # Exit on error
+
 mkdir -p /tmp
-cd /tmp || exit
+cd /tmp
 date=$(ls -rd */ | grep "$(date +"%Y-%m-%d")" | head -1)
 date=${date%/}
 tmp_dir="/tmp/${date}"
@@ -25,7 +27,7 @@ tmp_output_file="${filename_base}%04d.pnm"
 tmp_output_pdf_file="${tmp_dir}/${date}.pdf"
 output_pdf_file="/scans/${date}.pdf"
 
-cd "$tmp_dir" || exit
+cd "$tmp_dir"
 
 kill -9 "$(cat scan_pid)"
 rm scan_pid
