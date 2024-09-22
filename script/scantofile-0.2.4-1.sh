@@ -21,8 +21,12 @@
   tmp_output_file="${filename_base}%04d.pnm"
   output_pdf_file="/scans/${date}.pdf"
 
+  set -e # Exit on error
+
   mkdir -p "$tmp_dir"
-  cd "$tmp_dir" || exit
+  cd "$tmp_dir"
+  filename_base="/tmp/${date}/${date}-front-page"
+  output_file="${filename_base}%04d.pnm"
   echo "filename: $tmp_output_file"
 
   function scan_cmd() {
