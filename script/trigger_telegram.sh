@@ -17,4 +17,4 @@ MESSAGE="Scanner: $1"
 ENCODED_MESSAGE=$(echo "$MESSAGE" | jq -sRr @uri)
 
 # Send the message using wget
-wget -qO- --post-data="chat_id=$CHAT_ID&text=$ENCODED_MESSAGE" "https://api.telegram.org/$TOKEN/sendMessage" > /dev/null
+wget -qO- --post-data="chat_id=$CHAT_ID&text=$ENCODED_MESSAGE" "https://api.telegram.org/$TOKEN/sendMessage" >/dev/null
