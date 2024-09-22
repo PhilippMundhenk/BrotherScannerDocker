@@ -113,7 +113,15 @@ fi
           "${FTP_PASSWORD}" \
           "${FTP_HOST}" \
           "${FTP_PATH}" \
+<<<<<<< HEAD
           "/scans/${date}-ocr.pdf"
+=======
+          "${output_pdf_file}"
+
+          if [ -n "${REMOVE_ORIGINAL_AFTER_OCR}" ]; then
+            rm ${output_pdf_file}
+          fi
+>>>>>>> Update scanRear.sh
       ) &
     fi
   ) &
