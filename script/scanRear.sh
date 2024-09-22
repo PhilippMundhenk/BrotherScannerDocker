@@ -28,7 +28,7 @@ output_pdf_file="/scans/${date}.pdf"
 
 cd "$tmp_dir" || exit
 
-pkill -P "$(cat scan_pid)"
+kill -9 "$(cat scan_pid)"
 rm scan_pid
 
 function scan_cmd() {
