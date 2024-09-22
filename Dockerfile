@@ -7,33 +7,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends apt-utils && ap
 
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y clean
 RUN apt-get -y install \
-		sane \
-		sane-utils \
-		ghostscript \
-		netpbm \
-		x11-common \
-		wget \
-		graphicsmagick \
-		curl \
-		ssh \
-		sshpass \
-		lighttpd \
-        php-cgi \
-        php-curl \
-		sudo \
-		iproute2 \
-		jq \
-		&& apt-get -y clean
+  sane \
+  sane-utils \
+  ghostscript \
+  netpbm \
+  x11-common \
+  wget \
+  graphicsmagick \
+  curl \
+  ssh \
+  sshpass \
+  lighttpd \
+  php-cgi \
+  php-curl \
+  sudo \
+  iproute2 \
+  jq \
+  bc \
+  pdftk \
+  poppler-utils \
+  && apt-get -y clean
 
 RUN cd /tmp && \
-	wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb && \
-	dpkg -i /tmp/brscan4-0.4.11-1.amd64.deb && \
-	rm /tmp/brscan4-0.4.11-1.amd64.deb
+  wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb && \
+  dpkg -i /tmp/brscan4-0.4.11-1.amd64.deb && \
+  rm /tmp/brscan4-0.4.11-1.amd64.deb
 
 RUN cd /tmp && \
-	wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.1-2.amd64.deb && \
-	dpkg -i /tmp/brscan-skey-0.3.1-2.amd64.deb && \
-	rm /tmp/brscan-skey-0.3.1-2.amd64.deb
+  wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.1-2.amd64.deb && \
+  dpkg -i /tmp/brscan-skey-0.3.1-2.amd64.deb && \
+  rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
 ADD files/runScanner.sh /opt/brother/runScanner.sh
 COPY script /opt/brother/scanner/brscan-skey/script
@@ -50,6 +53,7 @@ ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"
 ENV IPADDRESS="192.168.1.123"
 ENV USERNAME="NAS"
+ENV REMOVE_BLANK_THRESHOLD="0.3"
 
 #only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive):
 ENV SSH_USER=""
@@ -67,7 +71,7 @@ ENV TELEGRAM_TOKEN=""
 ENV TELEGRAM_CHATID=""
 
 # Make sure this ends in a slash.
-ENV FTP_PATH="/scans/" 
+ENV FTP_PATH="/scans/"
 
 EXPOSE 54925
 EXPOSE 54921
