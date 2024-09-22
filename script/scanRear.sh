@@ -14,6 +14,7 @@ fi
 
 device="$1"
 script_dir="/opt/brother/scanner/brscan-skey/script"
+remove_blank="${script_dir}/remove_blank.sh"
 
 set -e # Exit on error
 
@@ -80,9 +81,14 @@ fi
 
   (
     echo "converting to PDF for $date..."
-    gm convert ${gm_opts[@]} ./*.pnm "$output_pdf_file"
+    gm convert ${gm_opts[@]} ./*.pnm "$tmp_output_pdf_file"
     ${script_dir}/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${output_pdf_file}"
     ${script_dir}/trigger_telegram.sh "${date}.pdf (rear) scanned"
+
+    $remove_blank "$tmp_output_pdf_file"
+    mv "$tmp_output_pdf_file" "$output_pdf_file"
+
+    $script_dir/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${output_pdf_file}"
 
     echo "cleaning up for $date..."
     cd /scans || exit
