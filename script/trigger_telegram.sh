@@ -2,7 +2,7 @@
 
 # Check if TELEGRAM_TOKEN and TELEGRAM_CHATID are both set
 if [ -z "${TELEGRAM_TOKEN}" ] || [ -z "${TELEGRAM_CHATID}" ]; then
-  echo "TELEGRAM_TOKEN or TELEGRAM_CHATID is not set"
+  echo "TELEGRAM_TOKEN or TELEGRAM_CHATID environment variables not set, skipping Telegram trigger."
 else
   # Use the environment variables TELEGRAM_TOKEN and TELEGRAM_CHATID
   TOKEN="$TELEGRAM_TOKEN"
