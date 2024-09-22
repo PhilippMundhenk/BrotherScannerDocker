@@ -118,7 +118,7 @@ fi
 =======
           "${output_pdf_file}"
 
-          if [ -n "${REMOVE_ORIGINAL_AFTER_OCR}" ]; then
+          if [ "${REMOVE_ORIGINAL_AFTER_OCR}" = true ]; then
             rm ${output_pdf_file}
           fi
 >>>>>>> Update scanRear.sh
