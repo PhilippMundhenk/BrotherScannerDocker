@@ -98,6 +98,7 @@ You can configure the tool via environment variables:
 | IPADDRESS | mandatory | IP Address of your scanner |
 | RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
 | REMOVE_BLANK_THRESHOLD | optional | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
+| REMOVE_ORIGINAL_AFTER_OCR | optional | Deletes the original scan, once OCR file is saved (default: false) |
 | FTP_USER | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_PASSWORD | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_HOST  | optional | Address of an FTP(S) server to upload the completed scan to (see below) |
