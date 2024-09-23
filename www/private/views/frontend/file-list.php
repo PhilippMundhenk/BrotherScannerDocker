@@ -24,7 +24,7 @@ if (isset($ALLOW_GUI_FILEOPERATIONS) && $ALLOW_GUI_FILEOPERATIONS) {
         <strong class="mb-2 file-name"><?php echo $file['name']; ?></strong>
         <input class="form-control form-control-sm file-name-new d-none m-0 me-2 " type="text" value="<?php echo $file['name_clean']; ?>">
         <input class="form-control form-control-sm file-name-original d-none m-0 me-2 " type="hidden" value="<?php echo $file['name_clean']; ?>">
-        <small><?php echo date('D', $file['fileCreationTime']); ?></small>
+        <small><?php echo date('D', $file['fileModificationTime']); ?></small>
       </div>
       <div class="d-flex w-100 align-items-center justify-content-between pt-3">
         <div class="mb-1 small info-label file-info-label-default"><?php echo number_format($file['size']/1024); ?> KB</div>

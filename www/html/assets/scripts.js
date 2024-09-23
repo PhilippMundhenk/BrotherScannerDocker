@@ -44,17 +44,14 @@ function set_state(state) {
     }
 }
 
-function show_file_offcanvas(){
+function load_files_offcanvas(){
     $.ajax({
         url: '/list-files',
         method: 'GET',
         success: function(response) {
             // Populate the Offcanvas with the response content
             $('#offcanvasContent').html(response);
-
-            // Show the Offcanvas
-            var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
-            offcanvas.show();
+            
         },
         error: function(xhr, status, error) {
             console.error('Failed to load content:', error);
@@ -106,13 +103,13 @@ $(document).ready(function() {
 
     $('#triggerFiles').on('click', function(e) {
         e.preventDefault();
-        show_file_offcanvas();
+        load_files_offcanvas();
+        var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
+        offcanvas.show();
         
     });
 
-    
 
-    
 
 
 });
@@ -145,6 +142,40 @@ function toggle_file_delete(source_element){
     $("#"+parentId+" .file-buttons-default").toggleClass('d-none');
     $("#"+parentId+" .file-buttons-delete").toggleClass('d-none');
 }
+
+
+function toggle_file_error(parentId, message){
+
+    $('#'+parentId).addClass('bg-danger text-white');
+
+    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 py-4">
+                    <strong class="fs-4 fw-bolder">`+message+`</strong>
+                    <small><button type="button" class="btn btn-dark refresh-files m-0 me-2">OK</button></small>
+                </div>`;
+    $('#'+parentId).html(html);
+
+}   
+
+
+function toggle_file_success(parentId, message){
+
+    $('#'+parentId).addClass('bg-success text-white');
+
+    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 py-4">
+                    <strong class="fs-4 fw-bolder">`+message+`</strong>
+                    <small><button type="button" class="btn btn-dark refresh-files m-0 me-2">OK</button></small>
+                </div>`;
+    $('#'+parentId).html(html);
+
+}   
+
+
+$(document).on("click", ".refresh-files", function (e) {
+    e.preventDefault();
+    load_files_offcanvas();
+
+});
+
 
 $(document).on("click", ".file-rename", function (e) {
     e.preventDefault();
@@ -201,11 +232,12 @@ $(document).on("click", ".file-rename-confirm", function (e) {
                 console.log(response);
                 console.log('File renamed');
                 toggle_file_rename($(this));
-                show_file_offcanvas();
+                load_files_offcanvas();
             },
             error: function(xhr, status, error) {
 
                 console.log('File NOT renamed');
+                toggle_file_error(parentId, 'Rename failed');
             }
         });
         
@@ -231,17 +263,23 @@ $(document).on("click", ".file-delete", function (e) {
 
 $(document).on("click", ".file-delete-confirm", function (e) {
     e.preventDefault();
+    var parentDiv = $(this).closest('.list-group-item');
+    var parentId = parentDiv.attr('id');
+
     url = $(this).attr('href');
     $.ajax({
         url: url,
         type: 'DELETE',
         success: function(response) {
+            toggle_file_success(parentId, 'File deleted');
+            setTimeout(() => {
+                load_files_offcanvas();
+            }, 500);
             
-            toggle_file_delete($(this));
-            show_file_offcanvas();
+            
         },
         error: function(response, xhr, status, error) {
-            console.error('Error:', response);
+            toggle_file_error(parentId, 'Delete failed');
         }
     });
     
