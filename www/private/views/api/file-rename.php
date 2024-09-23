@@ -56,9 +56,12 @@ if (file_is_valid_name_string($new_filename)){
     $original_filename = escapeshellarg($original_filename);  // Escape the filename for shell
     $final_filename = escapeshellarg($final_filename);        // Escape the new filename
 
-    $command = 'sudo -u \#'.$UID.' mv '.$original_filename.' '.$final_filename;
-    $output = shell_exec($command);
+    #$command = 'sudo -u \#'.$UID.' mv '.$original_filename.' '.$final_filename;
 
+    //looks complicated, but preserve the original file creation time
+    #$command = 'sudo -u \#'.$UID.' cp --preserve=all '.$original_filename.' '.$final_filename.' && rm '.$original_filename;
+    $command = 'sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/rename-preserve-datetime.sh '.$original_filename.' '.$final_filename ;
+    $output = shell_exec($command);
 
     json(array('status' => 'success'));
 }else{
