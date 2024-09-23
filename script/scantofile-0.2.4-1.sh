@@ -64,7 +64,13 @@
       gm convert ${gm_opts[@]} "$filename_base"*.pnm "$output_pdf_file"
       ${script_dir}/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${output_pdf_file}"
       ${script_dir}/trigger_telegram.sh "${date}.pdf (front) scanned"
-
+	  ${script_dir}/sendtoftps.sh \
+            "${FTP_USER}" \
+            "${FTP_PASSWORD}" \
+            "${FTP_HOST}" \
+            "${FTP_PATH}" \
+            "${output_pdf_file}"
+			
       echo "cleaning up for $date..."
       cd /scans || exit
       rm -rf "$tmp_dir"
@@ -82,7 +88,7 @@
             "${FTP_PASSWORD}" \
             "${FTP_HOST}" \
             "${FTP_PATH}" \
-            "${output_pdf_file}"
+            "/scans/${date}-ocr.pdf"
         ) &
       fi
     ) &
