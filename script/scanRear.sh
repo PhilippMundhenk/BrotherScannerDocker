@@ -115,7 +115,7 @@ fi
           "${FTP_PATH}" \
           "/scans/${date}-ocr.pdf"
 
-          if [ "${REMOVE_ORIGINAL_AFTER_OCR}" = true ]; then
+          if [ "${REMOVE_ORIGINAL_AFTER_OCR}" == "true" ]; then
 			if [ -f "/scans/${date}-ocr.pdf" ]; then
 				rm ${output_pdf_file}
 			fi
