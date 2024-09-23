@@ -1,5 +1,5 @@
 #
-name: PR: Create and publish a Docker image
+name: PR - Create and publish a Docker image
 
 # Build when a PR is created
 on:
