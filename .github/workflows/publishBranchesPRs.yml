@@ -3,6 +3,7 @@ name: Create and publish a Docker image on a branch
 
 # Configures this workflow to run every time a change is pushed to the branch called `master`.
 on:
+  pull_request
   push:
     branches: 
       - '*'
