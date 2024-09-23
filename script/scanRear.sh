@@ -119,7 +119,9 @@ fi
           "${output_pdf_file}"
 
           if [ "${REMOVE_ORIGINAL_AFTER_OCR}" = true ]; then
-            rm ${output_pdf_file}
+			if [ -f "/scans/${date}-ocr.pdf" ]; then
+				rm ${output_pdf_file}
+			fi
           fi
 >>>>>>> Update scanRear.sh
       ) &
