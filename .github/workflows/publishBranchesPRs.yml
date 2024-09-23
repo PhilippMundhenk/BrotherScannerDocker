@@ -1,9 +1,9 @@
 #
 name: Create and publish a Docker image on a branch
 
-# Configures this workflow to run every time a change is pushed to the branch called `master`.
+# Configures this workflow to run every time a change is pushed to any branch not called `master` and on PR event.
 on:
-  pull_request
+  pull_request:
   push:
     branches: 
       - '*'
