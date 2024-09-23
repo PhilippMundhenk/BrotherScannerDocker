@@ -88,17 +88,13 @@
             "${FTP_PASSWORD}" \
             "${FTP_HOST}" \
             "${FTP_PATH}" \
-<<<<<<< HEAD
             "/scans/${date}-ocr.pdf"
-=======
-            "${output_pdf_file}"
 
           if [ "${REMOVE_ORIGINAL_AFTER_OCR}" = true ]; then
 		    if [ -f "/scans/${date}-ocr.pdf" ]; then
               rm ${output_pdf_file}
 			fi
           fi
->>>>>>> Update scantofile-0.2.4-1.sh
         ) &
       fi
     ) &
