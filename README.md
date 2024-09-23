@@ -93,7 +93,7 @@ You can configure the tool via environment variables:
 
 | Variable | Type | Description |
 | ------------- | ------------- | ------------- |
-| NAME  | mandatory | Arbitrary name to give your scanner. Displayed on scanner, if multiple servers are running. |
+| NAME  | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running. |
 | MODEL  | mandatory | Model of your scanner (e.g., MFC-L2700DW) |
 | IPADDRESS | mandatory | IP Address of your scanner |
 | RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
