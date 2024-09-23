@@ -1,13 +1,13 @@
 #
-name: Create and publish a Docker image on a branch
+name: PR: Create and publish a Docker image
 
-# Configures this workflow to run every time a change is pushed to any branch not called `master` and on PR event.
+# Build when a PR is created
 on:
   pull_request:
-  push:
-    branches: 
-      - '*'
-      - '!master'
+  #push:
+  #  branches: 
+  #    - '*'
+  #    - '!master'
 
 # Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
 env:
