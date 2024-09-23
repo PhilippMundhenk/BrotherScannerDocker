@@ -68,6 +68,7 @@ function file_get_verified_fileinfo($dir, $file) {
     $pathInfo = pathinfo($filename);
     $filenameWithoutExtension = pathinfo($filename, PATHINFO_FILENAME);
     $fileCreationTime = filectime($filename);
+    $fileModificationTime = filemtime($filename);
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mimetype = $finfo->file($filename);
 
@@ -80,8 +81,9 @@ function file_get_verified_fileinfo($dir, $file) {
             'date_from_name' => '',
             'time_from_name' => '',
             'fileCreationTime' => $fileCreationTime,
-            'date_from_file' => date('Y-m-d', $fileCreationTime),
-            'time_from_file' => date('H:i:s', $fileCreationTime),
+            'fileModificationTime' => $fileModificationTime,
+            'date_from_file' => date('Y-m-d', $fileModificationTime),
+            'time_from_file' => date('H-i-s', $fileModificationTime),
             'extension' => $pathInfo['extension'] ?? '',
             'mimetype' => $mimetype,
             'size' => filesize($filename)
@@ -96,8 +98,9 @@ function file_get_verified_fileinfo($dir, $file) {
             }
     }
     // Combine date and time with the dash to form the full datetime string
+    $pattern = '/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\s*/';
     $remove_datetime = $file_info['date_from_name'].'-'.$file_info['time_from_name'];
-    $clean_name = str_replace($remove_datetime, '', $filenameWithoutExtension);
+    $clean_name = preg_replace($pattern, '', $filenameWithoutExtension);
 
     // Remove only the date and time without extra spaces around
     $remove_date = $file_info['date_from_name'];
@@ -152,7 +155,7 @@ function list_files($dir){
         
     }
     uasort($data, function($a, $b) {
-        return $b['fileCreationTime'] <=> $a['fileCreationTime'];
+        return $b['fileModificationTime'] <=> $a['fileModificationTime'];
     });
     return array_values($data);
 }
