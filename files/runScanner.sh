@@ -85,19 +85,15 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
+	if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+    fi
     echo "?>"
 
   } >/var/www/html/config.php
-  chown www-data /var/www/html/config.php
-  if [[ -z ${PORT} ]]; then
-    PORT=80
-  fi
-  echo "running on port $PORT"
-  sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
-  /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
-  echo "webserver started"
   
-# Rewrite-Regeln zur Lighttpd-Konfiguration hinzufügen
+  
+  # Add rewrite rules to the Lighttpd configuration
 	cat <<EOL >> /etc/lighttpd/lighttpd.conf
 
 server.modules += ( "mod_rewrite" )
@@ -107,6 +103,18 @@ url.rewrite-if-not-file = (
 )
 
 EOL
+  
+  chown www-data /var/www/html/config.php
+  if [[ -z ${PORT} ]]; then
+    PORT=80
+  fi
+
+  echo "running on port $PORT"
+  sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
+  /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
+  echo "webserver started"
+  
+
 else
   echo "webserver not configured"
 fi
