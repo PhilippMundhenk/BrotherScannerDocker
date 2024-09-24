@@ -1,20 +1,24 @@
 # Dockerized Brother Scanner
+
 This is a dockerized scanner setup for Brother scanners.
 It allows you to run your scan server in a Docker environment and thus also on devices such as a Synology DiskStation.
 Additionally, some scripts are included that allow you to easily create duplex documents on non-duplex scanners.
 A configurable web-interface is provided, allowing you to trigger scans from your smartphone or PC.
 
 ## Setup
+
 You have two options to set up your container: Preferred and Fallback.
 The preferred method is more complex but is able to address more situations, whereas the fallback method is much simpler, but might not work in all scenarios.
 Both are described in the following.
 
 ### Preferred
+
 The preferred setup is slightly more complex, but can be applied in a larger number of settings, such as containers running in virtual machines, etc.
 Here, we require the IP address under which the container is reachable, as it will be contacted by the scanner, when scanning via the shortcut buttons.
 This may be the IP address of the Docker host, your virtual machine containing the Docker environment, etc.
 Additionally, we will need to forward the correct ports in Docker.
 Consider the following docker-compose file as an example for the preferred setup:
+
 ```yaml
 version: '3'
 
@@ -22,7 +26,7 @@ services:
     brother-scanner:
         image: ghcr.io/philippmundhenk/brotherscannerdocker
         volumes:
-            - /path/on/host:/scans 
+            - /path/on/host:/scans
         ports:
             - 54925:54925/udp # mandatory, for scanner tools
             - 54921:54921 # mandatory, for scanner tools
@@ -42,6 +46,7 @@ Here, the scanner (an MFC-L2700DW), is running on IP 192.168.1.10 and the contai
 The startup scripts will automatically configure the included Brother tooling, to set up the scanner accordingly.
 
 ### Fallback
+
 The fallback setup might be a little more stable, but requires that your container can be bridged to the host network, rather than using Docker NAT.
 This is not possible in all situations (e.g., Docker on Win/Mac, limited underlying VM configuration, etc.).
 Consider the following docker-compose file:
@@ -53,7 +58,7 @@ services:
     brother-scanner:
         image: ghcr.io/philippmundhenk/brotherscannerdocker
         volumes:
-            - /path/on/host:/scans 
+            - /path/on/host:/scans
         environment:
             - NAME=Scanner
             - MODEL=MFC-L2700DW
@@ -69,6 +74,7 @@ Note, that we do not need to specify the host IP address in this case, as we ass
 The startup scripts automatically tries to guess the host interface and adjust the Brother driver settings correctly.
 
 ### Further Notes
+
 Note that the mounted folder /scans needs to have the correct permissions.
 By default, the scanner will run with user uid 1000 and gid 1000.
 You may change this through setting the environment variables UID and GID.
@@ -82,14 +88,16 @@ If OCR, FTP, SSH options are specified, these will be executed, as well.
 There are a number of additional options explained in the following.
 
 ## Options
+
 You can configure the tool via environment variables:
 
 | Variable | Type | Description |
 | ------------- | ------------- | ------------- |
-| NAME  | mandatory | Arbitrary name to give your scanner. Displayed on scanner, if multiple servers are running. |
+| NAME  | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running. |
 | MODEL  | mandatory | Model of your scanner (e.g., MFC-L2700DW) |
 | IPADDRESS | mandatory | IP Address of your scanner |
 | RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
+| REMOVE_BLANK_THRESHOLD | optional | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
 | FTP_USER | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_PASSWORD | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
 | FTP_HOST  | optional | Address of an FTP(S) server to upload the completed scan to (see below) |
@@ -115,10 +123,11 @@ You can configure the tool via environment variables:
 | TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
 | TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
 
-
 ### FTPS upload
+
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
 To do so, set the following environment variables to your values:
+
 ```
 - FTP_USER="scanner"
 - FTP_PASSWORD="scanner"
@@ -129,40 +138,48 @@ To do so, set the following environment variables to your values:
 This only works with the scripts offered here in folder script/ (see Customize).
 
 ### Automatic Synchronization Solutions
+
 Many automatic synchronization solutions, such as Synology CloudStation, are notified
-about changes in the filesystem through inotify (see http://man7.org/linux/man-pages/man7/inotify.7.html).
+about changes in the filesystem through inotify (see <http://man7.org/linux/man-pages/man7/inotify.7.html>).
 As the volume is mounted in Docker, the security mechanisms isolate the host and container
 filesystem. This means that such systems do not work.
 
 To solve this issue, a simple 'sed "" -i' can be performed on the file. The scripts in folder script/ use SSH
 to execute this command. This generates an inotify event, in turn starting synchronisation.
 To use this option, set the following variables to your values:
+
 ```
 - SSH_USER="admin"
 - SSH_PASSWORD="admin"
 - SSH_HOST="localhost"
 - SSH_PATH="/path/to/scans/folder/"
 ```
+
 Of course this requires SSH access to the host. If this is not available, consider the FTPS option.
 
 ### OCR
+
 This image is prepared to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
 This uploads, waits for OCR to complete and downloads the file again.
 The resulting PDF file is saved in the /scans directory, with the appendix "-ocr" in the filename.
 To use this option, set the following variables to your values:
+
 ```
 - OCR_SERVER=192.168.1.101
 - OCR_PORT=8080
 - OCR_PATH=ocr.php
 ```
-This will call the OCR service at https://192.168.1.101:8080/ocr.php.
+
+This will call the OCR service at <https://192.168.1.101:8080/ocr.php>.
 
 ### Webserver
+
 This image comes with an integrated webserver, allowing you to control the scanning functions also via API or GUI.
 To activate the webserver, you need to set an according environment variable.
 By default, the image uses port 80, but you may configure that.
 Additionally, for the GUI, you can rename and hide individual functions.
 here is an example of the environment:
+
 ```
 - WEBSERVER=true # optional, activates GUI & API
 - PORT=33355 # optional, sets port for webserver (default: 80)
@@ -173,21 +190,24 @@ here is an example of the environment:
 ```
 
 #### GUI
+
 You can access the GUI under the IP of your container and the set port (or 80 in default case).
 With the full config example below, the result will look something like this:
-![Screenshot of main web interface](doc/gui-main.jpg)  
+![Screenshot of main web interface](doc/gui-main.jpg)
 ![Screenshot of file list web interface](doc/gui-filelist.jpg)
 
 Note that the interface does not block when pressing a button.
 Thus, make sure to wait for your scan to complete, before pressing another button.
 
 #### API
+
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
 To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>`
 Also check out the endpoints `list.php`, `download.php`, `active.php`.
 Maybe one day an OpenAPI Spec will be included.
 
 ## Full Docker Compose Example
+
 This docker-compose file can be run with minimal adaptions (environment variables MODEL, IPADDRESS, HOST_IPADDRESS & volume where files are to be stored):
 
 ```yaml
@@ -231,12 +251,13 @@ services:
 ```
 
 ## Customize Scan Scripts
+
 As the standard scripts might not working particularly well for your purpose, you may customize them to your needs.
 You may also add additional scripts, as currently "Scan to Image" and "Scan to OCR" are not being used.
 Have a look in the folder `script/` in this repository for ideas.
 These scripts show some examples on how one might use the buttons on the printer.
 If you change these scripts, make sure to leave the filename as is, as the Brother drivers will call these scripts (or adapt /opt/brother/scanner/brscan-skey/brscan-skey.config).
-Each script corresponds to a shortcut button on the scanner. 
+Each script corresponds to a shortcut button on the scanner.
 This way you can customize the actions running on your scanner.
 
 Hint: These scripts don't necessarily need to do scanning tasks.
