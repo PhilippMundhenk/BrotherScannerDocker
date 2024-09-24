@@ -55,6 +55,7 @@ echo "-----"
 
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
+
   echo "starting webserver for API & GUI..."
   {
     echo "<?php"
@@ -95,6 +96,17 @@ if [ "$WEBSERVER" == "true" ]; then
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+  
+# Rewrite-Regeln zur Lighttpd-Konfiguration hinzufügen
+	cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+server.modules += ( "mod_rewrite" )
+
+url.rewrite-if-not-file = (
+    "^/(.*)$" => "/index.php"
+)
+
+EOL
 else
   echo "webserver not configured"
 fi

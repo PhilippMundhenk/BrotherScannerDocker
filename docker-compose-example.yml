@@ -28,6 +28,7 @@ services:
             - OCR_PATH=ocr.php
             - TELEGRAM_TOKEN="" # note: keep the word bot in the string
             - TELEGRAM_CHATID=127585497 # note: target chat id. can be person or group
+            - ALLOW_GUI_FILEOPERATIONS=true
         restart: unless-stopped
 
     # optional, for OCR
