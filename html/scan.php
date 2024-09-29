@@ -18,10 +18,10 @@ if (empty($target)) {
 if (in_array($target, array('file','email','image','ocr'))) {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 //return immediately
-                $handle = popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh', 'r');
+                $handle = popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.py', 'r');
         } else if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 //wait for completion
-                $output=shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh');
+                $output=shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.py');
         }
 }
 else

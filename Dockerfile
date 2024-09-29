@@ -22,8 +22,6 @@ RUN apt-get -y install \
   php-curl \
   sudo \
   iproute2 \
-  jq \
-  bc \
   pdftk \
   poppler-utils \
   && apt-get -y clean
