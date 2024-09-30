@@ -16,12 +16,14 @@ require_once('helper.php');
 function safe_guard_target($target) {
 
         if (empty($target)) {
+                trigger_error("Invalid scan target", E_API);
                 send_json_error(400, 'Invalid target');
         }
 
         if (in_array($target, array('file','email','image','ocr'))) {
                 return escapeshellcmd($target);
         } else {
+                trigger_error("Invalid scan target", E_API);
                 send_json_error(400, 'Invalid target');
         }
 }

@@ -1,5 +1,31 @@
 <?php
+define('E_API', 1024);
+define('E_FRONTEND', 1025);
+
+function customErrorHandler($errno, $errstr, $errfile, $errline) {
+    $date = date("Y-m-d H:i:s");
+
+    $errorType = match ($errno) {
+        E_WARNING => "Warning",
+        E_NOTICE => "Notice",
+        E_ERROR => "Error",
+        E_API => "API",  // Custom log type
+		E_FRONTEND => "Frontend",  // Custom log type
+        default => "Unknown"
+    };
+
+	if (($errno == E_API) OR ($errno == E_FRONTEND)) {
+		$logMessage = "[$errorType] $errstr\n";
+	} else {
+    	$logMessage = "[$date] [$errorType] $errstr in $errfile on line $errline\n";
+	}
+
+    error_log($logMessage, 3, '/var/log/scanner.log');
+}
+
+set_error_handler("customErrorHandler");
 set_include_path('/var/www/private/');
+
 include('config.php');
 require_once('classes/AltoRouter.php');
 require_once('helper.php');

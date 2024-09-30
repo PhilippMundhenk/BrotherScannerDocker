@@ -5,6 +5,7 @@ require_once('helper.php');
 if (isset($ALLOW_GUI_FILEOPERATIONS) && $ALLOW_GUI_FILEOPERATIONS) {
     $file_op = True;
 } else {
+    trigger_error("File operations are disabled in config", E_API);
     send_json_error(403, "File operations are disabled in config");
 }
 
@@ -36,6 +37,7 @@ if ($data !== null) {
    
    
 } else {
+    trigger_error("JSON decoding error", E_API);
     send_json_error(400, "JSON decoding error");
 }
 
@@ -66,6 +68,7 @@ if (file_is_valid_name_string($new_filename)){
         @touch($final_filename, $times['modification_time'], $times['access_time']);
         send_json_error(200, "Renamed file successfully");
     } else {
+        trigger_error("Error renaming the file", E_API);
         send_json_error(400, "Error renaming the file");
     }  
 

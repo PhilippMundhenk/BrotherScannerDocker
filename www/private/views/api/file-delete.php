@@ -19,7 +19,8 @@ $file_info = file_get_verified_fileinfo('/scans/', urldecode($file));
 if(unlink($file_info['full_path'])){
     json(array('status' => 'success'));
 } else {
-    send_json_error(500, "Could not delete file");
+    trigger_error("can not deleted file ".$file_info['full_path'], E_API);
+    send_json_error(500, "Could not delete file");   
 }
 
 ?>

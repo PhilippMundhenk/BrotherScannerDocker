@@ -18,6 +18,7 @@ mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
+chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 echo "-----"
