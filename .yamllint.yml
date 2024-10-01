@@ -1,0 +1,11 @@
+extends: default
+
+rules:
+  document-start: disable
+  line-length:
+    max: 180
+    level: warning
+  comments:
+    # Changed this to stop a mess between linters from Prettier (vscode) to yamllint
+    # - https://github.com/prettier/prettier/pull/10926
+    min-spaces-from-content: 1

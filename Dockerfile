@@ -34,8 +34,8 @@ RUN wget --progress=dot:giga https://download.brother.com/welcome/dlf006652/brsc
   dpkg -i /tmp/brscan-skey-0.3.1-2.amd64.deb && \
   rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
-ADD files/runScanner.sh /opt/brother/runScanner.sh
-ADD files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
+COPY files/runScanner.sh /opt/brother/runScanner.sh
+COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
 COPY script /opt/brother/scanner/brscan-skey/script
 
 RUN cp /etc/lighttpd/conf-available/05-auth.conf /etc/lighttpd/conf-enabled/
