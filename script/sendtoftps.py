@@ -1,7 +1,17 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+
+import subprocess
+from typing import List, Optional, TextIO
 
 
-def sendtoftps(log, user, password, address, filepath, file):
+def sendtoftps(
+    log: TextIO,
+    user: Optional[str],
+    password: Optional[str],
+    address: Optional[str],
+    filepath: Optional[str],
+    file: Optional[str],
+) -> None:
     """Uploads a file to an FTP server.
 
     Args:
@@ -12,7 +22,10 @@ def sendtoftps(log, user, password, address, filepath, file):
       file (str): The file to upload.
     """
 
-    command = [
+    if not any([user, password, address, filepath, file]):
+        return
+
+    command: List[str] = [
         "curl",
         "--silent",
         "--show-error",
@@ -20,7 +33,7 @@ def sendtoftps(log, user, password, address, filepath, file):
         "--user",
         f"{user}:{password}",
         "--upload-file",
-        file,
+        str(file),
         f"ftp://{address}{filepath}",
     ]
 

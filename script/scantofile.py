@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # $1 = scanner device
 # $2 = friendly name
 

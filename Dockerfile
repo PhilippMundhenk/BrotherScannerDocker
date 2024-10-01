@@ -1,5 +1,4 @@
-#FROM ubuntu:16.04
-FROM ubuntu:22.04
+FROM python:slim-bullseye
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get -y install tzdata && apt-get -y clean
 
@@ -24,15 +23,14 @@ RUN apt-get -y install \
   iproute2 \
   pdftk \
   poppler-utils \
-  && apt-get -y clean
+  && apt-get -y clean && \
+  pip install --no-cache-dir requests==2.32.3
 
-RUN cd /tmp && \
-  wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb && \
+RUN wget --progress=dot:giga https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb -O /tmp/brscan4-0.4.11-1.amd64.deb && \
   dpkg -i /tmp/brscan4-0.4.11-1.amd64.deb && \
   rm /tmp/brscan4-0.4.11-1.amd64.deb
 
-RUN cd /tmp && \
-  wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.1-2.amd64.deb && \
+RUN wget --progress=dot:giga https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.1-2.amd64.deb -O /tmp/brscan-skey-0.3.1-2.amd64.deb && \
   dpkg -i /tmp/brscan-skey-0.3.1-2.amd64.deb && \
   rm /tmp/brscan-skey-0.3.1-2.amd64.deb
 
@@ -87,6 +85,6 @@ RUN chown -R www-data /var/www/
 #directory for scans:
 VOLUME /scans
 
-CMD /opt/brother/runScanner.sh
+CMD ["bash", "-c", "/opt/brother/runScanner.sh"]
 
 
