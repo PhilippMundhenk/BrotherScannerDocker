@@ -1,11 +1,16 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import subprocess
-from typing import TextIO
+from typing import Optional, TextIO
 
 
 def trigger_inotify(
-    log: TextIO, user: str, password: str, address: str, filepath: str, file: str
+    log: TextIO,
+    user: Optional[str],
+    password: Optional[str],
+    address: Optional[str],
+    filepath: Optional[str],
+    file: Optional[str],
 ) -> None:
     """Triggers inotify for a file.
 

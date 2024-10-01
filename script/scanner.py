@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # $1 = scanner device
 # $2 = friendly name
 
@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime
-from typing import List, TextIO
+from typing import List, Optional, TextIO
 
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
@@ -59,12 +59,13 @@ def execute_command_pid(log: TextIO, command: List[str], **kwargs) -> int:
 
 
 def scan_cmd(
-    log: TextIO, device: str, output_batch: str, scanimage_args: List[str]
+    log: TextIO, device: Optional[str], output_batch: str, scanimage_args: List[str]
 ) -> None:
     log.flush()  # Required, otherwise scanimage output will appear before the already printed output
 
     resolution = os.environ.get("RESOLUTION", 300)
-    # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name for some reason.
+    # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name
+    #   for some reason.
     # Let's use the default scanner for now
     # fmt: off
     scan_command = [
@@ -90,13 +91,13 @@ def notify(log: TextIO, file_path: str, message: str) -> None:
     )
     trigger_telegram(
         log,
+        f"Scanner: {message}",
         os.getenv("TELEGRAM_TOKEN"),
         os.getenv("TELEGRAM_CHATID"),
-        f"Scanner: {message}",
     )
 
 
-def latest_batch_dir() -> str:
+def latest_batch_dir() -> Optional[str]:
     prefix = datetime.today().strftime("%Y-%m-%d")
     dir_entries = glob.glob(os.path.join(tempfile.gettempdir(), f"{prefix}*"))
     dirs = filter(os.path.isdir, dir_entries)
@@ -148,9 +149,13 @@ def remove_blank_pages(
     )
     output, _ = process.communicate()
     if process.returncode != 0:
-        print(f"  ERROR: getting number of pages from {input_file}: {output}")
+        print(f"  ERROR: getting number of pages from {input_file}")
         return
-    pages_line = re.search(r"^Pages:\s*(\d+)", output.decode(), re.MULTILINE)
+    info = output.decode()
+    pages_line = re.search(r"^Pages:\s*(\d+)", info, re.MULTILINE)
+    if pages_line is None:
+        print(f"  ERROR: finding number of pages in {info}")
+        return
     page_count = int(pages_line.group(1))
 
     print(
@@ -159,7 +164,7 @@ def remove_blank_pages(
     os.chdir(dirname)
 
     def non_blank_pages() -> List[str]:
-        picked_pages = []
+        picked_pages: List[str] = []
         for page in range(1, page_count + 1):
             # Use subprocess to run gs and get ink coverage
             process = subprocess.Popen(
@@ -181,13 +186,22 @@ def remove_blank_pages(
                 output.decode(),
                 re.MULTILINE,
             )
-            ink_coverage = sum(map(float, ink_coverage_line.groups()))
+            if ink_coverage_line is None:
+                ink_coverage = None
+            else:
+                ink_coverage = sum(map(float, ink_coverage_line.groups()))
 
-            if ink_coverage < remove_blank_threshold:
-                print(f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)")
+            if ink_coverage is not None and ink_coverage < remove_blank_threshold:
+                print(
+                    f"    Page {
+                        page}: delete (ink coverage: {ink_coverage:.2f}%)"
+                )
             else:
                 picked_pages += str(page)
-                print(f"    Page {page}: keep (ink coverage: {ink_coverage:.2f}%)")
+                print(
+                    f"    Page {
+                        page}: keep (ink coverage: {ink_coverage:.2f}%)"
+                )
 
         return picked_pages
 
@@ -210,20 +224,27 @@ def remove_blank_pages(
             print(f"  No blank pages detected in {input_file}")
         else:
             os.replace(output_file, input_file)
-            print(f"  Removed {removed_pages} blank pages and saved as {input_file}")
+            print(
+                f"  Removed {
+                    removed_pages} blank pages and saved as {input_file}"
+            )
     except FileNotFoundError:
         print(
-            f"  WARNING: '{command[0]}' executable not found. Skipping PDF manipulation."
+            f"  WARNING: '{
+                command[0]}' executable not found. Skipping PDF manipulation."
         )
     except subprocess.CalledProcessError:
-        print(f"  ERROR: manipulating  {input_file}. Skipping PDF manipulation.")
+        print(
+            f"  ERROR: manipulating  {
+                input_file}. Skipping PDF manipulation."
+        )
 
 
 #
 # Async job methods
 #
 def convert_and_post_process(
-    job_name: str, side: str, remove_blank_threshold: float
+    job_name: str, side: str, remove_blank_threshold: Optional[float]
 ) -> None:
     log = sys.stdout
     log.flush()
@@ -295,19 +316,17 @@ def convert_and_post_process(
         )
 
         notify(log, ocr_pdf_name, f"{ocr_pdf_name} ({side}) OCR finished")
-        sendtoftps(
-            log,
-            os.getenv("FTP_USER"),
-            os.getenv("FTP_PASSWORD"),
-            os.getenv("FTP_HOST"),
-            os.getenv("FTP_PATH"),
-            ocr_pdf_path,
-        )
 
-        if os.getenv("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(
-            ocf_pdf_path
-        ):
-            os.remove(output_pdf_file)
+        ftp_user = os.getenv("FTP_USER")
+        ftp_password = os.getenv("FTP_PASSWORD")
+        ftp_host = os.getenv("FTP_HOST")
+        ftp_path = os.getenv("FTP_PATH")
+        sendtoftps(log, ftp_user, ftp_password, ftp_host, ftp_path, ocr_pdf_path)
+
+    if os.getenv("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(
+        ocr_pdf_path
+    ):
+        os.remove(output_pdf_file)
 
     print(f"  {side} side: Conversion and post-processing for finished.")
     print("-----------------------------------")
@@ -316,7 +335,8 @@ def convert_and_post_process(
 def wait_for_rear_pages_or_convert(job_name: str) -> None:
     # Wait for 2 minutes in case there is a rear side scan
     print(
-        f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}"
+        f"  front side: Waiting for 2 minutes before starting file conversion for {
+            job_name}"
     )
     time.sleep(120)
 
@@ -365,14 +385,15 @@ def save_front_processing_pid(job_dir: str, pid: int) -> None:
         pid_file.write(str(pid))
 
 
-def kill_front_processing_from_pid(job_dir: str) -> int:
+def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
     path = scan_pid_path(job_dir)
     pid = None
     try:
         with open(path, "r") as scan_pid_file:
             pid = int(scan_pid_file.read().strip())
             print(
-                f"  rear side: Read pid from {path}, killing front processing job {pid}"
+                f"  rear side: Read pid from {
+                    path}, killing front processing job {pid}"
             )
             os.kill(pid, signal.SIGKILL)
     except FileNotFoundError:
@@ -389,8 +410,9 @@ def kill_front_processing_from_pid(job_dir: str) -> int:
 #
 # Scan entry points
 #
-def scan_front(log: TextIO, device: str, scanimage_args=[]) -> None:
-    job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")  # Generate unique timestamp
+def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
+    # Generate unique timestamp
+    job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
     filepath_base = os.path.join(job_dir, f"{job_name}-front-page")
     tmp_output_batch = f"{filepath_base}%04d.pnm"
@@ -418,13 +440,14 @@ def scan_front(log: TextIO, device: str, scanimage_args=[]) -> None:
     elif pid > 0:
         save_front_processing_pid(job_dir, pid)
         print(
-            f"  front side: INFO: Waiting to start conversion process for {job_name} in process with PID {pid}"
+            f"  front side: INFO: Waiting to start conversion process for {
+                job_name} in process with PID {pid}"
         )
     else:
         print(f"  front side: ERROR: Fork failed ({pid}).")
 
 
-def scan_rear(log: TextIO, device: str, scanimage_args=None) -> None:
+def scan_rear(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     # Find latest directory in temp directory
     job_name = latest_batch_dir()
     print(f"- Scanning rear to latest batch {job_name}")
@@ -466,7 +489,8 @@ def scan_rear(log: TextIO, device: str, scanimage_args=None) -> None:
         cnt_formatted = f"{cnt:03d}"
         os.rename(filename, f"index{cnt_formatted}-1-{filename}")
         print(
-            f"  rear side: DEBUG: renamed {filename} to index{cnt_formatted}-1-{filename}"
+            f"  rear side: DEBUG: renamed {filename} to index{
+                cnt_formatted}-1-{filename}"
         )
 
     cnt = 0
@@ -476,13 +500,15 @@ def scan_rear(log: TextIO, device: str, scanimage_args=None) -> None:
         rear_index_formatted = f"{rear_index:03d}"
         os.rename(filename, f"index{rear_index_formatted}-2-{filename}")
         print(
-            f"  rear side: DEBUG: renamed {filename} to index{rear_index_formatted}-2-{filename}"
+            f"  rear side: DEBUG: renamed {filename} to index{
+                rear_index_formatted}-2-{filename}"
         )
 
     # Convert to PDF
-    remove_blank_threshold = os.getenv("REMOVE_BLANK_THRESHOLD")
-    if remove_blank_threshold:
-        remove_blank_threshold = float(remove_blank_threshold)
+    remove_blank_threshold_str = os.getenv("REMOVE_BLANK_THRESHOLD")
+    remove_blank_threshold = None
+    if remove_blank_threshold_str is not None:
+        remove_blank_threshold = float(remove_blank_threshold_str)
 
     pid = os.fork()
     if pid == 0:  # Child process
