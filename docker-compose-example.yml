@@ -18,6 +18,7 @@ services:
             - GID=1000 # note: network mount needs to have correct permissions!
             - TZ=Europe/Berlin
             - HOST_IPADDRESS=192.168.188.117
+            # -MODE=Gray
             - WEBSERVER=true
             - RENAME_GUI_SCANTOFILE="Scan front pages"
             - RENAME_GUI_SCANTOEMAIL="Scan rear pages"

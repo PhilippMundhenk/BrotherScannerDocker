@@ -6,6 +6,11 @@
 export $(grep -v '^#' /opt/brother/scanner/env.txt | xargs)
 
 resolution="${RESOLUTION:-300}"
+if [[ $MODE ]]; then
+  mode="--mode $MODE"
+else
+  mode=""
+fi
 
 gm_opts=(-page A4+0+0)
 if [ "$USE_JPEG_COMPRESSION" = "true" ]; then
@@ -37,7 +42,7 @@ function scan_cmd() {
   # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name for some reason.
   # Let's use the default scanner for now
   # scanimage -l 0 -t 0 -x 215 -y 297 --device-name="$1" --resolution="$2" --batch="$3"
-  scanimage -l 0 -t 0 -x 215 -y 297 --format=pnm --resolution="$2" --batch="$3"
+  scanimage -l 0 -t 0 -x 215 -y 297 --format=pnm --resolution="$2" --batch="$3" "$mode"
 }
 
 if [ "$(which usleep 2>/dev/null)" != '' ]; then
@@ -45,14 +50,14 @@ if [ "$(which usleep 2>/dev/null)" != '' ]; then
 else
   sleep 0.1
 fi
-scan_cmd "$device" "$resolution" "$tmp_output_file"
+scan_cmd "$device" "$resolution" "$tmp_output_file" "$mode"
 if [ ! -s "${filename_base}0001.pnm" ]; then
   if [ "$(which usleep 2>/dev/null)" != '' ]; then
     usleep 1000000
   else
     sleep 1
   fi
-  scan_cmd "$device" "$resolution" "$tmp_output_file"
+  scan_cmd "$device" "$resolution" "$tmp_output_file" "$mode"
 fi
 
 (
