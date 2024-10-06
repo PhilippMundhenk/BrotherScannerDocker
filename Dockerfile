@@ -3,12 +3,10 @@ FROM python:slim-bullseye
 RUN <<EOF
 apt-get update && \
 apt-get -y --no-install-recommends install \
-  bc \
   curl \
   ghostscript \
   graphicsmagick \
   iproute2 \
-  jq \
   lighttpd \
   netbase \
   netpbm \
