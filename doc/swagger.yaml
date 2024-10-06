@@ -1,0 +1,284 @@
+openapi: 3.0.0
+info:
+  title: BrotherScannerDocker API
+  description: API for managing and accessing scans and files.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+paths:
+  /scanner/status:
+    get:
+      summary: Returns the current status of the scanner
+      responses:
+        '200':
+          description: Scanner status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scan:
+                    type: boolean
+                    description: Indicates if a scan is in progress
+                  waiting:
+                    type: boolean
+                    description: Indicates if the scanner is waiting
+                  ocr:
+                    type: boolean
+                    description: Indicates if an OCR process is running
+  /scanner/scanto:
+    post:
+      summary: Initiates a scan operation
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                  description: Target for the scan operation
+                  enum:
+                    - file
+                    - email
+                    - image
+                    - ocr
+      responses:
+        '200':
+          description: Scan operation successfully initiate
+  /scanner/scanto/{parameter}:
+    get:
+      summary: Initiates a scan operation with a specified parameter
+      parameters:
+        - name: parameter
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - file
+              - email
+              - image
+              - ocr
+      responses:
+        '200':
+          description: Scan operation successfully initiated, waiting for backend response
+  /file-list:
+    get:
+      summary: List Scanned Files
+      responses:
+        '200':
+          description: Returns a list of scanned files.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    full_path:
+                      type: string
+                    file:
+                      type: string
+                    name:
+                      type: string
+                    name_clean:
+                      type: string
+                    dir:
+                      type: string
+                    date_from_name:
+                      type: string
+                    time_from_name:
+                      type: string
+                    fileCreationTime:
+                      type: integer
+                    fileModificationTime:
+                      type: integer
+                    date_from_file:
+                      type: string
+                    time_from_file:
+                      type: string
+                    extension:
+                      type: string
+                    mimetype:
+                      type: string
+                    size:
+                      type: integer
+              example:
+                - full_path: "/scans/2024-09-21 Invoice Company A.pdf"
+                  file: "Invoice Company A.pdf"
+                  name: "Invoice Company A"
+                  name_clean: "Company A Invoice"
+                  dir: "/scans"
+                  date_from_name: "2024-09-21"
+                  time_from_name: ""
+                  fileCreationTime: 1726902248
+                  fileModificationTime: 1726902199
+                  date_from_file: "2024-09-21"
+                  time_from_file: "09-03-19"
+                  extension: "pdf"
+                  mimetype: "application/pdf"
+                  size: 2970761
+                - full_path: "/scans/2024-09-22 Insurance Policy Document.pdf"
+                  file: "Insurance Policy Document.pdf"
+                  name: "Insurance Policy Document"
+                  name_clean: "Insurance Policy"
+                  dir: "/scans"
+                  date_from_name: "2024-09-22"
+                  time_from_name: ""
+                  fileCreationTime: 1727016766
+                  fileModificationTime: 1726582762
+                  date_from_file: "2024-09-17"
+                  time_from_file: "16-19-22"
+                  extension: "pdf"
+                  mimetype: "application/pdf"
+                  size: 2947326
+  /file/{file}/info:
+    get:
+      summary: Provides extended information about a file
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Extended file information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  full_path:
+                    type: string
+                    description: The full path to the file
+                  file:
+                    type: string
+                    description: The file name
+                  name:
+                    type: string
+                    description: The file name without extension
+                  name_clean:
+                    type: string
+                    description: Cleaned version of the file name
+                  dir:
+                    type: string
+                    description: Directory where the file is located
+                  date_from_name:
+                    type: string
+                    format: date
+                    description: Date extracted from the file name
+                  time_from_name:
+                    type: string
+                    format: time
+                    description: Time extracted from the file name
+                  fileCreationTime:
+                    type: integer
+                    description: File creation time as a Unix timestamp
+                  fileModificationTime:
+                    type: integer
+                    description: File modification time as a Unix timestamp
+                  date_from_file:
+                    type: string
+                    format: date
+                    description: Date extracted from the file metadata
+                  time_from_file:
+                    type: string
+                    description: Time extracted from the file metadata
+                  extension:
+                    type: string
+                    description: File extension
+                  mimetype:
+                    type: string
+                    description: MIME type of the file
+                  size:
+                    type: integer
+                    description: Size of the file in bytes
+              example:
+                full_path: "/scans/2024-09-13-13-08-46 ganz anderes.pdf"
+                file: "2024-09-13-13-08-46 ganz anderes.pdf"
+                name: "2024-09-13-13-08-46 ganz anderes"
+                name_clean: "ganz anderes"
+                dir: "/scans"
+                date_from_name: "2024-09-13"
+                time_from_name: "13:08:46"
+                fileCreationTime: 1727176003
+                fileModificationTime: 1726225726
+                date_from_file: "2024-09-13"
+                time_from_file: "13-08-46"
+                extension: "pdf"
+                mimetype: "application/pdf"
+                size: 1161527
+  /file/{file}/download:
+    get:
+      summary: Download a File
+      parameters:
+        - name: file
+          in: path
+          required: true
+          description: The name of the file to download.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The file is downloaded.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+  /file/{file}/delete:
+    delete:
+      summary: Deletes the specified file
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File successfully deleted
+  /file/{file}/rename:
+    put:
+      summary: Renames the specified file
+      parameters:
+        - name: file
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_filename:
+                  type: string
+                new_filename_prefix:
+                  type: string
+                  enum:
+                    - none
+                    - date
+                    - datetime
+      responses:
+        '200':
+          description: File successfully renamed
+  /dev/timezone:
+    get:
+      summary: Returns the current timezone
+      responses:
+        '200':
+          description: Current timezone
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  timezone:
+                    type: string
