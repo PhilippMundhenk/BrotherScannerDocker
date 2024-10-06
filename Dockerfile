@@ -33,6 +33,7 @@ rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb
 EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh
+COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
 COPY script /opt/brother/scanner/brscan-skey/script
 
 RUN <<EOF
