@@ -3,7 +3,7 @@ echo "setting up user & logfile:"
 
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
-  exit -1
+  exit 1
 fi
 
 if [[ -z ${UID} ]]; then
@@ -16,7 +16,7 @@ groupadd --gid "$GID" NAS
 adduser "$NAME" --uid $UID --gid "$GID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
-touch /var/log/scanner.log
+echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
