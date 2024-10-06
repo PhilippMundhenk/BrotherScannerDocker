@@ -25,6 +25,7 @@ apt-get -y --no-install-recommends install \
   x11-common && \
 apt-get -y clean && \
 rm -rf /var/lib/apt/lists/* && \
+pip install --no-cache-dir requests==2.32.3 && \
 wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb --progress=dot:giga -O /tmp/brscan4.deb && \
 wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.2-0.amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
 dpkg -i --force-all /tmp/brscan4.deb && \
