@@ -456,19 +456,21 @@ def scan_rear(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     print(f"  rear side: INFO: number of pages scanned: {number_of_pages}")
 
     cnt = 0
-    for filename in glob.glob("*front*.pnm"):
+    for filename in sorted(glob.glob("*front*.pnm")):
         cnt += 1
         cnt_formatted = f"{cnt:03d}"
-        os.rename(filename, f"index{cnt_formatted}-1-{filename}")
-        print(f"  rear side: DEBUG: renamed {filename} to index{cnt_formatted}-1-{filename}")
+        new_filename = f"index{cnt_formatted}-1-{filename}"
+        os.rename(filename, new_filename)
+        print(f"  rear side: DEBUG: renamed {filename} to {new_filename}")
 
     cnt = 0
-    for filename in glob.glob("*back*.pnm"):
+    for filename in sorted(glob.glob("*back*.pnm")):
         cnt += 1
         rear_index = number_of_pages - cnt + 1
         rear_index_formatted = f"{rear_index:03d}"
-        os.rename(filename, f"index{rear_index_formatted}-2-{filename}")
-        print(f"  rear side: DEBUG: renamed {filename} to index{rear_index_formatted}-2-{filename}")
+        new_filename = f"index{rear_index_formatted}-2-{filename}"
+        os.rename(filename, new_filename)
+        print(f"  rear side: DEBUG: renamed {filename} to {new_filename}")
 
     # Convert to PDF
     remove_blank_threshold_str = os.getenv("REMOVE_BLANK_THRESHOLD")
