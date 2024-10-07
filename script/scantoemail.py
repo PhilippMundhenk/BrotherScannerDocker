@@ -4,7 +4,7 @@
 
 import sys
 
-from scanner import read_environment, scan_rear
+from scanner import read_environment, scan_back
 
 if __name__ == "__main__":
     # Open the log file in append mode
@@ -18,4 +18,4 @@ if __name__ == "__main__":
         device = None
         if len(sys.argv) > 1:
             device = sys.argv[1]
-        scan_rear(log, device)
+        scan_back(log, device)

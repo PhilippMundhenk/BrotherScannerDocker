@@ -158,7 +158,9 @@ def remove_blank_pages(
         return
     page_count = int(pages_line.group(1))
 
-    print(f"  Analyzing {page_count} pages in {input_file} with threshold {remove_blank_threshold}%")
+    print(
+        f"  Analyzing {page_count} pages in {input_file} with threshold {remove_blank_threshold}%"
+    )
     os.chdir(dirname)
 
     def non_blank_pages() -> List[str]:
@@ -188,7 +190,9 @@ def remove_blank_pages(
                 ink_coverage = sum(map(float, ink_coverage_line.groups()))
 
                 if ink_coverage < remove_blank_threshold:
-                    print(f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)")
+                    print(
+                        f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)"
+                    )
                 else:
                     picked_pages += str(page)
                     print(f"    Page {page}: keep (ink coverage: {ink_coverage:.2f}%)")
@@ -216,7 +220,9 @@ def remove_blank_pages(
             os.replace(output_file, input_file)
             print(f"  Removed {removed_pages} blank pages and saved as {input_file}")
     except FileNotFoundError:
-        print(f"  WARNING: '{command[0]}' executable not found. Skipping PDF manipulation.")
+        print(
+            f"  WARNING: '{command[0]}' executable not found. Skipping PDF manipulation."
+        )
     except subprocess.CalledProcessError:
         print(f"  ERROR: manipulating {input_file}. Skipping PDF manipulation.")
 
@@ -315,7 +321,9 @@ def convert_and_post_process(
 
 def wait_for_rear_pages_or_convert(job_name: str) -> None:
     # Wait for 2 minutes in case there is a rear side scan
-    print(f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}")
+    print(
+        f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}"
+    )
     time.sleep(120)
 
     convert_and_post_process(job_name, "front", None)
@@ -369,7 +377,9 @@ def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
     try:
         with open(path, "r") as scan_pid_file:
             pid = int(scan_pid_file.read().strip())
-            print(f"  rear side: Read pid from {path}, killing front processing job {pid}")
+            print(
+                f"  rear side: Read pid from {path}, killing front processing job {pid}"
+            )
             os.kill(pid, signal.SIGKILL)
     except FileNotFoundError:
         print("  rear side: ERROR: scan_pid file {path} not found.")
@@ -414,12 +424,14 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
         os._exit(0)  # Exit child process cleanly
     elif pid > 0:
         save_front_processing_pid(job_dir, pid)
-        print(f"  front side: INFO: Waiting to start conversion process for {job_name} in process with PID {pid}")
+        print(
+            f"  front side: INFO: Waiting to start conversion process for {job_name} in process with PID {pid}"
+        )
     else:
         print(f"  front side: ERROR: Fork failed ({pid}).")
 
 
-def scan_rear(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
+def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     # Find latest directory in temp directory
     job_name = latest_batch_dir()
     print(f"- Scanning rear to latest batch {job_name}")
