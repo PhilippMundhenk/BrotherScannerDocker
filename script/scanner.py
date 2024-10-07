@@ -279,7 +279,7 @@ def convert_and_post_process(
     ocr_port = os.getenv("OCR_PORT")
     ocr_path = os.getenv("OCR_PATH")
 
-    if not any([ocr_server, ocr_port, ocr_path]):
+    if not all([ocr_server, ocr_port, ocr_path]):
         print(f"  {side} side: OCR environment variables not set, skipping OCR.")
     else:
         ocr_pdf_name = f"{job_name}-ocr.pdf"
@@ -310,10 +310,10 @@ def convert_and_post_process(
         ftp_path = os.getenv("FTP_PATH")
         sendtoftps(log, ftp_user, ftp_password, ftp_host, ftp_path, ocr_pdf_path)
 
-    if os.getenv("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(
-        ocr_pdf_path
-    ):
-        os.remove(output_pdf_file)
+        if os.getenv("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(
+            ocr_pdf_path
+        ):
+            os.remove(output_pdf_file)
 
     print(f"  {side} side: Conversion and post-processing for finished.")
     print("-----------------------------------")
