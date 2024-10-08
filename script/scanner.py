@@ -123,6 +123,12 @@ def move_across_mounts(source: str, destination: str) -> None:
         print(f"  ERROR: moving file - {e}")
 
 
+def clean_job_files(log: TextIO, side: str, job_name: str):
+    # Cleanup temporary files
+    print(f"  {side} side: cleaning up for {job_name}...")
+    shutil.rmtree(os.path.join(tempfile.gettempdir(), job_name))
+
+
 #
 # PDF manipulation methods
 #
@@ -264,15 +270,7 @@ def convert_and_post_process(
 
     notify(log, output_pdf_file, f"{job_name}.pdf ({side}) scanned")
 
-    # Cleanup temporary files
-    print(f"  {side} side: cleaning up for {job_name}...")
-    subprocess.run(
-        f"rm -rf '{job_dir}' {tempfile.gettempdir()}/brscan_jpeg_*",
-        shell=True,
-        check=True,
-        stdout=log,
-        stderr=log,
-    )
+    clean_job_files(log, side, job_name)
 
     # Check for OCR environment variables
     ocr_server = os.getenv("OCR_SERVER")
@@ -411,11 +409,16 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
     save_scanimage_args(job_dir, scanimage_args)
 
     # Perform scan with retry
-    time.sleep(0.1)
-    scan_cmd(log, device, tmp_output_batch, scanimage_args)
-    if not os.path.exists(f"{filepath_base}0001.pnm"):
-        time.sleep(1)  # Short delay before retry
+    try:
+        time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
+        if not os.path.exists(f"{filepath_base}0001.pnm"):
+            time.sleep(1)  # Short delay before retry
+            scan_cmd(log, device, tmp_output_batch, scanimage_args)
+    except subprocess.CalledProcessError:
+        print(" ERROR: Cancelling scanning!")
+        clean_job_files(log, 'front', job_name)
+        return
 
     # Run conversion process in the background
     pid = os.fork()
@@ -455,11 +458,16 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
         scanimage_args = read_scanimage_args(job_dir)
 
     # Perform scan with retry
-    time.sleep(0.1)
-    scan_cmd(log, device, tmp_output_batch, scanimage_args)
-    if not os.path.exists(f"{filepath_base}0001.pnm"):
-        time.sleep(1)  # Short delay before retry
+    try:
+        time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
+        if not os.path.exists(f"{filepath_base}0001.pnm"):
+            time.sleep(1)  # Short delay before retry
+            scan_cmd(log, device, tmp_output_batch, scanimage_args)
+    except subprocess.CalledProcessError:
+        print(" ERROR: Cancelling scanning!")
+        clean_job_files(log, "back", job_name)
+        return
 
     # Rename pages
     number_of_pages = len(
