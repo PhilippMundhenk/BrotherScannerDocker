@@ -1,5 +1,5 @@
-<?php 
-include 'config.php'; 
+<?php
+include 'config.php';
 
 if (isset($RENAME_GUI_SCANTOFILE) && $RENAME_GUI_SCANTOFILE) {
     $button_file = $RENAME_GUI_SCANTOFILE;
@@ -36,7 +36,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <link rel="icon" href="favicon.ico">
     <link rel="stylesheet" href="/assets/bootstrap.5.1.3/bootstrap.min.css ">
     <link rel="stylesheet" href="/assets/fontawesome.5.15.4/css/all.min.css">
-    
+
     <style>
         /* prevent persistent highlight after click to scan */
         .trigger-scan:focus, .trigger-scan:active:focus {
@@ -64,20 +64,20 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                     <h1 class="   text-light mb-2 mt-5"><strong><?php echo($MODEL); ?></strong> </h1>
                     <p class="lead  text-light mb-5" id="status-text">Ready to scan</p>
 
-                    <?php 
-                if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
-                    echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="file">'.$button_file.'</a></p>');
-                }
-                if (!isset($DISABLE_GUI_SCANTOEMAIL) || $DISABLE_GUI_SCANTOEMAIL != true) {
-                    echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="email">'.$button_email.'</a></p>');
-                }
-                if (!isset($DISABLE_GUI_SCANTOIMAGE) || $DISABLE_GUI_SCANTOIMAGE != true) {
-                    echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="image">'.$button_image.'</a></p>');
-                }
-                if (!isset($DISABLE_GUI_SCANTOOCR) || $DISABLE_GUI_SCANTOOCR != true) {
-                    echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="ocr">'.$button_ocr.'</a></p>');
-                }
-            ?>
+                    <?php
+                        if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
+                            echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="file">'.$button_file.'</a></p>');
+                        }
+                        if (!isset($DISABLE_GUI_SCANTOEMAIL) || $DISABLE_GUI_SCANTOEMAIL != true) {
+                            echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="email">'.$button_email.'</a></p>');
+                        }
+                        if (!isset($DISABLE_GUI_SCANTOIMAGE) || $DISABLE_GUI_SCANTOIMAGE != true) {
+                            echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="image">'.$button_image.'</a></p>');
+                        }
+                        if (!isset($DISABLE_GUI_SCANTOOCR) || $DISABLE_GUI_SCANTOOCR != true) {
+                            echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="ocr">'.$button_ocr.'</a></p>');
+                        }
+                    ?>
                 </div>
             </div>
         </div>
@@ -85,16 +85,12 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasFiles" aria-labelledby="offcanvasFilesLabel">
-	
+
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="offcanvasFilesLabel">Last scanned</h5>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body m-0 p-0" id="offcanvasContent">
-
-
-
-
 
         </div>
     </div>
@@ -169,19 +165,19 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
 
                     let state = 'idle';
-                    
+
 
                     if (data.ocr && data.waiting && !data.scan) {
                         state = 'ocr';
-                    } else if (data.scan && data.waiting) {
+                    } elseif (data.scan && data.waiting) {
                         state = 'scan';
-                    } else if (data.scan) {
+                    } elseif (data.scan) {
                         state = 'scan';
-                    } else if (data.ocr && !data.scan) {
+                    } elseif (data.ocr && !data.scan) {
                         state = 'ocr';
-                    } else if (!data.ocr && !data.scan && data.waiting) {
+                    } elseif (!data.ocr && !data.scan && data.waiting) {
                         state = 'waiting';
-                    } else if (!data.ocr && !data.scan && !data.waiting) {
+                    } elseif (!data.ocr && !data.scan && !data.waiting) {
                         state = 'idle';
                     }
                     set_state(state);
@@ -192,14 +188,14 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
             /**
              * Event handler for the click event on the element with ID 'triggerFiles'.
              * Prevents the default action and performs an AJAX GET request to '/list.php'.
-             * 
+             *
              * On successful response:
              * - Populates the Offcanvas element with ID 'offcanvasContent' with the response content.
              * - Displays the Offcanvas element with ID 'offcanvasFiles'.
-             * 
+             *
              * On error:
              * - Logs an error message to the console.
-             * 
+             *
              * @param {Event} e - The click event object.
              */
             $('#triggerFiles').on('click', function(e) {
@@ -224,7 +220,6 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
         });
     </script>
-
 
 </body>
 
