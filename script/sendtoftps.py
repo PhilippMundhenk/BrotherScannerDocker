@@ -22,7 +22,7 @@ def sendtoftps(
       file (str): The file to upload.
     """
 
-    if not any([user, password, address, filepath, file]):
+    if not all([user, password, address, filepath, file]):
         return
 
     command: List[str] = [
