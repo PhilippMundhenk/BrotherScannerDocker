@@ -290,7 +290,7 @@ def convert_and_post_process(
             [
                 "curl",
                 "-F",
-                "userfile=@${output_pdf_file}",
+                "userfile=@"+output_pdf_file,
                 "-H",
                 "Expect:",
                 "-o",
