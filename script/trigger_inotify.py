@@ -22,7 +22,7 @@ def trigger_inotify(
         file (str): The file name.
     """
 
-    if not user or not password or not address or not filepath:
+    if not all([user, password, address, filepath]):
         print("  INFO: SSH environment variables not set, skipping inotify trigger.")
         return
 
