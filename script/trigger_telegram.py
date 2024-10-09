@@ -15,7 +15,7 @@ def trigger_telegram(
         print(
             "  INFO: TELEGRAM_TOKEN or TELEGRAM_CHATID environment variables not set, skipping Telegram trigger."
         )
-        exit(1)
+        return
 
     # URL encode the message
     encoded_message = urllib.parse.quote(message, safe="")
