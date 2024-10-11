@@ -3,6 +3,7 @@
 <div class="list-group list-group-flush border-bottom scrollarea">
 
 <?php
+
 // Directory path
 $directory = '/scans';
 
@@ -43,12 +44,12 @@ foreach ($filesWithMtime as $file => $attributes) {
     <div class="col-12 mb-1 small"><?php echo number_format($attributes['size']); ?> Bytes</div>
   </a>
 <?php
-
 }
+
 ?>
 
 
-  
+
 </div>
 </div>
 
