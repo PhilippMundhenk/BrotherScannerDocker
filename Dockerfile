@@ -43,14 +43,12 @@ cp /etc/lighttpd/conf-available/15-fastcgi-php.conf /etc/lighttpd/conf-enabled/ 
 cp /etc/lighttpd/conf-available/10-fastcgi.conf /etc/lighttpd/conf-enabled/ && \
 mkdir -p /var/run/lighttpd && \
 touch /var/run/lighttpd/php-fastcgi.socket && \
-chown -R www-data /var/run/lighttpd && \
-echo 'www-data ALL=(NAS) NOPASSWD:ALL' >> /etc/sudoers
+chown -R www-data /var/run/lighttpd
 EOF
 
 ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"
 ENV IPADDRESS="192.168.1.123"
-ENV USERNAME="NAS"
 ENV REMOVE_BLANK_THRESHOLD="0.3"
 
 # Only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive):

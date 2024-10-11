@@ -169,15 +169,15 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
                     if (data.ocr && data.waiting && !data.scan) {
                         state = 'ocr';
-                    } elseif (data.scan && data.waiting) {
+                    } else if (data.scan && data.waiting) {
                         state = 'scan';
-                    } elseif (data.scan) {
+                    } else if (data.scan) {
                         state = 'scan';
-                    } elseif (data.ocr && !data.scan) {
+                    } else if (data.ocr && !data.scan) {
                         state = 'ocr';
-                    } elseif (!data.ocr && !data.scan && data.waiting) {
+                    } else if (!data.ocr && !data.scan && data.waiting) {
                         state = 'waiting';
-                    } elseif (!data.ocr && !data.scan && !data.waiting) {
+                    } else if (!data.ocr && !data.scan && !data.waiting) {
                         state = 'idle';
                     }
                     set_state(state);
