@@ -55,6 +55,8 @@ echo "-----"
 
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
+  echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
+
   echo "starting webserver for API & GUI..."
   {
     echo "<?php"
