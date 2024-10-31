@@ -3,7 +3,7 @@ echo "setting up user & logfile:"
 
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
-  exit -1
+  exit 1
 fi
 
 if [[ -z ${UID} ]]; then
@@ -16,7 +16,7 @@ groupadd --gid "$GID" NAS
 adduser "$NAME" --uid $UID --gid "$GID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
-touch /var/log/scanner.log
+echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
 chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
@@ -56,6 +56,8 @@ echo "-----"
 
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
+
+  echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
 
   echo "starting webserver for API & GUI..."
   {
