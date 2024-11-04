@@ -42,10 +42,10 @@ function safe_guard_target($target) {
 function trigger_script($target, $UID, $method) {
 
         if ($method == 'return') {
-                popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh', 'r');
+                popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.py', 'r');
                 json(array('message' => 'Scan triggered','method' => 'post','target' => $target));
         } else if ($method == 'wait') {
-                shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.sh');
+                shell_exec('sudo -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.py');
                 json(array('message' => 'Scan triggered','method' => 'get','target' => $target));
         }
 }
