@@ -1,4 +1,4 @@
-FROM python:slim-bullseye
+FROM python:slim-bookworm
 
 RUN <<EOF
 apt-get update && \
@@ -43,8 +43,10 @@ cp /etc/lighttpd/conf-available/15-fastcgi-php.conf /etc/lighttpd/conf-enabled/ 
 cp /etc/lighttpd/conf-available/10-fastcgi.conf /etc/lighttpd/conf-enabled/ && \
 mkdir -p /var/run/lighttpd && \
 touch /var/run/lighttpd/php-fastcgi.socket && \
-chown -R www-data /var/run/lighttpd
+chown -R www-data /var/run/lighttpd && \
+echo 'www-data ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 EOF
+
 
 ENV NAME="Scanner"
 ENV MODEL="MFC-L2700DW"
@@ -69,13 +71,12 @@ ENV TELEGRAM_CHATID=""
 # Make sure this ends in a slash.
 ENV FTP_PATH="/scans/"
 
-#ADD files/gui/index.php /var/www/html
-#ADD files/gui/main.css /var/www/html
-#ADD files/api/scan.php /var/www/html
-#ADD files/api/active.php /var/www/html
-#ADD files/api/list.php /var/www/html
-#ADD files/api/download.php /var/www/html
-COPY html /var/www/html
+EXPOSE 54925
+EXPOSE 54921
+EXPOSE 80
+
+# Copy the web files to the web directory
+COPY www /var/www
 RUN chown -R www-data /var/www/
 
 #directory for scans:

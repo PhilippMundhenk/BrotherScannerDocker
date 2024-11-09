@@ -18,6 +18,7 @@ mkdir -p /scans
 chmod 777 /scans
 echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
+chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 echo "-----"
@@ -55,6 +56,7 @@ echo "-----"
 
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
+
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
 
   echo "starting webserver for API & GUI..."
@@ -86,17 +88,36 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
+	if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+    fi
     echo "?>"
 
   } >/var/www/html/config.php
+  
+  
+  # Add rewrite rules to the Lighttpd configuration
+	cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+server.modules += ( "mod_rewrite" )
+
+url.rewrite-if-not-file = (
+    "^/(.*)$" => "/index.php"
+)
+
+EOL
+  
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
   fi
+
   echo "running on port $PORT"
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+  
+
 else
   echo "webserver not configured"
 fi

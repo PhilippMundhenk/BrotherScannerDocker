@@ -1,4 +1,6 @@
 <?php
+include('config.php');
+require_once('helper.php');
 
 function isProcessRunning($processName) {
     // Execute the pgrep command
@@ -24,7 +26,6 @@ $result = array(
 
 
 // Output the result as JSON
-header('Content-Type: application/json; charset=utf-8');
-echo json_encode($result);
+json($result);
 
 ?>
