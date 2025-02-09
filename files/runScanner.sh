@@ -89,6 +89,20 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "?>"
 
   } >/var/www/html/config.php
+
+  if ! grep url.rewrite-if-not-file < /etc/lighttpd/lighttpd.conf >/dev/null; then
+    # Add rewrite rules to the Lighttpd configuration
+    cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+server.modules += ( "mod_rewrite" )
+
+url.rewrite-if-not-file = (
+    "^/(.*)$" => "/index.php"
+)
+
+EOL
+  fi
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
