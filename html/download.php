@@ -2,7 +2,17 @@
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
         if(array_key_exists("file", $_GET)) {
                 $file = $_GET["file"];
-                if(str_contains($file, "..") || str_contains($file, "/")) {
+                $evil = false;
+                if (!function_exists('str_contains')) {
+                        if(strpos($file, "..") !== false || strpos($file, "/") !== false) {
+                                $evil=true;
+                        }
+                else {
+                        if(str_contains($file, "..") || str_contains($file, "/")) {
+                                $evil=true;
+                        }
+                }
+                if($eval === true) {
                         header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
                         die("Error: Dont't be evil!");
                 }
