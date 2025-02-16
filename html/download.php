@@ -7,12 +7,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                         if(strpos($file, "..") !== false || strpos($file, "/") !== false) {
                                 $evil=true;
                         }
-                else {
+                } else {
                         if(str_contains($file, "..") || str_contains($file, "/")) {
                                 $evil=true;
                         }
                 }
-                if($eval === true) {
+                if($evil === true) {
                         header($_SERVER["SERVER_PROTOCOL"] . " 400 OK");
                         die("Error: Dont't be evil!");
                 }
