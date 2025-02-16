@@ -93,10 +93,11 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "?>"
 
   } >/var/www/html/config.php
-  
-  
-  # Add rewrite rules to the Lighttpd configuration
-	cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+
+  if ! grep url.rewrite-if-not-file < /etc/lighttpd/lighttpd.conf >/dev/null; then
+    # Add rewrite rules to the Lighttpd configuration
+    cat <<EOL >> /etc/lighttpd/lighttpd.conf
 
 server.modules += ( "mod_rewrite" )
 
@@ -105,7 +106,8 @@ url.rewrite-if-not-file = (
 )
 
 EOL
-  
+  fi
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
@@ -115,7 +117,7 @@ EOL
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
-  
+
 
 else
   echo "webserver not configured"
