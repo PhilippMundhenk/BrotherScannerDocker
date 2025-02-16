@@ -3,7 +3,7 @@ echo "setting up user & logfile:"
 
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
-  exit -1
+  exit 1
 fi
 
 if [[ -z ${UID} ]]; then
@@ -16,8 +16,9 @@ groupadd --gid "$GID" NAS
 adduser "$NAME" --uid $UID --gid "$GID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
-touch /var/log/scanner.log
+echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
+chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 echo "-----"
@@ -86,17 +87,38 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
+	if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+    fi
     echo "?>"
 
   } >/var/www/html/config.php
+
+
+  if ! grep url.rewrite-if-not-file < /etc/lighttpd/lighttpd.conf >/dev/null; then
+    # Add rewrite rules to the Lighttpd configuration
+    cat <<EOL >> /etc/lighttpd/lighttpd.conf
+
+server.modules += ( "mod_rewrite" )
+
+url.rewrite-if-not-file = (
+    "^/(.*)$" => "/index.php"
+)
+
+EOL
+  fi
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
   fi
+
   echo "running on port $PORT"
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+
+
 else
   echo "webserver not configured"
 fi

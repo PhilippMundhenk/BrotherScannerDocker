@@ -123,6 +123,7 @@ You can configure the tool via environment variables:
 | USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
 | TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
 | TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
+| ALLOW_GUI_FILEOPERATIONS | optional | true/false. Let you delete and rename files in files list  |
 
 ### FTPS upload
 
@@ -203,9 +204,8 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 #### API
 
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
-To scan, simply call `http://<ContainerIP>:<Port>/scan.php?target=<file|email|image|OCR>`
-Also check out the endpoints `list.php`, `download.php`, `active.php`.
-Maybe one day an OpenAPI Spec will be included.
+To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|OCR>`
+Also check out the  swagger file in the doc directory to see all available endpoints.
 
 ## Full Docker Compose Example
 
