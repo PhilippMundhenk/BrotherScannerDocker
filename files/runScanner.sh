@@ -6,14 +6,24 @@ if [[ $NAME == *" "* ]]; then
   exit -1
 fi
 
-if [[ -z ${UID} ]]; then
-  UID=1000
+if [[ -z {$NAME} ]]; then
+  $NAME="Scanner"
+fi
+
+# if running as root, create default user. If UID is set, use that
+if [[ ${UID} == 0 ]]; then
+  USERID=1000
+else
+  USERID=$UID
 fi
 if [[ -z ${GID} ]]; then
-  GID=1000
+  GROUPID=1000
+else
+  GROUPID=$GID
 fi
-groupadd --gid "$GID" NAS
-adduser "$NAME" --uid $UID --gid "$GID" --disabled-password --force-badname --gecos ""
+
+groupadd --gid "$GROUPID" NAS
+adduser "$NAME" --uid $USERID --gid "$GROUPID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
