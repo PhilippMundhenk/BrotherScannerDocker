@@ -28,6 +28,43 @@ GM_COMPRESSED_JPEG_SETTINGS = ["-compress", "JPEG", "-quality", "80"]
 # Utility methods
 #
 
+def set_status(status: str) -> None:
+    """
+    Sets the status by creating a temporary file.
+    
+    Parameters:
+    status (str): The status to be set.
+    """
+    status_file = os.path.join(tempfile.gettempdir(), f"STATUS_{status.upper()}")
+    with open(status_file, 'w') as temp_file:
+        temp_file.write(status)
+
+
+def read_status(status: str) -> bool:
+    """
+    Checks if the status file exists.
+    
+    Parameters:
+    status (str): The status to be checked.
+    
+    Returns:
+    bool: True if the status file exists, False otherwise.
+    """
+    status_file = os.path.join(tempfile.gettempdir(), f"STATUS_{status.upper()}")
+    return os.path.exists(status_file)
+
+
+def clear_status(status: str) -> None:
+    """
+    Clears the status by deleting the temporary file.
+    
+    Parameters:
+    status (str): The status to be cleared.
+    """
+    status_file = os.path.join(tempfile.gettempdir(), f"STATUS_{status.upper()}")
+    if os.path.exists(status_file):
+        os.remove(status_file)
+
 
 def read_environment() -> None:
     # Read the environment variables from the file,
@@ -319,10 +356,12 @@ def convert_and_post_process(
 
 def wait_for_rear_pages_or_convert(job_name: str) -> None:
     # Wait for 2 minutes in case there is a rear side scan
-    print(
-        f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}"
-    )
-    time.sleep(120)
+    print(f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}")
+    try:
+        set_status('waiting')
+        time.sleep(120)
+    finally:
+        clear_status('waiting')
 
     convert_and_post_process(job_name, "front", None)
 
@@ -394,6 +433,9 @@ def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
 # Scan entry points
 #
 def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
+    # Clear any existing waiting status before starting a new scan
+    clear_status('waiting')
+    
     # Generate unique timestamp
     job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
@@ -468,6 +510,9 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
         print(" ERROR: Cancelling scanning!")
         clean_job_files(log, "back", job_name)
         return
+
+    # Clear waiting status since rear pages are now scanned
+    clear_status('waiting')
 
     # Rename pages
     number_of_pages = len(
