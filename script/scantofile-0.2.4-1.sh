@@ -33,7 +33,7 @@
     # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name for some reason.
     # Let's use the default scanner for now
     # scanimage -l 0 -t 0 -x 215 -y 297 --device-name="$1" --resolution="$2" --batch="$3"
-    scanimage -l 0 -t 0 -x 215 -y 297 --format=pnm --resolution="$2" --batch="$3"
+    scanimage -l 0 -t 0 -x 0 -y 0 --format=pnm --resolution="$2" --batch="$3"
   }
 
   if [ "$(which usleep 2>/dev/null)" != '' ]; then
