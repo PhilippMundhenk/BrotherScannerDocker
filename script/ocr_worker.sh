@@ -24,6 +24,7 @@ QUEUE_ROOT="${OCR_QUEUE_DIR:-/scans/.ocr_queue}"
 PENDING_DIR="${QUEUE_ROOT}/pending"
 IN_PROGRESS_DIR="${QUEUE_ROOT}/in_progress"
 FAILED_DIR="${QUEUE_ROOT}/failed"
+OUTPUT_DIR="${OCR_OUTPUT_DIR:-/scans}"
 POLL_INTERVAL="${OCR_QUEUE_POLL_SECONDS:-5}"
 MAX_ATTEMPTS="${OCR_MAX_ATTEMPTS:-5}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
@@ -83,7 +84,7 @@ process_job() {
     return 1
   fi
 
-  local out="/scans/${date}-ocr.pdf"
+  local out="${OUTPUT_DIR}/${date}-ocr.pdf"
   log "uploading $pdf to ${OCR_SERVER}:${OCR_PORT}/${OCR_PATH}"
   if ! curl --fail --silent --show-error \
         -F "userfile=@${pdf}" -H "Expect:" \
