@@ -1,10 +1,14 @@
 name: Tests
 
+# Runs as a standalone workflow on pushes and PRs, and is also reusable
+# (workflow_call) so the publish workflows can gate their Docker builds
+# on the same checks without duplicating step definitions.
 on:
   pull_request:
   push:
     branches-ignore:
       - master
+  workflow_call:
 
 jobs:
   shellcheck:

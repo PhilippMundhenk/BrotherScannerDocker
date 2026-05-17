@@ -12,9 +12,13 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
-# There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
+# Tests gate the Docker build: if shellcheck or bats fail, no image is published.
 jobs:
+  tests:
+    uses: ./.github/workflows/test.yml
+
   build-and-push-image:
+    needs: tests
     runs-on: ubuntu-latest
     # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
     permissions:
