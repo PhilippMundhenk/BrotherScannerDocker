@@ -63,6 +63,23 @@ su - "$NAME" -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS
 su - "$NAME" -c "/usr/bin/brscan-skey"
 echo "-----"
 
+echo "starting OCR queue worker (supervised)..."
+OCR_QUEUE_DIR="${OCR_QUEUE_DIR:-/scans/.ocr_queue}"
+mkdir -p "$OCR_QUEUE_DIR/pending" "$OCR_QUEUE_DIR/in_progress" "$OCR_QUEUE_DIR/failed"
+chmod -R 777 "$OCR_QUEUE_DIR"
+# Supervisor: relaunch worker forever, with a small backoff to avoid a
+# crash-loop. Exported env vars (OCR_*, FTP_*, SSH_*, TELEGRAM_*,
+# REMOVE_ORIGINAL_AFTER_OCR) are inherited by the worker.
+(
+  while true; do
+    /opt/brother/scanner/brscan-skey/script/ocr_worker.sh
+    echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"
+    sleep 5
+  done
+) >>/var/log/scanner.log 2>&1 &
+echo "OCR queue worker pid: $!"
+echo "-----"
+
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
