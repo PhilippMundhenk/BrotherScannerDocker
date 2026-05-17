@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 user=$1
 password=$2
 address=$3
