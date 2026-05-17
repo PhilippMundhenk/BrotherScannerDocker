@@ -81,7 +81,7 @@ fi
 
   (
     echo "converting to PDF for $date..."
-    gm convert ${gm_opts[@]} ./*.pnm "$tmp_output_pdf_file"
+    gm convert "${gm_opts[@]}" ./*.pnm "$tmp_output_pdf_file"
     ${script_dir}/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${output_pdf_file}"
     ${script_dir}/trigger_telegram.sh "${date}.pdf (rear) scanned"
 	${script_dir}/sendtoftps.sh \

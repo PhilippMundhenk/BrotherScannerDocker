@@ -3,11 +3,11 @@ echo "setting up user & logfile:"
 
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
-  exit -1
+  exit 1
 fi
 
-if [[ -z {$NAME} ]]; then
-  $NAME="Scanner"
+if [[ -z "$NAME" ]]; then
+  NAME="Scanner"
 fi
 
 # if running as root, create default user. If UID is set, use that
