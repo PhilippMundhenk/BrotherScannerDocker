@@ -27,7 +27,7 @@ apt-get -y clean && \
 rm -rf /var/lib/apt/lists/* && \
 pip install --no-cache-dir requests==2.32.3 && \
 wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb --progress=dot:giga -O /tmp/brscan4.deb && \
-wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.2-0.amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
+wget https://github.com/EasyNetDev/brscan-skey/releases/download/3.2.0-2/brscan-skey_0.3.2-2_amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
 dpkg -i --force-all /tmp/brscan4.deb && \
 dpkg -i --force-all /tmp/brscan-skey.deb && \
 rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb
@@ -35,6 +35,7 @@ EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh
 COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
+COPY files/lighttpd-scanner.conf /etc/lighttpd/conf-enabled/99-scanner-rewrite.conf
 COPY script /opt/brother/scanner/brscan-skey/script
 
 RUN <<EOF
@@ -81,5 +82,9 @@ RUN chown -R www-data /var/www/
 
 #directory for scans:
 VOLUME /scans
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl --fail --silent --show-error --max-time 5 \
+  "http://127.0.0.1:${PORT:-80}/api/scanner/status" >/dev/null || exit 1
 
 CMD ["bash", "-c", "/opt/brother/runScanner.sh"]

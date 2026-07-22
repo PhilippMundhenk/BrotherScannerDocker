@@ -96,17 +96,6 @@ if [ "$WEBSERVER" == "true" ]; then
   } >/var/www/html/config.php
   
   
-  # Add rewrite rules to the Lighttpd configuration
-	cat <<EOL >> /etc/lighttpd/lighttpd.conf
-
-server.modules += ( "mod_rewrite" )
-
-url.rewrite-if-not-file = (
-    "^/(.*)$" => "/index.php"
-)
-
-EOL
-  
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
