@@ -24,7 +24,7 @@ version: '3'
 
 services:
     brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker
+        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
         volumes:
             - /path/on/host:/scans
         ports:
@@ -56,7 +56,7 @@ version: '3'
 
 services:
     brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker
+        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
         volumes:
             - /path/on/host:/scans
         environment:
@@ -216,7 +216,7 @@ version: '3'
 
 services:
     brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker
+        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
         volumes:
             - /path/on/host:/scans
         ports:

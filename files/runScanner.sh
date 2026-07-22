@@ -21,7 +21,7 @@ chown "$NAME" /var/log/scanner.log
 chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
-echo "-----"
+echo "-----
 
 echo "setting up interface:"
 subnet=$(echo "$IPADDRESS" | sed 's/\([0-9]*\.[0-9]*\.\)[0-9]*\.[0-9]*/\1/')
@@ -56,7 +56,6 @@ echo "-----"
 
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
-
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
 
   echo "starting webserver for API & GUI..."
@@ -94,8 +93,7 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "?>"
 
   } >/var/www/html/config.php
-  
-  
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
@@ -105,7 +103,7 @@ if [ "$WEBSERVER" == "true" ]; then
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
-  
+
 
 else
   echo "webserver not configured"
