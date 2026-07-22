@@ -21,7 +21,7 @@ chown "$NAME" /var/log/scanner.log
 chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
-echo "-----"
+echo "-----
 
 echo "setting up interface:"
 subnet=$(echo "$IPADDRESS" | sed 's/\([0-9]*\.[0-9]*\.\)[0-9]*\.[0-9]*/\1/')
@@ -93,20 +93,6 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "?>"
 
   } >/var/www/html/config.php
-
-
-  if ! grep url.rewrite-if-not-file < /etc/lighttpd/lighttpd.conf >/dev/null; then
-    # Add rewrite rules to the Lighttpd configuration
-    cat <<EOL >> /etc/lighttpd/lighttpd.conf
-
-server.modules += ( "mod_rewrite" )
-
-url.rewrite-if-not-file = (
-    "^/(.*)$" => "/index.php"
-)
-
-EOL
-  fi
 
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
