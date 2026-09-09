@@ -1,4 +1,4 @@
-FROM python:slim-bullseye
+FROM python:slim-bookworm
 
 RUN <<EOF
 apt-get update && \
@@ -28,10 +28,11 @@ apt-get -y --no-install-recommends install \
 apt-get -y clean && \
 rm -rf /var/lib/apt/lists/* && \
 wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb --progress=dot:giga -O /tmp/brscan4.deb && \
-wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.2-0.amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
+wget https://github.com/EasyNetDev/brscan-skey/releases/download/3.2.0-2/brscan-skey_0.3.2-2_amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
+wget https://github.com/EasyNetDev/brscan-skey/releases/download/3.2.0-2/brscan-skey-libsane1_0.3.2-2_amd64.deb --progress=dot:giga -O /tmp/brscan-skey-libsane1.deb && \
 dpkg -i --force-all /tmp/brscan4.deb && \
-dpkg -i --force-all /tmp/brscan-skey.deb && \
-rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb
+dpkg -i /tmp/brscan-skey-libsane1.deb /tmp/brscan-skey.deb && \
+rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb /tmp/brscan-skey-libsane1.deb
 EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh
