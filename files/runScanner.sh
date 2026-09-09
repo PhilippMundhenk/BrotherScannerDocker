@@ -21,10 +21,10 @@ chown "$NAME" /var/log/scanner.log
 chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
-echo "-----
+echo "-----"
 
 echo "setting up interface:"
-subnet=$(echo "$IPADDRESS" | sed 's/\([0-9]*\.[0-9]*\.\)[0-9]*\.[0-9]*/\1/')
+subnet="${IPADDRESS%.*.*}."
 interface=$(ip addr show | grep -B10 "$subnet" | grep mtu | tail -1 | sed 's/[0-9]*: \(.*\): .*/\1/')
 sed -i 's/^eth=.*//' /opt/brother/scanner/brscan-skey/brscan-skey.config
 # if found an interface for scanner subnet. Will use this to contact scanner.
@@ -87,7 +87,7 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
-	if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+    if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
       echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
     fi
     echo "?>"
@@ -103,7 +103,6 @@ if [ "$WEBSERVER" == "true" ]; then
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
-
 
 else
   echo "webserver not configured"
