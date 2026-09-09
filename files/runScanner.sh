@@ -1,29 +1,29 @@
 #!/bin/bash
 echo "setting up user & logfile:"
 
+NAME="${NAME:-Scanner}"
+
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
-  exit -1
+  exit 1
 fi
 
-if [[ -z {$NAME} ]]; then
-  $NAME="Scanner"
-fi
+USERID=${UID:-1000}
+GROUPID=${GID:-1000}
 
-# if running as root, create default user. If UID is set, use that
-if [[ ${UID} == 0 ]]; then
+# Without an inherited UID, Bash sets its readonly UID to 0 when running as root.
+if [[ $USERID == 0 ]]; then
   USERID=1000
-else
-  USERID=$UID
-fi
-if [[ -z ${GID} ]]; then
-  GROUPID=1000
-else
-  GROUPID=$GID
 fi
 
+if [[ ! $USERID =~ ^[0-9]+$ || ! $GROUPID =~ ^[0-9]+$ ]]; then
+  echo "UID and GID must be numeric (got UID='${UID}', GID='${GID}')"
+  exit 1
+fi
+
+echo "using uid ${USERID}, gid ${GROUPID} for user ${NAME}"
 groupadd --gid "$GROUPID" NAS
-adduser "$NAME" --uid $USERID --gid "$GROUPID" --disabled-password --force-badname --gecos ""
+adduser "$NAME" --uid "$USERID" --gid "$GROUPID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
 touch /var/log/scanner.log
@@ -33,7 +33,7 @@ chmod -R 777 /opt/brother
 echo "-----"
 
 echo "setting up interface:"
-subnet=$(echo "$IPADDRESS" | sed 's/\([0-9]*\.[0-9]*\.\)[0-9]*\.[0-9]*/\1/')
+subnet="${IPADDRESS%.*.*}."
 interface=$(ip addr show | grep -B10 "$subnet" | grep mtu | tail -1 | sed 's/[0-9]*: \(.*\): .*/\1/')
 sed -i 's/^eth=.*//' /opt/brother/scanner/brscan-skey/brscan-skey.config
 # if found an interface for scanner subnet. Will use this to contact scanner.
@@ -70,7 +70,7 @@ if [ "$WEBSERVER" == "true" ]; then
   echo "starting webserver for API & GUI..."
   {
     echo "<?php"
-    echo "\$UID=$UID;"
+    echo "\$UID=$USERID;"
     echo "\$MODEL=\"$MODEL\";"
     if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
       echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
