@@ -112,6 +112,8 @@ You can configure the tool via environment variables:
 | OCR_PATH | optional | Path of an OCR server (see below) |
 | WEBSERVER | optional | activates GUI & API (default:false) (see below) |
 | PORT | optional | sets port for webserver (default: 80) |
+| KEEPALIVE | optional | set to "false" to disable the periodic Scan-to-PC re-registration keepalive (default: true, see below) |
+| KEEPALIVE_INTERVAL | optional | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120) |
 | DISABLE_GUI_SCANTOFILE | optional | deactivates button "Scan to file" (default: false) |
 | DISABLE_GUI_SCANTOEMAIL | optional | deactivates button "Scan to e-mail" |
 | DISABLE_GUI_SCANTOIMAGE | optional | deactivates button "Scan to image" |

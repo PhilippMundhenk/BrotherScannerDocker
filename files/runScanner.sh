@@ -1,4 +1,31 @@
 #!/bin/bash
+
+keepAliveRegistration() {
+  # brscan-skey registers Scan-to-PC functions into the device via SNMP with a
+  # hardcoded 360s lease (DURATION=360) and only (re-)registers on events:
+  # daemon startup, a button press, or a device power-on. It has no timer-based
+  # renewal, so where no such event occurs the device silently drops the
+  # destination ("Scanner" disappears from the panel) after the lease expires.
+  # brscan-skey ships an undocumented client flag, --refresh, which asks the
+  # running daemon to re-register all network scanners. Run it every few
+  # minutes to keep the registration alive.
+  # Disable with KEEPALIVE=false. Interval: KEEPALIVE_INTERVAL seconds (< 360).
+  if [[ "${KEEPALIVE,,}" == "false" ]]; then
+    echo "registration keepalive disabled"
+    return
+  fi
+  INTERVAL="${KEEPALIVE_INTERVAL:-120}"
+  if [[ "$INTERVAL" -ge 360 ]]; then
+    echo "KEEPALIVE_INTERVAL >= 360 exceeds the device lease, clamping to 120"
+    INTERVAL=120
+  fi
+  echo "starting registration keepalive (every ${INTERVAL}s, disable with KEEPALIVE=false)"
+  while true; do
+    sleep "$INTERVAL"
+    su - "$NAME" -c "/usr/bin/brscan-skey --refresh" >>/var/log/scanner.log 2>&1
+  done
+}
+
 echo "setting up user & logfile:"
 
 if [[ $NAME == *" "* ]]; then
@@ -116,6 +143,7 @@ echo "capabilities:"
 scanimage -A
 
 echo "startup successful"
+keepAliveRegistration &
 while true; do
   tail -f /var/log/scanner.log
 done
