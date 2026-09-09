@@ -20,26 +20,26 @@ Additionally, we will need to forward the correct ports in Docker.
 Consider the following docker-compose file as an example for the preferred setup:
 
 ```yaml
-version: '3'
+version: "3"
 
 services:
-    brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
-        volumes:
-            - /path/on/host:/scans
-        ports:
-            - 54925:54925/udp # mandatory, for scanner tools
-            - 54921:54921 # mandatory, for scanner tools
-            - 161:161/udp # mandatory, for scanner tools
-        environment:
-            - NAME=Scanner
-            - MODEL=MFC-L2700DW
-            - IPADDRESS=192.168.1.10
-            - UID=1000 # note: network mount needs to have correct permissions!
-            - GID=1000 # note: network mount needs to have correct permissions!
-            - TZ=Europe/Berlin
-            - HOST_IPADDRESS=192.168.1.20
-        restart: unless-stopped
+  brother-scanner:
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    volumes:
+      - /path/on/host:/scans
+    ports:
+      - 54925:54925/udp # mandatory, for scanner tools
+      - 54921:54921 # mandatory, for scanner tools
+      - 161:161/udp # mandatory, for scanner tools
+    environment:
+      - NAME=Scanner
+      - MODEL=MFC-L2700DW
+      - IPADDRESS=192.168.1.10
+      - UID=1000 # note: network mount needs to have correct permissions!
+      - GID=1000 # note: network mount needs to have correct permissions!
+      - TZ=Europe/Berlin
+      - HOST_IPADDRESS=192.168.1.20
+    restart: unless-stopped
 ```
 
 Here, the scanner (an MFC-L2700DW), is running on IP 192.168.1.10 and the container is reachable from the scanner via 192.168.1.20.
@@ -52,22 +52,22 @@ This is not possible in all situations (e.g., Docker on Win/Mac, limited underly
 Consider the following docker-compose file:
 
 ```yaml
-version: '3'
+version: "3"
 
 services:
-    brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
-        volumes:
-            - /path/on/host:/scans
-        environment:
-            - NAME=Scanner
-            - MODEL=MFC-L2700DW
-            - IPADDRESS=192.168.1.10
-            - UID=1000 # note: network mount needs to have correct permissions!
-            - GID=1000 # note: network mount needs to have correct permissions!
-            - TZ=Europe/Berlin
-        restart: unless-stopped
-        network_mode: "host"
+  brother-scanner:
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    volumes:
+      - /path/on/host:/scans
+    environment:
+      - NAME=Scanner
+      - MODEL=MFC-L2700DW
+      - IPADDRESS=192.168.1.10
+      - UID=1000 # note: network mount needs to have correct permissions!
+      - GID=1000 # note: network mount needs to have correct permissions!
+      - TZ=Europe/Berlin
+    restart: unless-stopped
+    network_mode: "host"
 ```
 
 Note, that we do not need to specify the host IP address in this case, as we assume that the network is already available in the container.
@@ -76,8 +76,9 @@ The startup scripts automatically tries to guess the host interface and adjust t
 ### Further Notes
 
 Note that the mounted folder /scans needs to have the correct permissions.
-By default, the scanner will run with user uid 1000 and gid 1000.
-You may change this through setting the environment variables UID and GID.
+By default, the scanner runs with UID 1000 and GID 1000.
+To change these IDs, set the `UID` and `GID` environment variables to numeric values.
+Unset or empty values use the defaults. `UID=0` also uses UID 1000.
 
 Note that only "Scan to File" and "Scan to Email" are currently implemented.
 The earlier is configured to scan the front page(s) of documents and wait up to two minutes before converting to PDF.
@@ -91,41 +92,41 @@ There are a number of additional options explained in the following.
 
 You can configure the tool via environment variables:
 
-| Variable | Type | Description |
-| ------------- | ------------- | ------------- |
-| NAME  | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running. |
-| MODEL  | mandatory | Model of your scanner (e.g., MFC-L2700DW) |
-| IPADDRESS | mandatory | IP Address of your scanner |
-| RESOLUTION | optional | DPI resolution of scan, refer to capabilities of printer on startup |
-| REMOVE_BLANK_THRESHOLD | optional | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
-| REMOVE_ORIGINAL_AFTER_OCR | optional | Deletes the original scan, once OCR file is saved (default: false) |
-| FTP_USER | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
-| FTP_PASSWORD | optional | Username of an FTP(S) server to upload the completed scan to (see below) |
-| FTP_HOST  | optional | Address of an FTP(S) server to upload the completed scan to (see below) |
-| FTP_PATH | optional | Path of an FTP(S) server to upload the completed scan to (see below) |
-| SSH_USER | optional | Username for an SSH connection to trigger inotify (see below) |
-| SSH_PASSWORD | optional | Password for an SSH connection to trigger inotify (see below) |
-| SSH_HOST | optional | Address for an SSH connection to trigger inotify (see below) |
-| SSH_PATH | optional | Path for an SSH connection to trigger inotify (see below) |
-| OCR_SERVER | optional | Hostname of an OCR server (see below) |
-| OCR_PORT | optional | Port of an OCR server (see below) |
-| OCR_PATH | optional | Path of an OCR server (see below) |
-| WEBSERVER | optional | activates GUI & API (default:false) (see below) |
-| PORT | optional | sets port for webserver (default: 80) |
-| KEEPALIVE | optional | set to "false" to disable the periodic Scan-to-PC re-registration keepalive (default: true, see below) |
-| KEEPALIVE_INTERVAL | optional | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120) |
-| DISABLE_GUI_SCANTOFILE | optional | deactivates button "Scan to file" (default: false) |
-| DISABLE_GUI_SCANTOEMAIL | optional | deactivates button "Scan to e-mail" |
-| DISABLE_GUI_SCANTOIMAGE | optional | deactivates button "Scan to image" |
-| DISABLE_GUI_SCANTOOCR | optional | deactivates button "Scan to OCR" |
-| RENAME_GUI_SCANTOFILE="Scan front pages" | optional | renames GUI button "Scan to file" to "Scan front pages" |
-| RENAME_GUI_SCANTOEMAIL="Scan rear pages" | optional | renames GUI button "Scan to email" to "Scan rear pages" |
-| RENAME_GUI_SCANTOIMAGE="Scan photo" | optional | renames GUI button "Scan to image" to "Scan photo" |
-| RENAME_GUI_SCANTOOCR="Scan High-Res" | optional | renames GUI button "Scan to OCR" to "Scan High-Res" |
-| USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs |
-| TELEGRAM_TOKEN | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
-| TELEGRAM_CHATID | optional | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification |
-| ALLOW_GUI_FILEOPERATIONS | optional | true/false. Let you delete and rename files in files list  |
+| Variable                                 | Type      | Description                                                                                                                                      |
+| ---------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NAME                                     | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running.                                       |
+| MODEL                                    | mandatory | Model of your scanner (e.g., MFC-L2700DW)                                                                                                        |
+| IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
+| RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
+| REMOVE_BLANK_THRESHOLD                   | optional  | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
+| REMOVE_ORIGINAL_AFTER_OCR                | optional  | Deletes the original scan, once OCR file is saved (default: false)                                                                               |
+| FTP_USER                                 | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
+| FTP_PASSWORD                             | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
+| FTP_HOST                                 | optional  | Address of an FTP(S) server to upload the completed scan to (see below)                                                                          |
+| FTP_PATH                                 | optional  | Path of an FTP(S) server to upload the completed scan to (see below)                                                                             |
+| SSH_USER                                 | optional  | Username for an SSH connection to trigger inotify (see below)                                                                                    |
+| SSH_PASSWORD                             | optional  | Password for an SSH connection to trigger inotify (see below)                                                                                    |
+| SSH_HOST                                 | optional  | Address for an SSH connection to trigger inotify (see below)                                                                                     |
+| SSH_PATH                                 | optional  | Path for an SSH connection to trigger inotify (see below)                                                                                        |
+| OCR_SERVER                               | optional  | Hostname of an OCR server (see below)                                                                                                            |
+| OCR_PORT                                 | optional  | Port of an OCR server (see below)                                                                                                                |
+| OCR_PATH                                 | optional  | Path of an OCR server (see below)                                                                                                                |
+| WEBSERVER                                | optional  | activates GUI & API (default:false) (see below)                                                                                                  |
+| PORT                                     | optional  | sets port for webserver (default: 80)                                                                                                            |
+| KEEPALIVE                                | optional  | set to "false" to disable the periodic Scan-to-PC re-registration keepalive (default: true, see below)                                           |
+| KEEPALIVE_INTERVAL                       | optional  | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120)                                         |
+| DISABLE_GUI_SCANTOFILE                   | optional  | deactivates button "Scan to file" (default: false)                                                                                               |
+| DISABLE_GUI_SCANTOEMAIL                  | optional  | deactivates button "Scan to e-mail"                                                                                                              |
+| DISABLE_GUI_SCANTOIMAGE                  | optional  | deactivates button "Scan to image"                                                                                                               |
+| DISABLE_GUI_SCANTOOCR                    | optional  | deactivates button "Scan to OCR"                                                                                                                 |
+| RENAME_GUI_SCANTOFILE="Scan front pages" | optional  | renames GUI button "Scan to file" to "Scan front pages"                                                                                          |
+| RENAME_GUI_SCANTOEMAIL="Scan rear pages" | optional  | renames GUI button "Scan to email" to "Scan rear pages"                                                                                          |
+| RENAME_GUI_SCANTOIMAGE="Scan photo"      | optional  | renames GUI button "Scan to image" to "Scan photo"                                                                                               |
+| RENAME_GUI_SCANTOOCR="Scan High-Res"     | optional  | renames GUI button "Scan to OCR" to "Scan High-Res"                                                                                              |
+| USE_JPEG_COMPRESSION                     | optional  | use JPEG compression when creating PDFs                                                                                                          |
+| TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
+| TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
+| ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
 
 ### FTPS upload
 
@@ -207,50 +208,50 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
 To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|OCR>`
-Also check out the  swagger file in the doc directory to see all available endpoints.
+Also check out the swagger file in the doc directory to see all available endpoints.
 
 ## Full Docker Compose Example
 
 This docker-compose file can be run with minimal adaptions (environment variables MODEL, IPADDRESS, HOST_IPADDRESS & volume where files are to be stored):
 
 ```yaml
-version: '3'
+version: "3"
 
 services:
-    brother-scanner:
-        image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
-        volumes:
-            - /path/on/host:/scans
-        ports:
-            - 33355:33355
-            - 54925:54925/udp # mandatory, for scanner tools
-            - 54921:54921 # mandatory, for scanner tools
-            - 161:161/udp # mandatory, for scanner tools
-        environment:
-            - NAME=Scanner
-            - MODEL=MFC-L2700DW
-            - IPADDRESS=192.168.1.10
-            - HOST_IPADDRESS=192.168.1.20
-            - OCR_SERVER=localhost # optional, for OCR
-            - OCR_PORT=32800 # optional, for OCR
-            - OCR_PATH=ocr.php # optional, for OCR
-            - UID=1000 # optional, for /scans permissions
-            - GID=1000 # optional, for /scans permissions
-            - TZ=Europe/Berlin # optional, for correct time in scanned filenames
-            - WEBSERVER=true # optional, activates GUI & API
-            - PORT=33355 # optional, sets port for webserver (default: 80)
-            - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
-            - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
-            - RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
-            - RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
-        restart: unless-stopped
+  brother-scanner:
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    volumes:
+      - /path/on/host:/scans
+    ports:
+      - 33355:33355
+      - 54925:54925/udp # mandatory, for scanner tools
+      - 54921:54921 # mandatory, for scanner tools
+      - 161:161/udp # mandatory, for scanner tools
+    environment:
+      - NAME=Scanner
+      - MODEL=MFC-L2700DW
+      - IPADDRESS=192.168.1.10
+      - HOST_IPADDRESS=192.168.1.20
+      - OCR_SERVER=localhost # optional, for OCR
+      - OCR_PORT=32800 # optional, for OCR
+      - OCR_PATH=ocr.php # optional, for OCR
+      - UID=1000 # optional, for /scans permissions
+      - GID=1000 # optional, for /scans permissions
+      - TZ=Europe/Berlin # optional, for correct time in scanned filenames
+      - WEBSERVER=true # optional, activates GUI & API
+      - PORT=33355 # optional, sets port for webserver (default: 80)
+      - DISABLE_GUI_SCANTOIMAGE=true # optional, deactivates button "Scan to image"
+      - DISABLE_GUI_SCANTOOCR=true # optional, deactivates button "Scan to OCR"
+      - RENAME_GUI_SCANTOFILE="Scan front pages" # optional, renames button "Scan to file" to "Scan front pages"
+      - RENAME_GUI_SCANTOEMAIL="Scan rear pages" # optional, renames button "Scan to email" to "Scan rear pages"
+    restart: unless-stopped
 
-    # optional, for OCR
-    ocr:
-      image: ghcr.io/philippmundhenk/tesseractocrmicroservice
-      restart: unless-stopped
-      ports:
-          - 32800:80
+  # optional, for OCR
+  ocr:
+    image: ghcr.io/philippmundhenk/tesseractocrmicroservice
+    restart: unless-stopped
+    ports:
+      - 32800:80
 ```
 
 ## Customize Scan Scripts
@@ -266,4 +267,4 @@ This way you can customize the actions running on your scanner.
 Hint: These scripts don't necessarily need to do scanning tasks.
 You can add any shell script here.
 
-You may mount the scripts in this repository like this: ```-v "$PWD/script/:/opt/brother/scanner/brscan-skey/script/"```
+You may mount the scripts in this repository like this: `-v "$PWD/script/:/opt/brother/scanner/brscan-skey/script/"`

@@ -28,19 +28,29 @@ keepAliveRegistration() {
 
 echo "setting up user & logfile:"
 
+NAME="${NAME:-Scanner}"
+
 if [[ $NAME == *" "* ]]; then
   echo "Do not use spaces in NAME!"
   exit 1
 fi
 
-if [[ -z ${UID} ]]; then
-  UID=1000
+USERID=${UID:-1000}
+GROUPID=${GID:-1000}
+
+# Without an inherited UID, Bash sets its readonly UID to 0 when running as root.
+if [[ $USERID == 0 ]]; then
+  USERID=1000
 fi
-if [[ -z ${GID} ]]; then
-  GID=1000
+
+if [[ ! $USERID =~ ^[0-9]+$ || ! $GROUPID =~ ^[0-9]+$ ]]; then
+  echo "UID and GID must be numeric (got UID='${UID}', GID='${GID}')"
+  exit 1
 fi
-groupadd --gid "$GID" NAS
-adduser "$NAME" --uid $UID --gid "$GID" --disabled-password --force-badname --gecos ""
+
+echo "using uid ${USERID}, gid ${GROUPID} for user ${NAME}"
+groupadd --gid "$GROUPID" NAS
+adduser "$NAME" --uid "$USERID" --gid "$GROUPID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
 echo -n "" >/var/log/scanner.log
@@ -88,7 +98,7 @@ if [ "$WEBSERVER" == "true" ]; then
   echo "starting webserver for API & GUI..."
   {
     echo "<?php"
-    echo "\$UID=$UID;"
+    echo "\$UID=$USERID;"
     echo "\$MODEL=\"$MODEL\";"
     if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
       echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
