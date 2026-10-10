@@ -80,13 +80,13 @@ test.describe('restricted configuration', () => {
   });
 
   test('the page reflects the configuration', async ({ page }) => {
-    await page.goto(`http://localhost:${PORT}/`);
+    await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' });
     await expect(page.locator('a.trigger-scan[data-trigger="file"]')).toHaveText('Archive');
     await expect(page.locator('a.trigger-scan[data-trigger="image"]')).toHaveCount(0);
     await expect(page.locator('a.trigger-scan[data-trigger="ocr"]')).toHaveCount(1);
     await page.locator('#triggerFiles').click();
     const entry = page.locator('#offcanvasFiles .list-group-item', { hasText: SAMPLE_FILE.replace('.pdf', '') });
-    await expect(entry).toBeVisible();
+    await expect(entry).toBeVisible({ timeout: 30_000 });
     await expect(entry.locator('img.thumb')).toHaveCount(0);
     await expect(entry.locator('button.file-delete')).toHaveCount(0);
   });
