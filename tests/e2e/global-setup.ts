@@ -61,6 +61,9 @@ export default async function globalSetup() {
     '--add-host=host.docker.internal:host-gateway',
     '-p', `${HOST_PORT}:8080`,
     '-v', `${path.join(FIXTURES, 'scanimage')}:/usr/bin/scanimage:ro`,
+    // Docker-secrets style delivery of one credential (see secrets.spec.ts)
+    '-v', `${path.join(FIXTURES, 'ftp_password.txt')}:/run/secrets/ftp_password:ro`,
+    '-e', 'FTP_PASSWORD_FILE=/run/secrets/ftp_password',
     '-e', 'WEBSERVER=true', '-e', 'PORT=8080',
     '-e', 'NAME=Scanner', '-e', 'MODEL=MFC-SIMULATOR', '-e', 'IPADDRESS=192.0.2.10',
     '-e', 'TZ=UTC', '-e', 'KEEPALIVE=false',
