@@ -37,6 +37,8 @@ test.describe('scan pipeline (simulated scanner)', () => {
     expect(scanned).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.pdf$/);
     expect(pdfPageCount(scanned)).toBe(2);
     expect(ownerOf(scanned)).toBe('Scanner');
+    // #108: API-triggered scans are attributed in the log; a scan without such a line came from the device
+    expect(inContainer(['cat', '/var/log/scanner.log'])).toContain('[API] scan to file triggered via API (return)');
 
     const ocrName = scanned.replace('.pdf', '-ocr.pdf');
     await waitFor(async () => (await listFiles(request)).some((f) => f.file === ocrName), 60_000, `OCR output ${ocrName}`);
