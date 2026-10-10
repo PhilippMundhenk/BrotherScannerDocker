@@ -34,6 +34,27 @@ keepAliveRegistration() {
   done
 }
 
+echo "setting up configuration file:"
+# Settings may come from a file on the volume (settings page) in addition to
+# the environment. Environment wins; what the environment sets is recorded in
+# locked.txt so the scripts and the settings page know which keys are fixed.
+# shellcheck source=files/config.sh
+source /opt/brother/config.sh
+CONFIG_FILE="$(config_file_path)"
+mkdir -p "$(dirname "$CONFIG_FILE")" && chmod 777 "$(dirname "$CONFIG_FILE")"
+mkdir -p /opt/brother/scanner
+record_locked_keys /opt/brother/scanner/locked.txt
+chmod 644 /opt/brother/scanner/locked.txt
+load_config_file "$CONFIG_FILE" /opt/brother/scanner/locked.txt
+export SCANNER_CONFIG_FILE="$CONFIG_FILE"
+# Defaults for what neither the environment nor the file sets (these used to
+# be ENV lines in the Dockerfile, which made them look environment-set).
+export MODEL="${MODEL:-MFC-L2700DW}"
+export IPADDRESS="${IPADDRESS:-192.168.1.123}"
+export REMOVE_BLANK_THRESHOLD="${REMOVE_BLANK_THRESHOLD-0.3}"
+export FTP_PATH="${FTP_PATH:-/scans/}"
+echo "-----"
+
 echo "setting up secrets:"
 # Docker secrets / *_FILE convention: when VAR is empty and VAR_FILE names a
 # readable file, VAR is read from that file (trailing newlines stripped). This
@@ -162,7 +183,7 @@ if [ "$WEBSERVER" == "true" ]; then
       echo "\$TZ=\"$TZ\";"
     fi
     # scan defaults and API settings for the backend (values are PHP string literals)
-    for var in RESOLUTION SCAN_MODE SCAN_SOURCE API_TOKEN; do
+    for var in RESOLUTION SCAN_MODE SCAN_SOURCE API_TOKEN ALLOW_GUI_SETTINGS SCANNER_CONFIG_FILE; do
       if [[ -n "${!var}" ]]; then
         echo "\$${var}=\"${!var//\"/\\\"}\";"
       fi

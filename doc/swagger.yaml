@@ -487,6 +487,92 @@ paths:
         '404':
           description: File does not exist
 
+  /settings:
+    get:
+      summary: All settings with value, source (environment, file, default), lock state and whether a change needs a restart
+      description: Requires ALLOW_GUI_SETTINGS=true. Secrets are returned masked (is_set instead of value).
+      responses:
+        '200':
+          description: Settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  config_file:
+                    type: string
+                  config_file_exists:
+                    type: boolean
+                  settings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        group:
+                          type: string
+                        type:
+                          type: string
+                          enum: [string, int, float, bool, enum, secret]
+                        default:
+                          type: string
+                        description:
+                          type: string
+                        restart:
+                          type: boolean
+                        value:
+                          type: string
+                        source:
+                          type: string
+                          enum: [environment, file, default]
+                        locked:
+                          type: boolean
+        '403':
+          description: Settings disabled
+    put:
+      summary: Change settings in the configuration file
+      description: JSON object of setting names and values; an empty value removes the key from the file. Keys set by the environment are refused. Requires ALLOW_GUI_SETTINGS=true and the API token when configured.
+      security:
+        - bearer: []
+        - header: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  saved:
+                    type: array
+                    items:
+                      type: string
+                  removed:
+                    type: array
+                    items:
+                      type: string
+                  restart_required:
+                    type: array
+                    items:
+                      type: string
+                  settings:
+                    type: array
+        '400':
+          description: Invalid values (errors per key in the body)
+        '401':
+          description: API token required
+        '403':
+          description: Settings disabled
+
   /dev/timezone:
     get:
       summary: Time zone and current time of the backend

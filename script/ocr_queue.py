@@ -331,6 +331,7 @@ def run_worker(
     sleep: Callable[[float], None] = time.sleep,
     run: Callable = subprocess.run,
     count_pages: Callable[[str], Optional[int]] = pdf_page_count,
+    refresh: Optional[Callable[[], None]] = None,
 ) -> None:
     """Drain the queue. With once=True, return as soon as pending/ is empty."""
     env = os.environ
@@ -357,6 +358,8 @@ def run_worker(
         except OSError:
             continue
 
+        if refresh is not None:
+            refresh()  # pick up settings changed since the last job
         job = read_job(claim)
         attempts = int(job.get("ATTEMPTS", "0") or 0) + 1
         job["ATTEMPTS"] = str(attempts)
@@ -385,9 +388,10 @@ def main(argv) -> int:
             # su - starts with a clean environment.
             from scanner import read_environment
             read_environment()
+            refresh = read_environment
         except (ImportError, FileNotFoundError):
-            pass
-        run_worker()
+            refresh = None
+        run_worker(refresh=refresh)
         return 0
     if len(argv) == 5 and argv[1] == "enqueue":
         enqueue(argv[2], argv[3], argv[4])

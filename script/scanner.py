@@ -22,6 +22,8 @@ from ocr_queue import enqueue as enqueue_ocr
 import jobstate
 
 ENVIRONMENT_FILE_PATH = "/opt/brother/scanner/env.txt"
+LOCKED_KEYS_PATH = "/opt/brother/scanner/locked.txt"
+DEFAULT_CONFIG_FILE = "/scans/.config/scanner.conf"
 SCRIPT_DIR = "/opt/brother/scanner/brscan-skey/script"
 SCAN_DIR = "/scans"
 GM_COMPRESSED_JPEG_SETTINGS = ["-compress", "JPEG", "-quality", "80"]
@@ -79,7 +81,52 @@ def read_environment() -> None:
                 continue  # blank lines, comments, anything that is not KEY=VALUE
             key, value = line.split("=", 1)  # values may contain "=" themselves
             os.environ[key] = value
+    apply_config_file()
     apply_timezone()
+
+
+def parse_config_file(path: str) -> Dict[str, str]:
+    """KEY=VALUE lines of the configuration file; comments, blanks and bad keys skipped."""
+    values: Dict[str, str] = {}
+    try:
+        with open(path, "r") as handle:
+            lines = handle.read().splitlines()
+    except OSError:
+        return values
+    for line in lines:
+        line = line.rstrip("\r")
+        if not line.strip() or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.replace(" ", "")
+        if not re.match(r"^[A-Z][A-Z0-9_]*$", key):
+            continue
+        if len(value) >= 2 and value[0] == '"' and value[-1] == '"':
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def locked_keys() -> set:
+    try:
+        with open(LOCKED_KEYS_PATH, "r") as handle:
+            return {line.strip() for line in handle if line.strip()}
+    except OSError:
+        return set()
+
+
+def apply_config_file() -> None:
+    """Overlay the configuration file (settings page) on the environment.
+
+    Called after env.txt so that changes made while the container runs take
+    effect for the next job. Keys that the container environment sets are
+    locked (recorded by the entrypoint) and are never overridden.
+    """
+    path = os.environ.get("SCANNER_CONFIG_FILE") or DEFAULT_CONFIG_FILE
+    locked = locked_keys()
+    for key, value in parse_config_file(path).items():
+        if key not in locked:
+            os.environ[key] = value
 
 
 JOB_NAME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$")
