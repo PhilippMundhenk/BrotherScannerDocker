@@ -5,6 +5,9 @@ import pytest
 
 import ocr_queue
 
+# The validation step asks for page counts; the fake OCR output and the fake
+# originals are not real PDFs, so every file counts as one page here.
+
 
 class FakeRun:
     """Stand-in for subprocess.run that fakes curl: records calls, optionally creates the -o file."""
@@ -80,7 +83,7 @@ def test_successful_upload_removes_job_and_writes_output(queue, clean_env):
     ocr_queue.enqueue(str(source), "2026-05-17-test", "front")
 
     run = FakeRun()
-    ocr_queue.run_worker(once=True, sleep=lambda s: None, run=run)
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, sleep=lambda s: None, run=run)
 
     assert pending(root) == []
     assert not list((root / "in_progress").glob("*")) and not list((root / "failed").glob("*"))
@@ -98,7 +101,7 @@ def test_remove_original_after_ocr(queue, clean_env):
     source = scans / "s.pdf"
     source.write_text("%PDF-1.4")
     ocr_queue.enqueue(str(source), "s", "front")
-    ocr_queue.run_worker(once=True, sleep=lambda s: None, run=FakeRun())
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, sleep=lambda s: None, run=FakeRun())
     assert not source.exists()
     assert (scans / "s-ocr.pdf").is_file()
 
@@ -110,7 +113,7 @@ def test_repeated_failures_land_in_failed_with_backoff(queue, clean_env):
     source.write_text("%PDF-1.4")
     ocr_queue.enqueue(str(source), "f", "rear")
     slept = []
-    ocr_queue.run_worker(once=True, max_attempts=3, backoff_seconds=10,
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, max_attempts=3, backoff_seconds=10,
                          sleep=slept.append, run=FakeRun(returncode=7))
     failed = list((root / "failed").glob("*.job"))
     assert len(failed) == 1 and pending(root) == []
@@ -125,7 +128,7 @@ def test_missing_ocr_config_does_not_loop_forever(queue, clean_env):
     source.write_text("%PDF-1.4")
     ocr_queue.enqueue(str(source), "n", "front")
     run = FakeRun()
-    ocr_queue.run_worker(once=True, max_attempts=2, backoff_seconds=0, sleep=lambda s: None, run=run)
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, max_attempts=2, backoff_seconds=0, sleep=lambda s: None, run=run)
     assert run.calls == [], "no upload attempted without OCR configuration"
     assert len(list((root / "failed").glob("*.job"))) == 1
 
@@ -134,7 +137,7 @@ def test_missing_input_pdf_lands_in_failed(queue, clean_env):
     root, scans = queue
     ocr_env(clean_env)
     ocr_queue.enqueue(str(scans / "missing.pdf"), "m", "front")
-    ocr_queue.run_worker(once=True, max_attempts=1, backoff_seconds=0, sleep=lambda s: None, run=FakeRun())
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, max_attempts=1, backoff_seconds=0, sleep=lambda s: None, run=FakeRun())
     assert len(list((root / "failed").glob("*.job"))) == 1
 
 
@@ -145,7 +148,7 @@ def test_worker_processes_oldest_first(queue, clean_env):
         (scans / f"{name}.pdf").write_text("%PDF-1.4")
         ocr_queue.enqueue(str(scans / f"{name}.pdf"), name, "front")
     run = FakeRun()
-    ocr_queue.run_worker(once=True, sleep=lambda s: None, run=run)
+    ocr_queue.run_worker(count_pages=lambda path: 1, once=True, sleep=lambda s: None, run=run)
     uploaded = [c[c.index("-F") + 1] for c in run.calls]
     assert uploaded == [f"userfile=@{scans / n}.pdf" for n in ["a", "b", "c"]]
 

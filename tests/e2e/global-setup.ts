@@ -11,20 +11,53 @@ import { docker, FIXTURES, HOST_PORT, IMAGE, OUTPUT_DIR, SAMPLE_FILE, STATE_FILE
  *   - a fake OCR service running in this process, reachable from the
  *     container as host.docker.internal
  * and tears everything down (dumping the container log) when the run ends.
+ *
+ * The fake OCR service normally answers every upload with fixtures/sample.pdf
+ * (one page). Tests can switch its behaviour with POST /mode/<name>:
+ *   pdf      (default) a valid one page PDF
+ *   garbage  HTTP 200 with the text "Error: File not found." (what the real
+ *            microservice sends when tesseract fails)
+ *   empty    HTTP 200 with an empty body
+ *   error    HTTP 500
  */
+
+type OcrMode = 'pdf' | 'garbage' | 'empty' | 'error';
 
 function startFakeOcr(): Promise<http.Server> {
   const pdf = fs.readFileSync(path.join(FIXTURES, 'sample.pdf'));
+  let mode: OcrMode = 'pdf';
   const server = http.createServer((req, res) => {
-    // Drain the multipart upload, then answer with a PDF like the real service does.
+    const modeMatch = /^\/mode\/(pdf|garbage|empty|error)$/.exec(req.url || '');
+    if (modeMatch && req.method === 'POST') {
+      mode = modeMatch[1] as OcrMode;
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end(`mode ${mode}`);
+      return;
+    }
+    // Drain the multipart upload, then answer according to the current mode.
     req.on('data', () => undefined);
     req.on('end', () => {
       if (req.method !== 'POST') {
         res.writeHead(405).end();
         return;
       }
-      res.writeHead(200, { 'Content-Type': 'application/pdf' });
-      res.end(pdf);
+      switch (mode) {
+        case 'garbage':
+          res.writeHead(200, { 'Content-Type': 'application/zip' });
+          res.end('Error: File not found.');
+          return;
+        case 'empty':
+          res.writeHead(200, { 'Content-Type': 'application/pdf' });
+          res.end();
+          return;
+        case 'error':
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Error! Internal Server Error');
+          return;
+        default:
+          res.writeHead(200, { 'Content-Type': 'application/pdf' });
+          res.end(pdf);
+      }
     });
   });
   return new Promise((resolve) => server.listen(0, '0.0.0.0', () => resolve(server)));
@@ -70,7 +103,7 @@ export default async function globalSetup() {
     '-e', 'REAR_PAGE_WAIT_SECONDS=6',
     '-e', 'ALLOW_GUI_FILEOPERATIONS=true',
     '-e', 'OCR_SERVER=host.docker.internal', '-e', `OCR_PORT=${ocrPort}`, '-e', 'OCR_PATH=ocr.php',
-    '-e', 'OCR_QUEUE_POLL_SECONDS=1', '-e', 'OCR_RETRY_BACKOFF_SECONDS=1',
+    '-e', 'OCR_QUEUE_POLL_SECONDS=1', '-e', 'OCR_RETRY_BACKOFF_SECONDS=1', '-e', 'OCR_MAX_ATTEMPTS=3',
     '-e', 'SIM_PAGES=2', '-e', 'SIM_SCAN_SECONDS=0.5',
     IMAGE,
   ];

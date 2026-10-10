@@ -197,6 +197,7 @@ Of course this requires SSH access to the host. If this is not available, consid
 This image is prepared to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
 This uploads, waits for OCR to complete and downloads the file again.
 Uploads are serialized through a persistent on-disk queue in `/scans/.ocr_queue`, so several scans in quick succession do not compete for upload bandwidth. Failed uploads are retried with increasing delay and end up in `/scans/.ocr_queue/failed/` after `OCR_MAX_ATTEMPTS` attempts. The queue survives container restarts.
+Every OCR result is checked before it is used: it must be a PDF that `pdfinfo` can read and it must have the same number of pages as the scan. A response that fails this check (for example the error text the OCR service sends when tesseract fails) is kept under `/scans/.ocr_queue/failed/` for inspection and the upload is retried; the scan itself is never touched. With `REMOVE_ORIGINAL_AFTER_OCR=true` the original is deleted only after a validated OCR copy is in place.
 The resulting PDF file is saved in the /scans directory, with the appendix "-ocr" in the filename.
 To use this option, set the following variables to your values:
 
