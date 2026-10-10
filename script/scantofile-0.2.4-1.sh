@@ -78,24 +78,8 @@
       if [ -z "${OCR_SERVER}" ] || [ -z "${OCR_PORT}" ] || [ -z "${OCR_PATH}" ]; then
         echo "OCR environment variables not set, skipping OCR."
       else
-        echo "starting OCR for $date..."
-        (
-          curl -F "userfile=@${output_pdf_file}" -H "Expect:" -o "/scans/${date}-ocr.pdf" "${OCR_SERVER}":"${OCR_PORT}"/"${OCR_PATH}"
-          ${script_dir}/trigger_inotify.sh "${SSH_USER}" "${SSH_PASSWORD}" "${SSH_HOST}" "${SSH_PATH}" "${date}-ocr.pdf"
-          ${script_dir}/trigger_telegram.sh "${date}-ocr.pdf (front) OCR finished"
-          ${script_dir}/sendtoftps.sh \
-            "${FTP_USER}" \
-            "${FTP_PASSWORD}" \
-            "${FTP_HOST}" \
-            "${FTP_PATH}" \
-            "/scans/${date}-ocr.pdf"
-
-          if [ "${REMOVE_ORIGINAL_AFTER_OCR}" == "true" ]; then
-		    if [ -f "/scans/${date}-ocr.pdf" ]; then
-              rm ${output_pdf_file}
-			fi
-          fi
-        ) &
+        echo "queueing OCR for $date..."
+        ${script_dir}/ocr_enqueue.sh "${output_pdf_file}" "${date}" "front"
       fi
     ) &
   ) &

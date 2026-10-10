@@ -63,6 +63,32 @@ su - "$NAME" -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS
 su - "$NAME" -c "/usr/bin/brscan-skey"
 echo "-----"
 
+echo "setting up OCR queue worker:"
+if [ -z "${OCR_SERVER}" ] || [ -z "${OCR_PORT}" ] || [ -z "${OCR_PATH}" ]; then
+  echo "OCR not configured (OCR_SERVER, OCR_PORT, OCR_PATH), queue worker not started"
+else
+  OCR_QUEUE_DIR="${OCR_QUEUE_DIR:-/scans/.ocr_queue}"
+  mkdir -p "$OCR_QUEUE_DIR/pending" "$OCR_QUEUE_DIR/in_progress" "$OCR_QUEUE_DIR/failed"
+  chown -R "$NAME" "$OCR_QUEUE_DIR" 2>/dev/null || true
+  chmod -R 777 "$OCR_QUEUE_DIR"
+  # Supervisor: relaunch the worker forever, with a small backoff to avoid a
+  # crash-loop. The worker runs as the scanner user, like the scan scripts, so
+  # OCR output in /scans gets the same owner as the scans themselves. `su -`
+  # starts with a clean environment, so the container environment (OCR_*,
+  # FTP_*, SSH_*, TELEGRAM_*, REMOVE_ORIGINAL_AFTER_OCR) is loaded from env.txt
+  # the same way the scan scripts do it.
+  su - "$NAME" -s /bin/bash -c '
+    export $(grep -v "^#" /opt/brother/scanner/env.txt | xargs)
+    while true; do
+      /opt/brother/scanner/brscan-skey/script/ocr_worker.sh
+      echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"
+      sleep 5
+    done
+  ' >>/var/log/scanner.log 2>&1 &
+  echo "OCR queue worker started as $NAME (supervisor pid: $!)"
+fi
+echo "-----"
+
 echo "setting up webserver:"
 if [ "$WEBSERVER" == "true" ]; then
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
