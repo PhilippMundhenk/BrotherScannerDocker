@@ -8,8 +8,8 @@
 name: Lint Code Base
 
 on: # yamllint disable-line rule:truthy
-  push:
-    branches: ["master"]
+  # Pull requests only: the run is informational (errors disabled) and the
+  # same files were already linted when the change was a pull request.
   pull_request:
     branches: ["master"]
 
