@@ -194,12 +194,23 @@ def wait_for_idle_scanner(sleep: Callable[[float], None] = time.sleep, poll: flo
         return 0.0
     waited = 0.0
     announced = False
-    while busy() and waited < max_wait:
-        if not announced:
-            log("scan in progress; holding OCR upload until the scanner is idle")
-            announced = True
-        sleep(poll)
-        waited += poll
+    marker = os.path.join(tempfile.gettempdir(), "STATUS_OCR_HOLD")
+    try:
+        while busy() and waited < max_wait:
+            if not announced:
+                log("scan in progress; holding OCR upload until the scanner is idle")
+                announced = True
+                # Tell the status endpoint the queue is held back by a scan.
+                with open(marker, "w") as handle:
+                    handle.write("holding")
+            sleep(poll)
+            waited += poll
+    finally:
+        if announced:
+            try:
+                os.remove(marker)
+            except OSError:
+                pass
     return waited
 
 

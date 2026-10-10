@@ -48,6 +48,19 @@ components:
           type: boolean
           nullable: true
           description: the device answered the last connection check (null when the check is disabled or stale)
+        queue:
+          type: object
+          description: OCR queue (see OCR_QUEUE_DIR)
+          properties:
+            pending:
+              type: integer
+            in_progress:
+              type: integer
+            failed:
+              type: integer
+            holding:
+              type: boolean
+              description: the worker holds the next upload back because the scanner is busy
     Job:
       type: object
       properties:
