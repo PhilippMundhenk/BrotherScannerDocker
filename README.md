@@ -86,11 +86,8 @@ By default, the scanner runs with UID 1000 and GID 1000.
 To change these IDs, set the `UID` and `GID` environment variables to numeric values.
 Unset or empty values use the defaults. `UID=0` also uses UID 1000.
 
-Note that only "Scan to File" and "Scan to Email" are currently implemented.
-The earlier is configured to scan the front page(s) of documents and wait up to two minutes (`REAR_PAGE_WAIT_SECONDS`) before converting to PDF.
-Within this time, the latter may be called (via scanner buttons, GUI, API) to scan the rear of the same set of pages (just put the scanned stack into document feeder, no prior resorting needed).
-All scans are in turn interleaved correctly and a PDF is created.
-If OCR, FTP, SSH options are specified, these will be executed, as well.
+The four scanner buttons map to these actions: "Scan to File" scans the front page(s) and waits up to two minutes (`REAR_PAGE_WAIT_SECONDS`) before converting to PDF; within this time "Scan to E-mail" (scanner button, GUI or API) scans the rear of the same stack (just turn the stack over, no resorting needed) and both sides are interleaved into one PDF. "Scan to OCR" is "Scan to File" in gray mode. "Scan to Image" is a placeholder that only logs a message; mount your own script to use it (see "Customize Scan Scripts").
+If OCR, FTP, SSH or Telegram options are specified, they run after every finished PDF.
 
 There are a number of additional options explained in the following.
 
@@ -111,7 +108,7 @@ You can configure the tool via environment variables:
 | REMOVE_BLANK_THRESHOLD                   | optional  | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
 | REMOVE_ORIGINAL_AFTER_OCR                | optional  | Deletes the original scan, once OCR file is saved (default: false)                                                                               |
 | FTP_USER                                 | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
-| FTP_PASSWORD                             | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
+| FTP_PASSWORD                             | optional  | Password of an FTP(S) server to upload the completed scan to (see below)                                                                         |
 | FTP_HOST                                 | optional  | Address of an FTP(S) server to upload the completed scan to (see below)                                                                          |
 | FTP_PATH                                 | optional  | Path of an FTP(S) server to upload the completed scan to (see below)                                                                             |
 | FTP_INSECURE | optional | Set to "true" to upload via plain FTP instead of requiring TLS (FTPS). Credentials and files then travel unencrypted (default: false) |
@@ -130,8 +127,7 @@ You can configure the tool via environment variables:
 | WEBSERVER                                | optional  | activates GUI & API (default:false) (see below)                                                                                                  |
 | PORT                                     | optional  | sets port for webserver (default: 80)                                                                                                            |
 | KEEPALIVE                                | optional  | set to "false" to disable the periodic Scan-to-PC re-registration keepalive (default: true, see below)                                           |
-| KEEPALIVE_INTERVAL                       | optional  | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120)                                         |
-The refresh is skipped while a scan is running or a front scan is waiting for rear pages, so it never interferes with an active job.
+| KEEPALIVE_INTERVAL                       | optional  | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120). The refresh is skipped while a scan is running or a front scan is waiting for rear pages, so it never interferes with an active job                                         |
 | DISABLE_GUI_SCANTOFILE                   | optional  | deactivates button "Scan to file" (default: false)                                                                                               |
 | DISABLE_GUI_SCANTOEMAIL                  | optional  | deactivates button "Scan to e-mail"                                                                                                              |
 | DISABLE_GUI_SCANTOIMAGE                  | optional  | deactivates button "Scan to image"                                                                                                               |

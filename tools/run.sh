@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Developer helper: run from the repository root.
 docker run \
     -d \
     -v "/home/$USER/scans:/scans" \
