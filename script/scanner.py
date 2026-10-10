@@ -480,8 +480,14 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
 
     os.chdir(job_dir)
 
-    # Interrupt front scanning process which is waiting from a rear side scan
-    if kill_front_processing_from_pid(job_dir) is None:
+    # Interrupt front scanning process which is waiting from a rear side scan.
+    # Either way nobody is waiting for rear pages any more: the front job is
+    # taken over by this rear scan, or it is already gone. Clear the status
+    # now, because the killed child cannot run its own cleanup (SIGKILL),
+    # and a failing rear scan below must not leave a stale waiting state.
+    front_pid = kill_front_processing_from_pid(job_dir)
+    clear_status('waiting')
+    if front_pid is None:
         return
 
     if scanimage_args is None:
@@ -503,9 +509,6 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
         return
     finally:
         clear_status('scan')
-
-    # Clear waiting status since rear pages are now scanned
-    clear_status('waiting')
 
     # Rename pages
     number_of_pages = len(

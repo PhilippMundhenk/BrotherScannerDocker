@@ -56,6 +56,9 @@ test.describe('scan pipeline (simulated scanner)', () => {
     const merged = await waitForNewFile(request, before, 60_000, (n) => !n.endsWith('-ocr.pdf'));
     expect(pdfPageCount(merged)).toBe(4);
 
+    // #37: the UI must not keep showing 'waiting for rear pages' after the rear scan.
+    await expect.poll(async () => (await scannerStatus(request)).waiting, { timeout: 10_000 }).toBe(false);
+
     // Exactly one new scan: the front job's own conversion was cancelled.
     await new Promise((r) => setTimeout(r, 8_000));
     const after = (await listFiles(request)).map((f) => f.file).filter((n) => !before.includes(n) && !n.endsWith('-ocr.pdf'));
