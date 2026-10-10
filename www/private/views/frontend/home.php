@@ -45,6 +45,9 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <nav class="navbar navbar-expand-sm fixed-top  navbar-dark bg-dark">
         <div class="container pe-0">
             <a class="navbar-brand" href="/"><?php echo($MODEL); ?></a>
+            <?php if (settings_enabled()) { ?>
+            <a class="nav-link text-white me-3" id="openSettings" href="/settings" title="Settings"><i class="fas fa-cog fa-fw fa-2x"></i></a>
+            <?php } ?>
             <a class="nav-link text-white me-0" id="triggerFiles" href="#"><i
                     class="far fa-file-pdf  fa-fw fa-2x"></i></a>
 

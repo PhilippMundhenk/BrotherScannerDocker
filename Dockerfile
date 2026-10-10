@@ -34,6 +34,7 @@ rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb
 EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh
+COPY files/config.sh /opt/brother/config.sh
 COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
 COPY files/lighttpd-scanner.conf /etc/lighttpd/conf-enabled/99-scanner-rewrite.conf
 COPY script /opt/brother/scanner/brscan-skey/script
@@ -48,27 +49,9 @@ chown -R www-data /var/run/lighttpd
 EOF
 
 
-ENV NAME="Scanner"
-ENV MODEL="MFC-L2700DW"
-ENV IPADDRESS="192.168.1.123"
-ENV REMOVE_BLANK_THRESHOLD="0.3"
-
-# Only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive).
-# Secrets (SSH_PASSWORD, FTP_PASSWORD, TELEGRAM_TOKEN) have no defaults here; set them in the compose file
-# or provide them as files via SSH_PASSWORD_FILE etc. (see README, "Secrets").
-ENV SSH_USER=""
-ENV SSH_HOST=""
-ENV SSH_PATH=""
-
-# Only set these variables in the compose file, if you need FTP upload:
-ENV FTP_USER=""
-ENV FTP_HOST=""
-
-# Only set these variables in the compose file, if you need Telegram notifications:
-ENV TELEGRAM_CHATID=""
-
-# Make sure this ends in a slash.
-ENV FTP_PATH="/scans/"
+# Defaults live in files/runScanner.sh (NAME, MODEL, IPADDRESS, REMOVE_BLANK_THRESHOLD, FTP_PATH),
+# so that a configuration file on the volume can set them: an ENV here would
+# count as "set by the environment" and win over the file. See README, "Configuration file".
 
 EXPOSE 54925
 EXPOSE 54921

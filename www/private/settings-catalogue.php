@@ -1,0 +1,123 @@
+<?php
+// Every setting the container understands: name, type, default, description,
+// whether a change needs a container restart, and whether it is a secret.
+// Used by the settings page, GET/PUT /api/settings and the validation.
+//
+// type: string | int | float | bool | enum (with 'options') | secret
+// restart: true when only the entrypoint reads the value (user, ports,
+//          drivers, keepalive); false when the scan scripts, the OCR worker or
+//          the web backend read it per request and the file takes effect at
+//          once.
+
+return array(
+    // --- Scanner and container
+    array('key' => 'NAME', 'group' => 'Scanner', 'type' => 'string', 'default' => 'Scanner', 'restart' => true,
+          'description' => 'Name of this destination as shown on the device (no spaces).'),
+    array('key' => 'MODEL', 'group' => 'Scanner', 'type' => 'string', 'default' => 'MFC-L2700DW', 'restart' => true,
+          'description' => 'Model of the scanner, as the Brother driver expects it.'),
+    array('key' => 'IPADDRESS', 'group' => 'Scanner', 'type' => 'string', 'default' => '192.168.1.123', 'restart' => true,
+          'description' => 'IP address of the scanner.'),
+    array('key' => 'HOST_IPADDRESS', 'group' => 'Scanner', 'type' => 'string', 'default' => '', 'restart' => true,
+          'description' => 'IP address under which the scanner reaches this container (bridged networking).'),
+    array('key' => 'KEEPALIVE', 'group' => 'Scanner', 'type' => 'bool', 'default' => 'true', 'restart' => true,
+          'description' => 'Refresh the Scan-to-PC registration on the device periodically.'),
+    array('key' => 'KEEPALIVE_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '120', 'restart' => true, 'min' => 10, 'max' => 359,
+          'description' => 'Seconds between registration refreshes (below the device lease of 360 s).'),
+    array('key' => 'SCANNER_PING_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '60', 'restart' => true, 'min' => 0, 'max' => 86400,
+          'description' => 'Seconds between reachability checks of the scanner (0 disables).'),
+
+    // --- Scanning
+    array('key' => 'RESOLUTION', 'group' => 'Scanning', 'type' => 'int', 'default' => '300', 'restart' => false, 'min' => 50, 'max' => 9600,
+          'description' => 'Scan resolution in dpi; one of the values the device lists at startup.'),
+    array('key' => 'SCAN_MODE', 'group' => 'Scanning', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Scan mode as listed by the device, e.g. True Gray or Black & White (empty: device default).'),
+    array('key' => 'SCAN_SOURCE', 'group' => 'Scanning', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Paper source as listed by the device, e.g. a duplex ADF (empty: device default).'),
+    array('key' => 'SCAN_LEFT_MM', 'group' => 'Scanning', 'type' => 'float', 'default' => '0', 'restart' => false, 'min' => 0, 'max' => 300,
+          'description' => 'Left edge of the scan window in mm.'),
+    array('key' => 'SCAN_TOP_MM', 'group' => 'Scanning', 'type' => 'float', 'default' => '0', 'restart' => false, 'min' => 0, 'max' => 900,
+          'description' => 'Top edge of the scan window in mm.'),
+    array('key' => 'SCAN_WIDTH_MM', 'group' => 'Scanning', 'type' => 'float', 'default' => '215', 'restart' => false, 'min' => 1, 'max' => 300,
+          'description' => 'Width of the scan window in mm.'),
+    array('key' => 'SCAN_HEIGHT_MM', 'group' => 'Scanning', 'type' => 'float', 'default' => '297', 'restart' => false, 'min' => 1, 'max' => 900,
+          'description' => 'Height of the scan window in mm (295 trims the bar at the bottom of ADF scans).'),
+    array('key' => 'REAR_PAGE_WAIT_SECONDS', 'group' => 'Scanning', 'type' => 'int', 'default' => '120', 'restart' => false, 'min' => 0, 'max' => 3600,
+          'description' => 'How long a front scan waits for a rear scan before it is converted.'),
+
+    // --- Post-processing
+    array('key' => 'REMOVE_BLANK_THRESHOLD', 'group' => 'Post-processing', 'type' => 'float', 'default' => '0.3', 'restart' => false, 'min' => 0, 'max' => 100,
+          'description' => 'Ink coverage in percent below which a page counts as blank and is removed (empty: keep all pages).'),
+    array('key' => 'USE_JPEG_COMPRESSION', 'group' => 'Post-processing', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Store the pages as JPEG inside the PDF (much smaller files).'),
+
+    // --- OCR
+    array('key' => 'OCR_SERVER', 'group' => 'OCR', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Host name of the OCR service (empty: OCR off).'),
+    array('key' => 'OCR_PORT', 'group' => 'OCR', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Port of the OCR service.'),
+    array('key' => 'OCR_PATH', 'group' => 'OCR', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Path of the OCR service, e.g. ocr.php.'),
+    array('key' => 'REMOVE_ORIGINAL_AFTER_OCR', 'group' => 'OCR', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Delete the original scan once a validated OCR copy is in place.'),
+    array('key' => 'OCR_MAX_ATTEMPTS', 'group' => 'OCR', 'type' => 'int', 'default' => '5', 'restart' => false, 'min' => 1, 'max' => 100,
+          'description' => 'Upload attempts per scan before it is moved to the failed folder.'),
+    array('key' => 'OCR_QUEUE_POLL_SECONDS', 'group' => 'OCR', 'type' => 'int', 'default' => '5', 'restart' => true, 'min' => 1, 'max' => 3600,
+          'description' => 'How often the OCR worker checks for queued uploads.'),
+    array('key' => 'OCR_WAIT_FOR_IDLE_SCANNER', 'group' => 'OCR', 'type' => 'bool', 'default' => 'true', 'restart' => false,
+          'description' => 'Hold OCR uploads while the scanner is busy.'),
+    array('key' => 'OCR_UPLOAD_LIMIT_RATE', 'group' => 'OCR', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Bandwidth limit for OCR transfers in curl syntax, e.g. 2M (empty: unlimited).'),
+
+    // --- Notifications and uploads
+    array('key' => 'FTP_HOST', 'group' => 'FTP upload', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'FTP(S) server to upload finished scans to (empty: off).'),
+    array('key' => 'FTP_USER', 'group' => 'FTP upload', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'FTP user name.'),
+    array('key' => 'FTP_PASSWORD', 'group' => 'FTP upload', 'type' => 'secret', 'default' => '', 'restart' => false,
+          'description' => 'FTP password.'),
+    array('key' => 'FTP_PATH', 'group' => 'FTP upload', 'type' => 'string', 'default' => '/scans/', 'restart' => false,
+          'description' => 'Target path on the FTP server (ends with a slash).'),
+    array('key' => 'FTP_INSECURE', 'group' => 'FTP upload', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Use plain FTP instead of requiring TLS.'),
+    array('key' => 'SSH_HOST', 'group' => 'inotify trigger', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'SSH host to touch the new file on (e.g. a Synology Drive), empty: off.'),
+    array('key' => 'SSH_USER', 'group' => 'inotify trigger', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'SSH user name.'),
+    array('key' => 'SSH_PASSWORD', 'group' => 'inotify trigger', 'type' => 'secret', 'default' => '', 'restart' => false,
+          'description' => 'SSH password.'),
+    array('key' => 'SSH_PATH', 'group' => 'inotify trigger', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Path of the scans on the SSH host.'),
+    array('key' => 'TELEGRAM_TOKEN', 'group' => 'Telegram', 'type' => 'secret', 'default' => '', 'restart' => false,
+          'description' => 'Bot token including the leading "bot" (empty: off).'),
+    array('key' => 'TELEGRAM_CHATID', 'group' => 'Telegram', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Chat id to notify.'),
+
+    // --- Web UI
+    array('key' => 'RENAME_GUI_SCANTOFILE', 'group' => 'Web UI', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Label of the "Scan to file" button.'),
+    array('key' => 'RENAME_GUI_SCANTOEMAIL', 'group' => 'Web UI', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Label of the "Scan to email" button.'),
+    array('key' => 'RENAME_GUI_SCANTOIMAGE', 'group' => 'Web UI', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Label of the "Scan to image" button.'),
+    array('key' => 'RENAME_GUI_SCANTOOCR', 'group' => 'Web UI', 'type' => 'string', 'default' => '', 'restart' => false,
+          'description' => 'Label of the "Scan to OCR" button.'),
+    array('key' => 'DISABLE_GUI_SCANTOFILE', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Hide the "Scan to file" button.'),
+    array('key' => 'DISABLE_GUI_SCANTOEMAIL', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Hide the "Scan to email" button.'),
+    array('key' => 'DISABLE_GUI_SCANTOIMAGE', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Hide the "Scan to image" button.'),
+    array('key' => 'DISABLE_GUI_SCANTOOCR', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Hide the "Scan to OCR" button.'),
+    array('key' => 'ALLOW_GUI_FILEOPERATIONS', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
+          'description' => 'Allow renaming and deleting files in the file list.'),
+    array('key' => 'ALLOW_GUI_SETTINGS', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => true,
+          'description' => 'Enable this settings page and the settings API.'),
+    array('key' => 'API_TOKEN', 'group' => 'Web UI', 'type' => 'secret', 'default' => '', 'restart' => true,
+          'description' => 'Token required for everything that starts a scan or changes files (empty: none).'),
+    array('key' => 'PORT', 'group' => 'Web UI', 'type' => 'int', 'default' => '80', 'restart' => true, 'min' => 1, 'max' => 65535,
+          'description' => 'Port of the web server inside the container.'),
+    array('key' => 'TZ', 'group' => 'Web UI', 'type' => 'string', 'default' => '', 'restart' => true,
+          'description' => 'Time zone for file names and the web UI, e.g. Europe/Berlin.'),
+);
+?>

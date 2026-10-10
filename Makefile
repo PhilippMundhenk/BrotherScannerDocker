@@ -19,6 +19,7 @@ bats:
 # raise to "warning" once those are cleaned up.
 lint:
 	shellcheck --severity=error \
+		files/config.sh \
 		files/runScanner.sh \
 		run.sh \
 		update-container.sh

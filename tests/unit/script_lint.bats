@@ -10,6 +10,7 @@ setup() {
 # and the two maintainer helpers.
 shell_scripts() {
   printf '%s\n' \
+    "$REPO_ROOT/files/config.sh" \
     "$REPO_ROOT/files/runScanner.sh" \
     "$REPO_ROOT/run.sh" \
     "$REPO_ROOT/update-container.sh"

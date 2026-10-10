@@ -144,6 +144,8 @@ The refresh is skipped while a scan is running or a front scan is waiting for re
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
+| ALLOW_GUI_SETTINGS | optional | true/false. Enables the settings page (`/settings`) and the settings API, which write the configuration file (default: false) |
+| SCANNER_CONFIG_FILE | optional | Path of the configuration file inside the container (default: /scans/.config/scanner.conf) |
 | API_TOKEN | optional | When set, every request that starts a scan or changes a file must carry it (`Authorization: Bearer <token>`, `X-API-Token` header, or a `token` field). The web UI sends it itself (default: no token) |
 | SCANNER_PING_INTERVAL | optional | Seconds between checks whether the scanner answers on its scan port, reported as `reachable` by the status endpoint; 0 disables (default: 60) |
 | FTP_PASSWORD_FILE, SSH_PASSWORD_FILE, TELEGRAM_TOKEN_FILE, FTP_USER_FILE, SSH_USER_FILE, TELEGRAM_CHATID_FILE | optional | Path of a file inside the container to read the value from, for Docker secrets (see below) |
@@ -162,6 +164,22 @@ To do so, set the following environment variables to your values:
 
 The upload requires TLS (explicit FTPS, `curl --ssl-reqd`). If your server only speaks plain FTP, add `FTP_INSECURE=true`; the credentials and the scanned files are then sent unencrypted, so only do this on a network you trust.
 Uploads are done for every scanned PDF and, if OCR is configured, for the OCR output as well.
+
+### Configuration file
+
+Every setting in the table above can also be put into a configuration file instead of the compose file: `KEY=VALUE` lines in `/scans/.config/scanner.conf` (on the scans volume, so it survives container updates; change the path with `SCANNER_CONFIG_FILE`). Precedence: a variable set in the container environment wins over the file, the file wins over the built-in default. Lines starting with `#` are ignored.
+
+```
+# /scans/.config/scanner.conf
+RESOLUTION=200
+SCAN_MODE=True Gray
+REMOVE_BLANK_THRESHOLD=0.5
+RENAME_GUI_SCANTOFILE=Scan front pages
+```
+
+Changes to scan, post-processing, OCR, notification and web UI settings take effect with the next scan or request. Settings that only the entrypoint reads (NAME, UID/GID, MODEL, IPADDRESS, HOST_IPADDRESS, PORT, TZ, KEEPALIVE*, SCANNER_PING_INTERVAL, API_TOKEN, ALLOW_GUI_SETTINGS) need a container restart; the settings page marks them.
+
+With `ALLOW_GUI_SETTINGS=true` the web UI gets a settings page (cog icon, `/settings`) that shows every setting with its current value and where it comes from, and writes the file. Values set in the environment are shown read-only. The same is available as `GET`/`PUT /api/settings` (see [doc/swagger.yaml](doc/swagger.yaml)); `PUT` needs the API token when one is configured.
 
 ### Secrets
 

@@ -29,6 +29,7 @@ set_include_path('/var/www/private/');
 include('config.php');
 require_once('classes/AltoRouter.php');
 require_once('helper.php');
+require_once('settings.php');
 
 if (!isset($TZ)) {
 	$TZ = 'Europe/Berlin';
@@ -45,6 +46,11 @@ $router->addMatchTypes(array('char' => '(?:[^\/]*)'));
 
 $router->map( 'GET', '/', function() {
 	require_once 'views/frontend/home.php';
+});
+
+
+$router->map( 'GET', '/settings', function() {
+	require_once 'views/frontend/settings.php';
 });
 
 
@@ -90,6 +96,17 @@ $router->map( 'GET', '/api/scanner/scanto/[char:parameter]', function( $paramete
     $scanto = $parameter;
     $method = 'wait';
 	require_once 'views/api/scanner-scanto.php';
+});
+
+
+$router->map( 'GET', '/api/settings', function() {
+	require_once 'views/api/settings.php';
+});
+
+
+$router->map( 'PUT', '/api/settings', function() {
+    api_token_required();
+	require_once 'views/api/settings.php';
 });
 
 
