@@ -112,7 +112,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <?php include('views/frontend/common-javascript.php'); ?>
 
 
-    <script src="/assets/scripts.min.js?ver=1.3"></script>
+    <script src="/assets/scripts.min.js?ver=1.4"></script>
 
 
 </body>

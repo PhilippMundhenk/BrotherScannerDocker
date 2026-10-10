@@ -172,6 +172,8 @@ fi
 echo "-----"
 
 echo "setting up webserver:"
+# thumbnail cache for the file list (rendered on first request by the web server user)
+mkdir -p /scans/.thumbnails && chmod 777 /scans/.thumbnails
 if [ "$WEBSERVER" == "true" ]; then
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
 

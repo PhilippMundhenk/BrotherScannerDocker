@@ -63,6 +63,7 @@ if (file_is_valid_name_string($new_filename)){
 
     // Rename the file
     if (rename($original_filename, $final_filename)) {
+        thumbnails_forget($file_info['file']);
         
         // Restore access and modification time using 'touch'
         @touch($final_filename, $times['modification_time'], $times['access_time']);

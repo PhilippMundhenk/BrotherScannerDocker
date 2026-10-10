@@ -17,6 +17,7 @@ $file_info = file_get_verified_fileinfo('/scans/', urldecode($file));
 
 
 if(unlink($file_info['full_path'])){
+    thumbnails_forget($file_info['file']);
     json(array('status' => 'success'));
 } else {
     trigger_error("can not deleted file ".$file_info['full_path'], E_API);

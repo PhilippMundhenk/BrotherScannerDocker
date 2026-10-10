@@ -411,6 +411,28 @@ paths:
         '404':
           description: File does not exist
 
+  /file/{file}/thumbnail:
+    get:
+      summary: Thumbnail of the first page (JPEG, cached; placeholder SVG when the PDF cannot be rendered)
+      parameters:
+        - in: path
+          name: file
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image; ETag and long-lived Cache-Control headers; X-Thumbnail-Cache is hit, miss or placeholder
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '304':
+          description: Not modified (If-None-Match matched)
+        '404':
+          description: File does not exist or thumbnails disabled
+
   /file/{file}/download:
     get:
       summary: Download a file
