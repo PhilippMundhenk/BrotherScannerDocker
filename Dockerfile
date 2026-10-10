@@ -58,6 +58,10 @@ EXPOSE 54921
 EXPOSE 80
 
 # Copy the web files to the web directory
+# Version string for /api/actions (the publish workflows pass the tag or branch)
+ARG VERSION=dev
+RUN echo "$VERSION" > /etc/brotherscanner-version
+
 COPY www /var/www
 RUN chown -R www-data /var/www/
 

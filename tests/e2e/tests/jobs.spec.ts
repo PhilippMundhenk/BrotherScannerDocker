@@ -37,6 +37,14 @@ test.describe('jobs API', () => {
     expect(body.parameters.resolution.default).toBe(100); // the e2e container runs with RESOLUTION=100
     expect(Object.keys(body.parameters)).toEqual(['resolution', 'mode', 'source', 'wait']);
     expect(body.authentication).toBe('none');
+    // #129: integrations read the version and the device from the same endpoint
+    expect(body.api_version).toBe(1);
+    expect(typeof body.version).toBe('string');
+    expect(body.device).toMatchObject({ name: 'Scanner', model: 'MFC-SIMULATOR', host: '192.0.2.10' });
+    expect(body.device.capabilities.mode).toEqual({ options: ['Black & White', 'Gray[Error Diffusion]', 'True Gray', '24bit Color[Fast]'], default: '24bit Color[Fast]' });
+    expect(body.device.capabilities.resolution).toEqual({ options: [100, 150, 200, 300, 400, 600], default: 300 });
+    expect(body.device.capabilities.source.options).toContain('FlatBed');
+    expect(body.device.capabilities.source.default).toBe('Automatic Document Feeder(left aligned)');
   });
 
   test('status reports reachability (the test scanner address never answers)', async ({ request }) => {

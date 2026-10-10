@@ -296,9 +296,38 @@ curl http://<ContainerIP>:<Port>/api/jobs/2026-10-10-19-25-20
 
 States: `queued`, `scanning`, `waiting_for_rear`, `scanning_rear`, `converting`, `done` (with `file`, `file_url`, and `ocr` being `none`, `pending`, `in_progress`, `failed` or `done` with `ocr_file_url`), `failed` (with `error`). `GET /api/jobs` lists the recent jobs, newest first. `POST /api/jobs/<id>/rear` scans the rear pages for that specific job while it is waiting for them (the "Scan to E-mail" action always addresses the latest job).
 
-Other endpoints: `GET /api/actions` describes the available actions, their labels and the accepted parameters; `GET /api/scanner/status` reports `scan`, `waiting`, `ocr`, `reachable` (whether the device answered the last connection check) and `queue` (OCR jobs pending, in progress and failed, and whether the worker is holding back for a busy scanner; the home page shows the same under the status); files via `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` also rename (`PUT /api/file/<name>/rename`) and delete (`DELETE /api/file/<name>/delete`).
+Other endpoints: `GET /api/actions` describes the available actions, their labels and the accepted parameters, plus the image version and the device (name, model, address and the mode/resolution/source options it listed at startup, for integrations like Home Assistant); `GET /api/scanner/status` reports `scan`, `waiting`, `ocr`, `reachable` (whether the device answered the last connection check) and `queue` (OCR jobs pending, in progress and failed, and whether the worker is holding back for a busy scanner; the home page shows the same under the status); files via `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` also rename (`PUT /api/file/<name>/rename`) and delete (`DELETE /api/file/<name>/delete`).
 
 Set `API_TOKEN` to require a token for everything that starts a scan or changes a file; the web UI sends it itself, so anyone who can open the UI can use the API, which is the same trust level as before.
+
+#### Home Assistant
+
+There is a Home Assistant integration for this container, [ha-brother-scanner](https://github.com/PhilippMundhenk/ha-brother-scanner), and a dashboard card, [brother-scanner-card](https://github.com/PhilippMundhenk/brother-scanner-card). Both install through HACS (as custom repositories until they are in the default store). The integration creates one device per container with the scanner state, the last scan (downloadable through Home Assistant), the OCR queue, one button per scan action named like the buttons here, selects for resolution/mode/source from the device capabilities, services (`brother_scanner.scan`, `scan_rear`, `download_last_scan`) and events when a scan starts, finishes or fails.
+
+<!-- screenshot of the Home Assistant card: doc/ha-card.png -->
+
+Without the integration, Home Assistant's built-in `rest` platform covers the basics:
+
+```yaml
+rest:
+  - resource: http://scanner.local:8080/api/scanner/status
+    scan_interval: 5
+    binary_sensor:
+      - name: Scanner busy
+        value_template: "{{ value_json.scan or value_json.waiting }}"
+      - name: Scanner reachable
+        value_template: "{{ value_json.reachable }}"
+        device_class: connectivity
+
+rest_command:
+  scan_to_file:
+    url: http://scanner.local:8080/api/scanner/scanto
+    method: POST
+    headers:
+      X-API-Token: !secret scanner_token   # only with API_TOKEN
+    payload: "target=file&resolution=300"
+    content_type: application/x-www-form-urlencoded
+```
 
 ## Full Docker Compose Example
 

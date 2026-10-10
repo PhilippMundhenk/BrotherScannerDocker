@@ -258,7 +258,10 @@ fi
 echo "-----"
 
 echo "capabilities:"
-scanimage -A
+# kept for /api/actions (device.capabilities): the option lists of the device
+scanimage -A > /tmp/SCANNER_CAPABILITIES 2>&1 || true
+chmod 644 /tmp/SCANNER_CAPABILITIES
+cat /tmp/SCANNER_CAPABILITIES
 
 echo "startup successful"
 keepAliveRegistration &
