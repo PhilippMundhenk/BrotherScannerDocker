@@ -33,9 +33,16 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install test dependencies
-        run: pip install pytest requests==2.32.3
-      - name: Run Python unit tests
-        run: pytest tests/python
+        run: pip install pytest pytest-cov requests==2.32.3
+      - name: Run Python unit tests with coverage (fails below 95%)
+        run: pytest --cov --cov-report=term-missing --cov-report=xml:output/python-coverage.xml tests/python
+      - name: Upload Python coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage
+          path: output/python-coverage.xml
+          if-no-files-found: ignore
 
   # End-to-end: build the image, run it with a simulated scanner and a fake
   # OCR service, and drive the web UI and the API with Playwright.
@@ -45,6 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build image under test
         run: docker build -t brotherscanner:e2e .
+      - name: Build coverage flavour (php-pcov)
+        run: docker build -f tests/coverage/Dockerfile.coverage --build-arg BASE=brotherscanner:e2e -t brotherscanner:e2e-cov .
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -58,8 +67,12 @@ jobs:
       - name: Run end-to-end tests
         working-directory: tests/e2e
         env:
-          IMAGE: brotherscanner:e2e
+          IMAGE: brotherscanner:e2e-cov
+          PHP_COVERAGE_DIR: ${{ github.workspace }}/tests/e2e/output/php-coverage
         run: npx playwright test
+      - name: PHP coverage report (fails below 95%)
+        if: always()
+        run: python3 tests/coverage/php_report.py tests/e2e/output/php-coverage www --fail-under 95 --xml tests/e2e/output/php-coverage.xml
       - name: Upload report and container logs
         if: always()
         uses: actions/upload-artifact@v4

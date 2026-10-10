@@ -12,6 +12,18 @@ produced when every layer is green and nothing runs twice:
 | Python units | pytest | `script/scanner.py` (environment parsing, blank page removal, post-processing, rear wait), the OCR queue (`script/ocr_queue.py`) and the notification helpers, with subprocesses mocked | `pytest tests/python` |
 | end-to-end | Playwright | the built image running with a simulated scanner and a fake OCR service: web UI, REST API, scan pipeline, OCR queue, file ownership | `cd tests/e2e && npx playwright test` |
 
+The main container comes from `global-setup.ts` (everything switched on, port `E2E_PORT`, default 18080). Two specs start their own short-lived
+container next to it: `token.spec.ts` with `API_TOKEN` (port `E2E_TOKEN_PORT`, default 18090) and `restricted.spec.ts` with file operations,
+settings and thumbnails switched off, one action disabled and one renamed (port `E2E_RESTRICTED_PORT`, default 18091). `api-edge.spec.ts`
+covers the error branches of the API (malformed bodies, unknown files, validation limits, stale status files).
+
+## Coverage
+
+- Python: `pytest --cov --cov-report=term-missing tests/python` (configuration in `.coveragerc`); CI fails below 95%.
+- PHP: the e2e job runs against a coverage flavour of the image (`tests/coverage/Dockerfile.coverage`, php-pcov) that records the executed lines of every request; `tests/coverage/php_report.py` merges the dumps into a per-file report and fails below 95%. Files no request loads count as uncovered.
+- Shell: bats covers the sourceable `files/config.sh`; the entrypoint itself is exercised by the e2e container start.
+- JavaScript: exercised by the Playwright specs (drawer, thumbnails, settings page, token header).
+
 ## Running locally
 
 ```bash

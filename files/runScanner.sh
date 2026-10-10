@@ -185,49 +185,32 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$TZ" ]]; then
       echo "\$TZ=\"$TZ\";"
     fi
-    # scan defaults and API settings for the backend (values are PHP string literals)
+    # Every setting the environment provides (locked.txt) plus the backend
+    # basics, as PHP literals: "true"/"false" become booleans so that
+    # DISABLE_GUI_*=false or ALLOW_GUI_FILEOPERATIONS=false mean what they say,
+    # everything else is an escaped string.
+    php_literal() {
+      local value="$1"
+      case "${value,,}" in
+        true) echo "true" ;;
+        false) echo "false" ;;
+        *)
+          value="${value//\\/\\\\}"
+          value="${value//\"/\\\"}"
+          value="${value//\$/\\\$}"
+          echo "\"${value}\""
+          ;;
+      esac
+    }
     for var in RESOLUTION SCAN_MODE SCAN_SOURCE API_TOKEN ALLOW_GUI_SETTINGS SCANNER_CONFIG_FILE; do
       if [[ -n "${!var}" ]]; then
-        echo "\$${var}=\"${!var//\"/\\\"}\";"
+        echo "\$${var}=$(php_literal "${!var}");"
       fi
     done
-    if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
-      echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
-    fi
-    if [[ -n "$RENAME_GUI_SCANTOEMAIL" ]]; then
-      echo "\$RENAME_GUI_SCANTOEMAIL=$RENAME_GUI_SCANTOEMAIL;"
-    fi
-    if [[ -n "$RENAME_GUI_SCANTOIMAGE" ]]; then
-      echo "\$RENAME_GUI_SCANTOIMAGE=$RENAME_GUI_SCANTOIMAGE;"
-    fi
-    if [[ -n "$RENAME_GUI_SCANTOOCR" ]]; then
-      echo "\$RENAME_GUI_SCANTOOCR=$RENAME_GUI_SCANTOOCR;"
-    fi
-    if [[ -n "$DISABLE_GUI_SCANTOFILE" ]]; then
-      echo "\$DISABLE_GUI_SCANTOFILE=$DISABLE_GUI_SCANTOFILE;"
-    fi
-    if [[ -n "$DISABLE_GUI_SCANTOEMAIL" ]]; then
-      echo "\$DISABLE_GUI_SCANTOEMAIL=$DISABLE_GUI_SCANTOEMAIL;"
-    fi
-    if [[ -n "$DISABLE_GUI_SCANTOIMAGE" ]]; then
-      echo "\$DISABLE_GUI_SCANTOIMAGE=$DISABLE_GUI_SCANTOIMAGE;"
-    fi
-    if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
-      echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
-    fi
-    if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
-      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
-    fi
-    # every other environment variable with a setting-like name, escaped as a PHP
-    # string literal, so the settings page can show environment-set values
     while IFS= read -r key; do
       case "$key" in PATH|HOME|HOSTNAME|PWD|SHLVL|TERM|OLDPWD|UID|GID|EUID|PPID|LANG|LC_ALL|_|TZ|MODEL) continue ;; esac
       [[ -n "${!key+x}" ]] || continue
-      value="${!key}"
-      value="${value//\\/\\\\}"
-      value="${value//\"/\\\"}"
-      value="${value//\$/\\\$}"
-      echo "\$${key}=\"${value}\";"
+      echo "\$${key}=$(php_literal "${!key}");"
     done </opt/brother/scanner/locked.txt
     # settings from the configuration file for keys the environment does not set;
     # extract() runs in the scope of whoever includes config.php (every view)

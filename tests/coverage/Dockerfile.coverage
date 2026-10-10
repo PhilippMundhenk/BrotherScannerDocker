@@ -1,0 +1,9 @@
+# Coverage flavour of the image under test: php-pcov records which lines of
+# the PHP backend every request executes; tests/coverage/php_report.py turns
+# the dumps into a report. Built in CI on top of the normal image.
+ARG BASE=brotherscanner:e2e
+FROM ${BASE}
+RUN apt-get update && apt-get install -y --no-install-recommends php-pcov && apt-get -y clean && rm -rf /var/lib/apt/lists/*
+COPY tests/coverage/php-prepend.php /var/www/private/coverage-prepend.php
+RUN printf 'auto_prepend_file=/var/www/private/coverage-prepend.php\npcov.enabled=1\npcov.directory=/var/www\n' >/etc/php/8.2/cgi/conf.d/99-coverage.ini \
+    && mkdir -p /var/www/coverage && chmod 777 /var/www/coverage

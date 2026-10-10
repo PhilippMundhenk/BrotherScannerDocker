@@ -1,0 +1,11 @@
+[run]
+source = script
+branch = False
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 95
+exclude_lines =
+    pragma: no cover
+    if __name__ == "__main__":

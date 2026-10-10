@@ -51,9 +51,19 @@ function scan_parameter_args($params) {
  * device get. Waits a second if a job of the same second already exists.
  */
 function new_job_id() {
+        // Two requests in the same second must not share an id: the scan script
+        // only creates its record a moment later, so the id is reserved here with
+        // an atomic mkdir (fails for the second caller) in a directory of its own.
+        $reservations = sys_get_temp_dir() . '/scanner-job-ids';
+        @mkdir($reservations, 0777, true);
+        foreach (glob($reservations . '/*') ?: array() as $old) {
+                if (time() - @filemtime($old) > 120) {
+                        @rmdir($old);
+                }
+        }
         for ($attempt = 0; $attempt < 3; $attempt++) {
                 $id = date('Y-m-d-H-i-s');
-                if (job_record($id) === null && !is_dir(sys_get_temp_dir() . '/' . $id)) {
+                if (job_record($id) === null && !is_dir(sys_get_temp_dir() . '/' . $id) && @mkdir($reservations . '/' . $id)) {
                         return $id;
                 }
                 sleep(1);
