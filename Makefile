@@ -19,8 +19,6 @@ bats:
 # raise to "warning" once those are cleaned up.
 lint:
 	shellcheck --severity=error \
-		script/ocr_enqueue.sh \
-		script/ocr_worker.sh \
 		files/runScanner.sh \
 		run.sh \
 		update-container.sh

@@ -108,7 +108,7 @@ else
   su - "$NAME" -s /bin/bash -c '
     export $(grep -v "^#" /opt/brother/scanner/env.txt | xargs)
     while true; do
-      /opt/brother/scanner/brscan-skey/script/ocr_worker.sh
+      python3 /opt/brother/scanner/brscan-skey/script/ocr_queue.py worker
       echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"
       sleep 5
     done

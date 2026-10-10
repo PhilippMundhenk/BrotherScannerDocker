@@ -6,12 +6,10 @@ setup() {
   load '../helpers/common'
 }
 
-# Shell scripts left after the Python rewrite: the container entrypoint,
-# the OCR queue scripts and the two maintainer helpers.
+# Shell scripts left after the Python rewrite: the container entrypoint
+# and the two maintainer helpers.
 shell_scripts() {
   printf '%s\n' \
-    "$SCRIPT_DIR/ocr_enqueue.sh" \
-    "$SCRIPT_DIR/ocr_worker.sh" \
     "$REPO_ROOT/files/runScanner.sh" \
     "$REPO_ROOT/run.sh" \
     "$REPO_ROOT/update-container.sh"

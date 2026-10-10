@@ -17,6 +17,7 @@ from typing import List, Optional, TextIO
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
 from trigger_telegram import trigger_telegram
+from ocr_queue import enqueue as enqueue_ocr
 
 ENVIRONMENT_FILE_PATH = "/opt/brother/scanner/env.txt"
 SCRIPT_DIR = "/opt/brother/scanner/brscan-skey/script"
@@ -71,9 +72,11 @@ def read_environment() -> None:
     # as brscan is screwing it up
     with open(ENVIRONMENT_FILE_PATH, "r") as f:
         for line in f:
-            if not line.startswith("#"):  # Skip comments
-                key, value = line.strip().split("=")
-                os.environ[key] = value
+            line = line.rstrip("\r\n")
+            if not line or line.startswith("#") or "=" not in line:
+                continue  # blank lines, comments, anything that is not KEY=VALUE
+            key, value = line.split("=", 1)  # values may contain "=" themselves
+            os.environ[key] = value
 
 
 def execute_command(log: TextIO, command: List[str], **kwargs) -> None:
@@ -169,6 +172,42 @@ def clean_job_files(log: TextIO, side: str, job_name: str):
 #
 # PDF manipulation methods
 #
+def parse_page_count(pdfinfo_output: str) -> Optional[int]:
+    """Extract the page count from pdfinfo output."""
+    match = re.search(r"^Pages:\s*(\d+)", pdfinfo_output, re.MULTILINE)
+    return int(match.group(1)) if match else None
+
+
+def parse_ink_coverage(gs_output: str) -> Optional[float]:
+    """Sum the CMYK coverage percentages reported by the gs ink_cov device."""
+    for line in gs_output.splitlines():
+        parts = line.split()
+        if len(parts) >= 5 and parts[4] == "CMYK":
+            try:
+                return sum(float(value) for value in parts[:4])
+            except ValueError:
+                continue
+    return None
+
+
+def pdf_page_count(log: TextIO, input_file: str) -> Optional[int]:
+    process = subprocess.Popen(["pdfinfo", input_file], stdout=subprocess.PIPE, stderr=log)
+    output, _ = process.communicate()
+    if process.returncode != 0:
+        return None
+    return parse_page_count(output.decode())
+
+
+def page_ink_coverage(log: TextIO, input_file: str, page: int) -> Optional[float]:
+    process = subprocess.Popen(
+        ["gs", "-o", "-", f"-dFirstPage={page}", f"-dLastPage={page}", "-sDEVICE=ink_cov", input_file],
+        stdout=subprocess.PIPE,
+        stderr=log,
+    )
+    output, _ = process.communicate()
+    return parse_ink_coverage(output.decode())
+
+
 def remove_blank_pages(
     log: TextIO, input_file: str, remove_blank_threshold: float
 ) -> None:
@@ -186,20 +225,10 @@ def remove_blank_pages(
     filename = os.path.splitext(os.path.basename(input_file))[0]
     dirname = os.path.dirname(input_file)
 
-    # Get the number of pages in the PDF
-    process = subprocess.Popen(
-        ["pdfinfo", input_file], stdout=subprocess.PIPE, stderr=log
-    )
-    output, _ = process.communicate()
-    if process.returncode != 0:
+    page_count = pdf_page_count(log, input_file)
+    if page_count is None:
         print(f"  ERROR: getting number of pages from {input_file}")
         return
-    info = output.decode()
-    pages_line = re.search(r"^Pages:\s*(\d+)", info, re.MULTILINE)
-    if pages_line is None:
-        print(f"  ERROR: finding number of pages in {info}")
-        return
-    page_count = int(pages_line.group(1))
 
     print(
         f"  Analyzing {page_count} pages in {input_file} with threshold {remove_blank_threshold}%"
@@ -209,36 +238,16 @@ def remove_blank_pages(
     def non_blank_pages() -> List[str]:
         picked_pages: List[str] = []
         for page in range(1, page_count + 1):
-            # Use subprocess to run gs and get ink coverage
-            process = subprocess.Popen(
-                [
-                    "gs",
-                    "-o",
-                    "-",
-                    f"-dFirstPage={page}",
-                    f"-dLastPage={page}",
-                    "-sDEVICE=ink_cov",
-                    input_file,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=log,
-            )
-            output, _ = process.communicate()
-            ink_coverage_line = re.search(
-                r"^\s*([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+([\d\.]+)\s+CMYK",
-                output.decode(),
-                re.MULTILINE,
-            )
-            if ink_coverage_line is not None:
-                ink_coverage = sum(map(float, ink_coverage_line.groups()))
-
-                if ink_coverage < remove_blank_threshold:
-                    print(
-                        f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)"
-                    )
-                else:
-                    picked_pages += str(page)
-                    print(f"    Page {page}: keep (ink coverage: {ink_coverage:.2f}%)")
+            ink_coverage = page_ink_coverage(log, input_file, page)
+            if ink_coverage is None:
+                # Could not measure: never drop a page we know nothing about.
+                print(f"    Page {page}: keep (ink coverage unknown)")
+                picked_pages.append(str(page))
+            elif ink_coverage < remove_blank_threshold:
+                print(f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)")
+            else:
+                picked_pages.append(str(page))
+                print(f"    Page {page}: keep (ink coverage: {ink_coverage:.2f}%)")
 
         return picked_pages
 
@@ -306,60 +315,36 @@ def convert_and_post_process(
     move_across_mounts(tmp_output_pdf_file, output_pdf_file)
 
     notify(log, output_pdf_file, f"{job_name}.pdf ({side}) scanned")
+    sendtoftps(
+        log,
+        os.getenv("FTP_USER"),
+        os.getenv("FTP_PASSWORD"),
+        os.getenv("FTP_HOST"),
+        os.getenv("FTP_PATH"),
+        output_pdf_file,
+    )
 
     clean_job_files(log, side, job_name)
 
-    # Check for OCR environment variables
-    ocr_server = os.getenv("OCR_SERVER")
-    ocr_port = os.getenv("OCR_PORT")
-    ocr_path = os.getenv("OCR_PATH")
-
-    if not all([ocr_server, ocr_port, ocr_path]):
+    # OCR is handed to the queue worker (ocr_queue.py), which uploads one scan
+    # at a time and runs the post-OCR notifications itself.
+    if not all([os.getenv("OCR_SERVER"), os.getenv("OCR_PORT"), os.getenv("OCR_PATH")]):
         print(f"  {side} side: OCR environment variables not set, skipping OCR.")
     else:
-        ocr_pdf_name = f"{job_name}-ocr.pdf"
-        ocr_pdf_path = os.path.join(SCAN_DIR, ocr_pdf_name)
+        print(f"  {side} side: queueing OCR for {job_name}...")
+        enqueue_ocr(output_pdf_file, job_name, side)
 
-        # Perform OCR in the background
-        print(f"  {side} side: starting OCR for {job_name}...")
-        execute_command(
-            log,
-            [
-                "curl",
-                "-F",
-                f"userfile=@{output_pdf_file}",
-                "-H",
-                "Expect:",
-                "-o",
-                ocr_pdf_path,
-                f"{ocr_server}:{ocr_port}/{ocr_path}",
-            ],
-            check=True,
-        )
-
-        notify(log, ocr_pdf_name, f"{ocr_pdf_name} ({side}) OCR finished")
-
-        ftp_user = os.getenv("FTP_USER")
-        ftp_password = os.getenv("FTP_PASSWORD")
-        ftp_host = os.getenv("FTP_HOST")
-        ftp_path = os.getenv("FTP_PATH")
-        sendtoftps(log, ftp_user, ftp_password, ftp_host, ftp_path, ocr_pdf_path)
-
-        if os.getenv("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(
-            ocr_pdf_path
-        ):
-            os.remove(output_pdf_file)
-
-    print(f"  {side} side: Conversion and post-processing for finished.")
+    print(f"  {side} side: Conversion and post-processing finished.")
     print("-----------------------------------")
 
 
 def wait_for_rear_pages_or_convert(job_name: str) -> None:
     # Wait for 2 minutes in case there is a rear side scan
-    print(f"  front side: Waiting for 2 minutes before starting file conversion for {job_name}")
+    wait_seconds = int(os.environ.get("REAR_PAGE_WAIT_SECONDS", "120"))
+    print(f"  front side: Waiting {wait_seconds}s for rear pages before starting file conversion for {job_name}")
     try:
         set_status('waiting')
-        time.sleep(120)
+        time.sleep(wait_seconds)
     finally:
         clear_status('waiting')
 
@@ -419,9 +404,9 @@ def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
             )
             os.kill(pid, signal.SIGKILL)
     except FileNotFoundError:
-        print("  rear side: ERROR: scan_pid file {path} not found.")
+        print(f"  rear side: ERROR: scan_pid file {path} not found.")
     except ProcessLookupError:
-        print("  rear side: ERROR: process with pid {pid} not found.")
+        print(f"  rear side: ERROR: process with pid {pid} not found.")
     else:
         os.remove(path)
         return pid

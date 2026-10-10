@@ -11,20 +11,16 @@ def trigger_inotify(
     address: Optional[str],
     filepath: Optional[str],
     file: Optional[str],
-) -> None:
-    """Triggers inotify for a file.
+) -> bool:
+    """Touches a file over SSH so inotify-based watchers (e.g. Synology Drive) notice it.
 
-    Args:
-        user (str): The SSH username.
-        password (str): The SSH password.
-        address (str): The SSH address.
-        filepath (str): The file path.
-        file (str): The file name.
+    Returns True on success, False when skipped (SSH variables not set) or failed.
+    Never exits the calling process: the scan pipeline continues either way.
     """
 
     if not all([user, password, address, filepath]):
         print("  INFO: SSH environment variables not set, skipping inotify trigger.")
-        return
+        return False
 
     command = [
         "sshpass",
@@ -40,6 +36,7 @@ def trigger_inotify(
     try:
         subprocess.run(command, check=True, stdout=log, stderr=log)
         print("Trigger inotify successful")
-    except subprocess.CalledProcessError:
-        print("Trigger inotify failed")
-        exit(1)
+        return True
+    except (subprocess.CalledProcessError, OSError) as error:
+        print(f"Trigger inotify failed: {error}")
+        return False

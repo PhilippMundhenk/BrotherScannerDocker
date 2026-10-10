@@ -11,19 +11,16 @@ def sendtoftps(
     address: Optional[str],
     filepath: Optional[str],
     file: Optional[str],
-) -> None:
-    """Uploads a file to an FTP server.
+) -> Optional[bool]:
+    """Uploads a file to an FTP(S) server with curl.
 
-    Args:
-      user (str): The FTP username.
-      password (str): The FTP password.
-      address (str): The FTP address.
-      filepath (str): The file path on the FTP server.
-      file (str): The file to upload.
+    Returns True on success, False on failure and None when the FTP variables
+    are not set. Never exits the calling process: the scan pipeline continues
+    either way.
     """
 
     if not all([user, password, address, filepath, file]):
-        return
+        return None
 
     command: List[str] = [
         "curl",
@@ -40,10 +37,11 @@ def sendtoftps(
     try:
         subprocess.run(command, check=True, stdout=log, stderr=log)
         print(f"Uploading to FTP server {address} successful.")
-    except subprocess.CalledProcessError:
-        print("Uploading to FTP failed while using curl")
+        return True
+    except (subprocess.CalledProcessError, OSError) as error:
+        print(f"Uploading to FTP failed while using curl: {error}")
         print(f"user: {user}")
         print(f"address: {address}")
         print(f"filepath: {filepath}")
         print(f"file: {file}")
-        exit(1)
+        return False
