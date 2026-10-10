@@ -69,24 +69,36 @@ test.describe('file list with many files', () => {
 
   test('the drawer shows the newest entries first and keeps loading in the background', async ({ page }) => {
     await page.goto('/');
-    const newest = (await (await page.request.get('/api/file-list?limit=1')).json())[0];
-    const total = Number((await page.request.get('/api/file-list?limit=1')).headers()['x-total-count']);
+    const head = await page.request.get('/api/file-list?limit=1');
+    const newest = (await head.json())[0];
+    const total = Number(head.headers()['x-total-count']);
+    expect(total).toBeGreaterThanOrEqual(SEED + 1);
+
+    // Count the batch requests the drawer makes, to prove it loads incrementally.
+    const batchRequests: string[] = [];
+    page.on('request', (req) => {
+      if (req.url().includes('/list-files')) batchRequests.push(req.url());
+    });
 
     const t0 = performance.now();
     await page.locator('#triggerFiles').click();
     const items = page.locator('#fileslist-items .list-group-item');
-    await expect(items).toHaveCount(BATCH, { timeout: BUDGET_FIRST_BATCH_MS + 1000 });
+    // The first batch is on screen long before the list is complete (locally
+    // all batches arrive within a second, so "at least" rather than "exactly").
+    await expect.poll(() => items.count(), { timeout: BUDGET_FIRST_BATCH_MS + 1000 }).toBeGreaterThanOrEqual(BATCH);
     const firstBatchMs = performance.now() - t0;
     record(test.info(), `drawer shows first ${BATCH} entries`, firstBatchMs, BUDGET_FIRST_BATCH_MS);
     expect(firstBatchMs).toBeLessThan(BUDGET_FIRST_BATCH_MS);
 
     await expect(items.first().locator('.file-name')).toHaveText(newest.name);
-    await expect(page.locator('#fileslist-loading')).toBeVisible();
 
     await expect(items).toHaveCount(total, { timeout: BUDGET_COMPLETE_MS });
     const completeMs = performance.now() - t0;
     record(test.info(), `drawer complete with ${total} entries`, completeMs, BUDGET_COMPLETE_MS);
     await expect(page.locator('#fileslist-loading')).toBeHidden();
+    expect(batchRequests.length).toBe(Math.ceil(total / BATCH));
+    expect(batchRequests[0]).toContain(`offset=0&limit=${BATCH}`);
+    expect(batchRequests[1]).toContain(`offset=${BATCH}&limit=${BATCH}&fragment=1`);
 
     // Reopening restarts the load cleanly (no duplicates from a cancelled run).
     await page.locator('#offcanvasFiles .btn-close').click();
