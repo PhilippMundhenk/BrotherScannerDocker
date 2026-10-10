@@ -105,6 +105,7 @@ You can configure the tool via environment variables:
 | FTP_PASSWORD                             | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
 | FTP_HOST                                 | optional  | Address of an FTP(S) server to upload the completed scan to (see below)                                                                          |
 | FTP_PATH                                 | optional  | Path of an FTP(S) server to upload the completed scan to (see below)                                                                             |
+| FTP_INSECURE | optional | Set to "true" to upload via plain FTP instead of requiring TLS (FTPS). Credentials and files then travel unencrypted (default: false) |
 | SSH_USER                                 | optional  | Username for an SSH connection to trigger inotify (see below)                                                                                    |
 | SSH_PASSWORD                             | optional  | Password for an SSH connection to trigger inotify (see below)                                                                                    |
 | SSH_HOST                                 | optional  | Address for an SSH connection to trigger inotify (see below)                                                                                     |
@@ -144,7 +145,8 @@ To do so, set the following environment variables to your values:
 - FTP_PATH="/"
 ```
 
-This only works with the scripts offered here in folder script/ (see Customize).
+The upload requires TLS (explicit FTPS, `curl --ssl-reqd`). If your server only speaks plain FTP, add `FTP_INSECURE=true`; the credentials and the scanned files are then sent unencrypted, so only do this on a network you trust.
+Uploads are done for every scanned PDF and, if OCR is configured, for the OCR output as well.
 
 ### Automatic Synchronization Solutions
 
