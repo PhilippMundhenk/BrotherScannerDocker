@@ -1,34 +1,17 @@
 import * as fs from 'fs';
-import * as http from 'http';
 import * as path from 'path';
 import { AddressInfo } from 'net';
+import { startFakeOcr } from './fake-ocr';
 import { docker, FIXTURES, HOST_PORT, IMAGE, OUTPUT_DIR, SAMPLE_FILE, STATE_FILE } from './helpers';
 
 /**
  * Starts one container from the image under test with:
  *   - the scanner simulator mounted over /usr/bin/scanimage
  *   - the web UI on HOST_PORT
- *   - a fake OCR service running in this process, reachable from the
- *     container as host.docker.internal
+ *   - a fake OCR service (see fake-ocr.ts) running in this process, reachable
+ *     from the container as host.docker.internal
  * and tears everything down (dumping the container log) when the run ends.
  */
-
-function startFakeOcr(): Promise<http.Server> {
-  const pdf = fs.readFileSync(path.join(FIXTURES, 'sample.pdf'));
-  const server = http.createServer((req, res) => {
-    // Drain the multipart upload, then answer with a PDF like the real service does.
-    req.on('data', () => undefined);
-    req.on('end', () => {
-      if (req.method !== 'POST') {
-        res.writeHead(405).end();
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': 'application/pdf' });
-      res.end(pdf);
-    });
-  });
-  return new Promise((resolve) => server.listen(0, '0.0.0.0', () => resolve(server)));
-}
 
 async function waitForUrl(url: string, timeoutMs: number, container: string) {
   const deadline = Date.now() + timeoutMs;
@@ -70,7 +53,7 @@ export default async function globalSetup() {
     '-e', 'REAR_PAGE_WAIT_SECONDS=6',
     '-e', 'ALLOW_GUI_FILEOPERATIONS=true',
     '-e', 'OCR_SERVER=host.docker.internal', '-e', `OCR_PORT=${ocrPort}`, '-e', 'OCR_PATH=ocr.php',
-    '-e', 'OCR_QUEUE_POLL_SECONDS=1', '-e', 'OCR_RETRY_BACKOFF_SECONDS=1',
+    '-e', 'OCR_QUEUE_POLL_SECONDS=1', '-e', 'OCR_RETRY_BACKOFF_SECONDS=1', '-e', 'OCR_MAX_ATTEMPTS=3',
     '-e', 'SIM_PAGES=2', '-e', 'SIM_SCAN_SECONDS=0.5',
     IMAGE,
   ];

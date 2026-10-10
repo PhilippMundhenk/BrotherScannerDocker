@@ -22,6 +22,14 @@ keepAliveRegistration() {
   echo "starting registration keepalive (every ${INTERVAL}s, disable with KEEPALIVE=false)"
   while true; do
     sleep "$INTERVAL"
+    # Never re-register while the device is busy with one of our jobs: a refresh
+    # during a scan can stall the feeder, and it must not coincide with paper
+    # in the ADF. The scan scripts mark both phases with status files in /tmp
+    # (ignored when older than 10 minutes, i.e. left behind by a crash).
+    if [[ -n "$(find /tmp -maxdepth 1 \( -name STATUS_SCAN -o -name STATUS_WAITING \) -mmin -10 2>/dev/null)" ]]; then
+      echo "keepalive: scan active, skipping registration refresh" >>/var/log/scanner.log
+      continue
+    fi
     su - "$NAME" -c "/usr/bin/brscan-skey --refresh" >>/var/log/scanner.log 2>&1
   done
 }
@@ -128,8 +136,9 @@ else
   # starts with a clean environment, so the container environment (OCR_*,
   # FTP_*, SSH_*, TELEGRAM_*, REMOVE_ORIGINAL_AFTER_OCR) is loaded from env.txt
   # the same way the scan scripts do it.
+  # ocr_queue.py loads the container environment from env.txt itself, so no
+  # shell export is needed (env.txt contains UID, which bash refuses to export).
   su - "$NAME" -s /bin/bash -c '
-    export $(grep -v "^#" /opt/brother/scanner/env.txt | xargs)
     while true; do
       python3 /opt/brother/scanner/brscan-skey/script/ocr_queue.py worker
       echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"
