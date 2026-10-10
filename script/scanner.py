@@ -77,6 +77,19 @@ def read_environment() -> None:
                 continue  # blank lines, comments, anything that is not KEY=VALUE
             key, value = line.split("=", 1)  # values may contain "=" themselves
             os.environ[key] = value
+    apply_timezone()
+
+
+def apply_timezone() -> None:
+    """Make the C library pick up TZ from the environment.
+
+    The scan scripts are started by brscan-skey from a login shell without TZ;
+    read_environment() puts TZ into os.environ, but datetime.now() keeps using
+    the time zone cached at process start until time.tzset() is called.
+    Without this, job names and log times were in UTC.
+    """
+    if hasattr(time, "tzset"):
+        time.tzset()
 
 
 def execute_command(log: TextIO, command: List[str], **kwargs) -> None:

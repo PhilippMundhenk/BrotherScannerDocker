@@ -9,6 +9,7 @@ import {
   triggerScan,
   waitFor,
   waitForNewFile,
+  waitForQueueIdle,
 } from '../helpers';
 
 // Each scan with the simulator takes about 1 s; the front scan then waits
@@ -21,6 +22,9 @@ test.describe('scan pipeline (simulated scanner)', () => {
       const s = await scannerStatus(request);
       return !s.scan && !s.waiting && !s.ocr;
     }, 60_000, 'scanner to be idle');
+    // The previous test's OCR copy may still be in flight; the status flag
+    // does not cover the queue's poll and backoff gaps, so wait for the queue.
+    await waitForQueueIdle(60_000);
   });
 
   test('scan to file via the API produces a 2 page PDF owned by the scanner user, then an OCR copy', async ({ request }) => {
@@ -80,7 +84,8 @@ test.describe('scan pipeline (simulated scanner)', () => {
       const before = (await listFiles(request)).map((f) => f.file);
       await triggerScan(request, 'file');
       await new Promise((r) => setTimeout(r, 5_000));
-      expect((await listFiles(request)).map((f) => f.file)).toEqual(before);
+      const after = (await listFiles(request)).map((f) => f.file).filter((n) => !n.endsWith('-ocr.pdf'));
+      expect(after).toEqual(before.filter((n) => !n.endsWith('-ocr.pdf')));
       expect(inContainer(['cat', '/var/log/scanner.log'])).toContain('ERROR: Cancelling scanning!');
       expect(inContainer(['bash', '-c', 'ls -d /tmp/20* 2>/dev/null | wc -l']).trim()).toBe('0');
     } finally {

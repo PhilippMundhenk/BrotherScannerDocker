@@ -93,6 +93,14 @@ export function ownerOf(file: string): string {
   return inContainer(['stat', '-c', '%U', `/scans/${file}`]);
 }
 
+/** Wait until no OCR job is pending or in progress (the 'ocr' status flag only reflects a running curl). */
+export async function waitForQueueIdle(timeoutMs: number): Promise<void> {
+  await waitFor(async () => {
+    const q = queueContents();
+    return q.pending.length === 0 && q.in_progress.length === 0;
+  }, timeoutMs, 'OCR queue to drain');
+}
+
 export function queueContents(): Record<string, string[]> {
   const out = inContainer(['bash', '-c', 'for d in pending in_progress failed; do echo "$d:$(ls /scans/.ocr_queue/$d 2>/dev/null | tr "\\n" " ")"; done']);
   const result: Record<string, string[]> = {};
