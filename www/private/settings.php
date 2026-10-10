@@ -80,25 +80,14 @@ function settings_file_overlay() {
     $overlay = array();
     $locked = settings_locked_keys();
     foreach (settings_file_values() as $key => $value) {
-        if (isset($locked[$key]) || settings_catalogue_entry($key) === null) {
+        $entry = settings_catalogue_entry($key);
+        if (isset($locked[$key]) || $entry === null) {
             continue;
         }
-        $overlay[$key] = $value;
+        // the views test booleans with isset($X) && $X: a "false" string would be true
+        $overlay[$key] = $entry['type'] === 'bool' ? in_array(strtolower($value), array('true', '1', 'yes', 'on')) : $value;
     }
     return $overlay;
-}
-
-/** Make file values visible to the views: the generated config.php holds the
- *  environment values, this adds the file values for keys the environment
- *  does not set. */
-function settings_overlay_globals() {
-    $locked = settings_locked_keys();
-    foreach (settings_file_values() as $key => $value) {
-        if (isset($locked[$key]) || settings_catalogue_entry($key) === null) {
-            continue;
-        }
-        $GLOBALS[$key] = $value;
-    }
 }
 
 function settings_effective_value($key) {
@@ -179,11 +168,6 @@ function settings_validate($key, $value) {
                 return array(true, 'false');
             }
             return array(false, 'must be true or false');
-        case 'enum':
-            if (!in_array($value, $entry['options'] ?? array())) {
-                return array(false, 'must be one of ' . implode(', ', $entry['options'] ?? array()));
-            }
-            return array(true, $value);
         default:
             if (strlen($value) > 500) {
                 return array(false, 'too long');

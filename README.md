@@ -144,6 +144,7 @@ The refresh is skipped while a scan is running or a front scan is waiting for re
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
+| GUI_THUMBNAILS | optional | true/false. Thumbnails of the first page in the file list, rendered once per file and cached in `/scans/.thumbnails` (default: true) |
 | ALLOW_GUI_SETTINGS | optional | true/false. Enables the settings page (`/settings`) and the settings API, which write the configuration file (default: false) |
 | SCANNER_CONFIG_FILE | optional | Path of the configuration file inside the container (default: /scans/.config/scanner.conf) |
 | API_TOKEN | optional | When set, every request that starts a scan or changes a file must carry it (`Authorization: Bearer <token>`, `X-API-Token` header, or a `token` field). The web UI sends it itself (default: no token) |
@@ -267,6 +268,8 @@ You can access the GUI under the IP of your container and the set port (or 80 in
 With the full config example below, the result will look something like this:
 ![Screenshot of main web interface](doc/gui-main.jpg)
 ![Screenshot of file list web interface](doc/gui-filelist.jpg)
+
+The file list shows a thumbnail of the first page of every scan. Thumbnails are rendered once per file on first view, cached in `/scans/.thumbnails`, and loaded lazily, so a folder with a thousand scans stays fast; `GUI_THUMBNAILS=false` turns them off.
 
 Note that the interface does not block when pressing a button.
 Thus, make sure to wait for your scan to complete, before pressing another button.

@@ -31,9 +31,9 @@ $data = json_decode($jsonData, true);
 
 
 
-if ($data !== null) {
-   $new_filename = $data['new_filename'];
-   $new_filename_prefix = $data['new_filename_prefix'];
+if (is_array($data) && isset($data['new_filename'])) {
+   $new_filename = (string)$data['new_filename'];
+   $new_filename_prefix = (string)($data['new_filename_prefix'] ?? 'none');
    
    
 } else {
@@ -63,6 +63,7 @@ if (file_is_valid_name_string($new_filename)){
 
     // Rename the file
     if (rename($original_filename, $final_filename)) {
+        thumbnails_forget($file_info['file']);
         
         // Restore access and modification time using 'touch'
         @touch($final_filename, $times['modification_time'], $times['access_time']);

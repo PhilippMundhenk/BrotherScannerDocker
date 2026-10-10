@@ -13,8 +13,7 @@ function send_json_error($http_code, $message){
 
     header('Content-Type: application/json');
     http_response_code($http_code);
-    json(array('code' => $http_code, 'message' => $message));
-    die();
+    json(array('code' => $http_code, 'message' => $message));  // json() exits
 }
 
 
@@ -394,5 +393,24 @@ function device_capabilities($path = null) {
         $caps[$option] = array('options' => $options, 'default' => $default);
     }
     return $caps;
+}
+
+/** Thumbnails in the file list are on unless GUI_THUMBNAILS=false. */
+function thumbnails_enabled() {
+    global $GUI_THUMBNAILS;
+    if (!isset($GUI_THUMBNAILS)) {
+        return true;
+    }
+    if (is_bool($GUI_THUMBNAILS)) {
+        return $GUI_THUMBNAILS;  // config.php and the settings overlay hand booleans over
+    }
+    return !in_array(strtolower((string)$GUI_THUMBNAILS), array('false', '0', 'no', 'off'));
+}
+
+/** Remove cached thumbnails of a file (after rename or delete). */
+function thumbnails_forget($filename) {
+    foreach (glob('/scans/.thumbnails/' . $filename . '.*.jpg') ?: array() as $old) {
+        @unlink($old);
+    }
 }
 ?>

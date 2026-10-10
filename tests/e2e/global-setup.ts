@@ -78,6 +78,14 @@ export default async function globalSetup() {
     } catch (error) {
       console.warn('could not collect container logs:', error);
     }
+    if (process.env.PHP_COVERAGE_DIR) {
+      try {
+        fs.mkdirSync(process.env.PHP_COVERAGE_DIR, { recursive: true });
+        docker(['cp', `${name}:/var/www/coverage/.`, process.env.PHP_COVERAGE_DIR]);
+      } catch (error) {
+        console.warn('could not collect PHP coverage:', error);
+      }
+    }
     try {
       docker(['rm', '-f', name]);
     } catch (error) {

@@ -58,6 +58,61 @@ function set_state(state) {
     }
 }
 
+// Thumbnails: the browser only fetches the ones near the viewport, and at most
+// THUMB_KEEP decoded images stay alive; the others fall back to the CSS
+// placeholder until they scroll near again. Keeps a drawer with a thousand
+// scans light on memory.
+var THUMB_KEEP = 40;
+var thumbObserver = null;
+
+function thumb_root() {
+    return document.querySelector('#offcanvasFiles .offcanvas-body');
+}
+
+function release_far_thumbs() {
+    var root = thumb_root();
+    if (!root) { return; }
+    var loaded = $('img.thumb').filter(function () { return this.getAttribute('src'); }).get();
+    if (loaded.length <= THUMB_KEEP) { return; }
+    var rootRect = root.getBoundingClientRect();
+    var middle = (rootRect.top + rootRect.bottom) / 2;
+    loaded.sort(function (a, b) {
+        var da = Math.abs((a.getBoundingClientRect().top + a.getBoundingClientRect().bottom) / 2 - middle);
+        var db = Math.abs((b.getBoundingClientRect().top + b.getBoundingClientRect().bottom) / 2 - middle);
+        return db - da;  // farthest first
+    });
+    loaded.slice(0, loaded.length - THUMB_KEEP).forEach(function (img) {
+        if (img.dataset.visible !== '1') { img.removeAttribute('src'); }
+    });
+}
+
+function observe_thumbs(container) {
+    var images = container.find('img.thumb[data-src]');
+    if (!('IntersectionObserver' in window)) {
+        images.each(function () { this.src = this.dataset.src; });
+        return;
+    }
+    if (!thumbObserver) {
+        thumbObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                var img = entry.target;
+                if (entry.isIntersecting) {
+                    img.dataset.visible = '1';
+                    if (!img.getAttribute('src')) { img.src = img.dataset.src; }
+                } else {
+                    img.dataset.visible = '';
+                }
+            });
+            release_far_thumbs();
+        }, { root: thumb_root(), rootMargin: '400px 0px' });
+    }
+    images.each(function () { thumbObserver.observe(this); });
+}
+
+function reset_thumbs() {
+    if (thumbObserver) { thumbObserver.disconnect(); thumbObserver = null; }
+}
+
 // The file drawer loads the newest FILES_BATCH entries first and shows them
 // right away, then keeps appending batches in the background until the whole
 // directory is listed. A generation counter cancels a running load when the
@@ -73,7 +128,9 @@ function load_files_offcanvas(){
         success: function(response) {
             if (generation !== files_load_generation) { return; }
             // Populate the Offcanvas with the first batch
+            reset_thumbs();
             $('#offcanvasContent').html(response);
+            observe_thumbs($('#offcanvasContent'));
             load_more_files(generation);
         },
         error: function(xhr, status, error) {
@@ -99,6 +156,7 @@ function load_more_files(generation) {
             if (generation !== files_load_generation) { return; }
             var items = $(response).filter('.list-group-item');
             $('#fileslist-items').append(items);
+            observe_thumbs(items);
             loaded += items.length;
             list.attr('data-loaded', loaded);
             $('#fileslist-loaded').text(loaded);
