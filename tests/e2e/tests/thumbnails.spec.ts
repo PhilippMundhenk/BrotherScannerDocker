@@ -58,6 +58,7 @@ test.describe('thumbnails', () => {
     await page.goto('/');
     await page.locator('#triggerFiles').click();
     const entry = page.locator('#offcanvasFiles .list-group-item', { hasText: SAMPLE_FILE.replace('.pdf', '') });
+    await entry.scrollIntoViewIfNeeded();
     const img = entry.locator('img.thumb');
     await expect(img).toHaveAttribute('data-src', new RegExp(`/api/file/${SAMPLE_FILE}/thumbnail\\?v=\\d+`));
     await expect.poll(async () => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
