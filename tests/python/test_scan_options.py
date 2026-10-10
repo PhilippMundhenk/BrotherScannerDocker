@@ -109,3 +109,35 @@ def test_scan_area_rejects_nonsense(monkeypatch, clean_env, capsys):
     assert cmd[cmd.index("-y") + 1] == "297" and cmd[cmd.index("-x") + 1] == "215" and cmd[cmd.index("-l") + 1] == "0"
     out = capsys.readouterr().out
     assert "SCAN_HEIGHT_MM" in out and "SCAN_WIDTH_MM" in out and "SCAN_LEFT_MM" in out
+
+
+def test_scan_source_from_env(monkeypatch, clean_env):
+    """#77: SCAN_SOURCE selects the paper source, e.g. a duplex ADF."""
+    calls = []
+    monkeypatch.setattr(scanner, "execute_command", lambda log, cmd, **kw: calls.append(cmd))
+    scanner.scan_cmd(io.StringIO(), None, "/tmp/x%04d.pnm", [])
+    assert not any(a.startswith("--source=") for a in calls[0]), "device default when unset"
+
+    clean_env.setenv("SCAN_SOURCE", "Automatic Document Feeder(left aligned,Duplex)")
+    scanner.scan_cmd(io.StringIO(), None, "/tmp/x%04d.pnm", [])
+    assert "--source=Automatic Document Feeder(left aligned,Duplex)" in calls[1]
+    assert calls[1].index("--source=Automatic Document Feeder(left aligned,Duplex)") < calls[1].index("--resolution=300")
+
+
+def test_scan_source_and_mode_together_with_explicit_mode(monkeypatch, clean_env):
+    calls = []
+    monkeypatch.setattr(scanner, "execute_command", lambda log, cmd, **kw: calls.append(cmd))
+    clean_env.setenv("SCAN_SOURCE", "FlatBed")
+    clean_env.setenv("SCAN_MODE", "Black & White")
+    scanner.scan_cmd(io.StringIO(), None, "/tmp/x%04d.pnm", ["--mode=True Gray"])
+    cmd = calls[0]
+    assert "--source=FlatBed" in cmd
+    assert [a for a in cmd if a.startswith("--mode=")] == ["--mode=True Gray"]
+
+
+def test_explicit_source_argument_wins(monkeypatch, clean_env):
+    calls = []
+    monkeypatch.setattr(scanner, "execute_command", lambda log, cmd, **kw: calls.append(cmd))
+    clean_env.setenv("SCAN_SOURCE", "FlatBed")
+    scanner.scan_cmd(io.StringIO(), None, "/tmp/x%04d.pnm", ["--source=Automatic Document Feeder(left aligned)"])
+    assert [a for a in calls[0] if a.startswith("--source=")] == ["--source=Automatic Document Feeder(left aligned)"]

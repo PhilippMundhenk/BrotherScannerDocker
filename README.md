@@ -77,6 +77,8 @@ The startup scripts automatically tries to guess the host interface and adjust t
 
 File sizes: a 300 dpi 24-bit colour page is about 4 MB as a lossless PDF. For documents, set `SCAN_MODE=True Gray` (about a third) or `SCAN_MODE=Black & White` (a few tens of KB), and/or `USE_JPEG_COMPRESSION=true`. The OCR service keeps the page images it receives, so these settings also decide the size of the OCR copy.
 
+Duplex scanners: this image was written for simplex ADFs (front pages first, then the rear pages through "Scan to E-mail", merged into one PDF). If your device lists a duplex source in the capabilities at startup, set `SCAN_SOURCE` to it (for example `SCAN_SOURCE=Automatic Document Feeder(left aligned,Duplex)`); the device then delivers both sides of every sheet in one pass as consecutive pages, and the rear-page scan is not needed. The value must match the device's wording exactly, including the parentheses.
+
 Calibration: the ADF feeds the sheet a little before the sensor starts, so the first millimetre or two of a page are not scanned and the 297 mm window reaches past the trailing edge, which shows as a dark or white bar at the bottom. The lost top edge cannot be recovered, but the window can be adjusted with `SCAN_TOP_MM`, `SCAN_HEIGHT_MM`, `SCAN_LEFT_MM` and `SCAN_WIDTH_MM`: scan a page with a ruler on it, compare, and set the values accordingly (`SCAN_HEIGHT_MM=295` is the usual fix for the bar). The device clamps the width to its maximum (211.9 mm on the MFC-L2700DW).
 
 Note that the mounted folder /scans needs to have the correct permissions.
@@ -103,6 +105,7 @@ You can configure the tool via environment variables:
 | IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
 | RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
 | SCAN_MODE | optional | Scan mode as listed by the device in the capabilities at startup, e.g. `True Gray` or `Black & White` (default: device default, usually 24-bit colour). Scan to OCR uses `True Gray` unless this is set |
+| SCAN_SOURCE | optional | Paper source as listed by the device at startup, e.g. `Automatic Document Feeder(left aligned,Duplex)` on duplex models or `FlatBed` (default: device default) |
 | SCAN_LEFT_MM, SCAN_TOP_MM, SCAN_WIDTH_MM, SCAN_HEIGHT_MM | optional | Scan window in millimetres (defaults 0, 0, 215, 297). Use to calibrate the page position, e.g. `SCAN_HEIGHT_MM=295` removes the bar at the bottom of ADF scans |
 | REAR_PAGE_WAIT_SECONDS | optional | How long a front scan waits for a rear scan before it is converted to PDF (default: 120) |
 | REMOVE_BLANK_THRESHOLD                   | optional  | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |

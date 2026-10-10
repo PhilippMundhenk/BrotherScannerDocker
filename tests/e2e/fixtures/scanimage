@@ -11,7 +11,7 @@ Behaviour:
     A4 size at the requested --resolution (default 300 dpi), each with a large
     black rectangle so blank page removal keeps them, sleeping SIM_SCAN_SECONDS
     (default 0.5) per page like a real ADF would
-  * the --mode value, if any, is echoed to stderr so tests can check it
+  * the --mode and --source values, if any, are echoed to stderr so tests can check them
   * SIM_FAIL=true makes every scan exit 1 without writing pages
 """
 
@@ -26,6 +26,7 @@ def main(argv):
     if any(a in ("-A", "-L", "--all-options", "--list-devices", "--help", "-h", "-V", "--version") for a in argv):
         print("device `brother4:net1;dev0' is a Brother MFC-SIMULATOR USB scanner (simulated)")
         print("    --mode Black & White|Gray[Error Diffusion]|True Gray|24bit Color[Fast] [24bit Color[Fast]]")
+        print("    --source FlatBed|Automatic Document Feeder(left aligned)|Automatic Document Feeder(left aligned,Duplex) [Automatic Document Feeder(left aligned)]")
         return 0
 
     batch = next((a.split("=", 1)[1] for a in argv if a.startswith("--batch=")), None)
@@ -35,7 +36,8 @@ def main(argv):
 
     resolution = int(next((a.split("=", 1)[1] for a in argv if a.startswith("--resolution=")), "300"))
     mode = next((a.split("=", 1)[1] for a in argv if a.startswith("--mode=")), "24bit Color[Fast]")
-    print(f"scanimage simulator: mode={mode} resolution={resolution}", file=sys.stderr)
+    source = next((a.split("=", 1)[1] for a in argv if a.startswith("--source=")), "Automatic Document Feeder(left aligned)")
+    print(f"scanimage simulator: mode={mode} source={source} resolution={resolution}", file=sys.stderr)
 
     if os.environ.get("SIM_FAIL", "").lower() == "true":
         print("scanimage: sane_start: Document feeder jammed (simulated)", file=sys.stderr)

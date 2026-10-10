@@ -153,6 +153,12 @@ def scan_cmd(
     scan_mode = os.environ.get("SCAN_MODE", "").strip()
     if scan_mode and not any(arg.startswith("--mode=") for arg in scanimage_args):
         mode_args = [f"--mode={scan_mode}"]
+    # SCAN_SOURCE selects the paper source, e.g. "Automatic Document Feeder(left
+    # aligned,Duplex)" on duplex-capable models or "FlatBed"; the values are the
+    # ones the device lists at container start. Unset keeps the device default.
+    scan_source = os.environ.get("SCAN_SOURCE", "").strip()
+    if scan_source and not any(arg.startswith("--source=") for arg in scanimage_args):
+        mode_args.append(f"--source={scan_source}")
     # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name
     #   for some reason.
     # Let's use the default scanner for now

@@ -98,6 +98,22 @@ test.describe('scan pipeline (simulated scanner)', () => {
     }
   });
 
+  test('SCAN_SOURCE reaches the scanner call (duplex ADF)', async ({ request }) => {
+    // #77: the scan scripts read SCAN_SOURCE from env.txt; inject it for this test only.
+    inContainer(['bash', '-c', "echo 'SCAN_SOURCE=Automatic Document Feeder(left aligned,Duplex)' >> /opt/brother/scanner/env.txt"]);
+    try {
+      const before = (await listFiles(request)).map((f) => f.file);
+      await triggerScan(request, 'file');
+      const scanned = await waitForNewFile(request, before, 60_000, (n) => !n.endsWith('-ocr.pdf'));
+      expect(pdfPageCount(scanned)).toBe(2);
+      const log = inContainer(['cat', '/var/log/scanner.log']);
+      expect(log).toContain("'--source=Automatic Document Feeder(left aligned,Duplex)'");
+      expect(log).toContain('source=Automatic Document Feeder(left aligned,Duplex) resolution=100');
+    } finally {
+      inContainer(['sed', '-i', '/^SCAN_SOURCE=/d', '/opt/brother/scanner/env.txt']);
+    }
+  });
+
   test('scan button in the UI shows the waiting state and returns to ready', async ({ page, request }) => {
     const before = (await listFiles(request)).map((f) => f.file);
     await page.goto('/');
