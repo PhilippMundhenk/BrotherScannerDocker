@@ -25,6 +25,20 @@ function set_state_ocr() {
     $('.trigger-scan').removeClass('disabled');
 }
 
+// OCR queue line under the status: hidden while nothing is queued.
+function set_queue(queue) {
+    var line = $('#queue-text');
+    if (!queue) { line.addClass('d-none'); return; }
+    var parts = [];
+    if (queue.in_progress > 0) { parts.push(queue.in_progress + ' running'); }
+    if (queue.pending > 0) { parts.push(queue.pending + ' waiting'); }
+    if (queue.failed > 0) { parts.push(queue.failed + ' failed'); }
+    if (parts.length === 0) { line.addClass('d-none'); return; }
+    var text = 'OCR: ' + parts.join(', ');
+    if (queue.holding) { text += ' (waiting for the scanner)'; }
+    line.text(text).removeClass('d-none');
+}
+
 function set_state(state) {
     switch (state) {
         case 'idle':
@@ -147,6 +161,7 @@ $(document).ready(function() {
                 state = 'idle';
             }
             set_state(state);
+            set_queue(data.queue);
         });
     }, 1000);
 

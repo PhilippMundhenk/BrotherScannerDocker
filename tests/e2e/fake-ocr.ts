@@ -15,8 +15,9 @@ import * as http from 'http';
  *   empty    HTTP 200 with an empty body
  *   error    HTTP 500
  *   short    HTTP 200 with a valid PDF that has one page fewer than the upload
+ *   slow     like pdf, but the answer takes 8 seconds (queue tests)
  */
-export type OcrMode = 'pdf' | 'garbage' | 'empty' | 'error' | 'short';
+export type OcrMode = 'pdf' | 'garbage' | 'empty' | 'error' | 'short' | 'slow';
 
 /** Count the page objects of a PDF (not the /Pages tree node). */
 export function countPdfPages(pdf: Buffer): number {
@@ -58,7 +59,7 @@ export function buildPdf(pages: number, label = 'fake OCR output'): Buffer {
 export function startFakeOcr(): Promise<http.Server> {
   let mode: OcrMode = 'pdf';
   const server = http.createServer((req, res) => {
-    const modeMatch = /^\/mode\/(pdf|garbage|empty|error|short)$/.exec(req.url || '');
+    const modeMatch = /^\/mode\/(pdf|garbage|empty|error|short|slow)$/.exec(req.url || '');
     if (modeMatch && req.method === 'POST') {
       mode = modeMatch[1] as OcrMode;
       res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -89,6 +90,12 @@ export function startFakeOcr(): Promise<http.Server> {
         case 'short':
           res.writeHead(200, { 'Content-Type': 'application/pdf' });
           res.end(buildPdf(Math.max(1, uploadedPages - 1)));
+          return;
+        case 'slow':
+          setTimeout(() => {
+            res.writeHead(200, { 'Content-Type': 'application/pdf' });
+            res.end(buildPdf(uploadedPages));
+          }, 8000);
           return;
         default:
           res.writeHead(200, { 'Content-Type': 'application/pdf' });

@@ -57,7 +57,8 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                     <span id="status-image" class="d-block mx-auto rounded-circle img-fluid text-white"> <i
                             class="far fa-smile fa-fw fa-10x"></i></span>
                     <h1 class="   text-light mb-2 mt-5"><strong><?php echo($MODEL); ?></strong> </h1>
-                    <p class="lead  text-light mb-5" id="status-text">Ready to scan</p>
+                    <p class="lead  text-light mb-2" id="status-text">Ready to scan</p>
+                    <p class="small text-light mb-5 d-none" id="queue-text" title="Scans waiting for OCR (the queue is in /scans/.ocr_queue)"></p>
 
                     <?php 
                 if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
@@ -108,7 +109,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <?php include('views/frontend/common-javascript.php'); ?>
 
 
-    <script src="/assets/scripts.min.js?ver=1.2"></script>
+    <script src="/assets/scripts.min.js?ver=1.3"></script>
 
 
 </body>

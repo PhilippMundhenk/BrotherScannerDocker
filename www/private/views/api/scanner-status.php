@@ -44,6 +44,22 @@ function scannerReachable() {
     return trim((string)@file_get_contents($file)) === '1';
 }
 
+/**
+ * OCR queue folders (see ocr_queue.py): how many scans wait for OCR, are
+ * being uploaded, or failed for good; and whether the worker is holding the
+ * upload back because the scanner is busy.
+ */
+function ocrQueue() {
+    $root = '/scans/.ocr_queue';
+    $counts = array();
+    foreach (array('pending', 'in_progress', 'failed') as $dir) {
+        $counts[$dir] = count(glob($root . '/' . $dir . '/*.job') ?: array());
+    }
+    $hold = sys_get_temp_dir() . '/STATUS_OCR_HOLD';
+    $counts['holding'] = file_exists($hold) && time() - filemtime($hold) < 1800;
+    return $counts;
+}
+
 // scan:      scanner.py marks the scan phase with a status file; the process
 //            check stays as a fallback for scans started outside the scripts.
 // waiting:   the front scan is waiting for rear pages (status file, 3 minutes).
@@ -54,6 +70,7 @@ $result = array(
     'waiting' => isStatusSet('waiting', 180),
     'ocr' => isProcessRunning('curl'),
     'reachable' => scannerReachable(),
+    'queue' => ocrQueue(),
 );
 
 // Output the result as JSON
