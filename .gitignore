@@ -1,3 +1,7 @@
 docker-compose.yml
 .vscode
 !.vscode/launch.json
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/

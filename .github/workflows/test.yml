@@ -1,10 +1,10 @@
 name: Tests
 
-# Runs as a standalone workflow on pushes and PRs, and is also reusable
-# (workflow_call) so the publish workflows can gate their Docker builds
-# on the same checks without duplicating step definitions.
+# Runs standalone on pushes to non-master branches and is reusable
+# (workflow_call) so the publish workflows gate their Docker builds on the
+# same checks. PRs run it through the PR publish workflow, so there is no
+# separate pull_request trigger (that would run everything twice).
 on:
-  pull_request:
   push:
     branches-ignore:
       - master
@@ -28,3 +28,46 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y bats
       - name: Run bats unit tests
         run: bats tests/unit
+
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: pip install pytest requests==2.32.3
+      - name: Run Python unit tests
+        run: pytest tests/python
+
+  # End-to-end: build the image, run it with a simulated scanner and a fake
+  # OCR service, and drive the web UI and the API with Playwright.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image under test
+        run: docker build -t brotherscanner:e2e .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        working-directory: tests/e2e
+        env:
+          IMAGE: brotherscanner:e2e
+        run: npx playwright test
+      - name: Upload report and container logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-output
+          path: tests/e2e/output
+          if-no-files-found: ignore

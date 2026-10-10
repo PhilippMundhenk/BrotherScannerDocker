@@ -1,51 +1,71 @@
 # Tests
 
-Static analysis (shellcheck) and unit tests (bats-core) for the bash
-scripts in this repository.
+Four layers, all run by `.github/workflows/test.yml`, which the publish
+workflows call before building an image (so a pull request or a push to
+master only produces an image when every layer is green):
+
+| Layer | Tool | What it covers | Command |
+|---|---|---|---|
+| static analysis | shellcheck | the remaining shell scripts: `files/runScanner.sh`, `run.sh`, `update-container.sh` | `make lint` |
+| shell hygiene | bats-core | `bash -n` on the shell scripts, executable bits in `script/`, Dockerfile sanity | `bats tests/unit` |
+| Python units | pytest | `script/scanner.py` (environment parsing, blank page removal, post-processing, rear wait), the OCR queue (`script/ocr_queue.py`) and the notification helpers, with subprocesses mocked | `pytest tests/python` |
+| end-to-end | Playwright | the built image running with a simulated scanner and a fake OCR service: web UI, REST API, scan pipeline, OCR queue, file ownership | `cd tests/e2e && npx playwright test` |
 
 ## Running locally
 
 ```bash
-# Install once
+# static analysis + shell hygiene
 sudo apt-get install -y bats shellcheck
-
-# Run everything
-make test          # from repo root
-# or
+make lint
 bats tests/unit
-shellcheck script/*.sh files/*.sh
+
+# Python units
+pip install pytest requests==2.32.3
+pytest tests/python
+
+# end-to-end (needs Docker and Node 18+)
+docker build -t brotherscanner:e2e .
+cd tests/e2e
+npm ci
+npx playwright install chromium        # once
+IMAGE=brotherscanner:e2e npx playwright test
 ```
+
+`npm run report` opens the HTML report of the last run. On failure, the
+container log and `/var/log/scanner.log` are saved to `tests/e2e/output/`.
 
 ## Layout
 
 ```
 tests/
-  helpers/
-    common.bash        # shared setup, mock helpers
-  unit/
-    *.bats             # one file per script under test
+  helpers/common.bash        shared bats helpers
+  unit/*.bats                bats tests
+  python/
+    conftest.py              puts script/ on sys.path, clean_env fixture
+    test_*.py                pytest tests
+  e2e/
+    fixtures/scanimage       scanner simulator (stand-in for SANE's scanimage)
+    fixtures/sample.pdf      seeded into /scans; also the fake OCR response
+    global-setup.ts          starts the container and the fake OCR service
+    helpers.ts               API helpers, docker exec helpers
+    tests/*.spec.ts          Playwright specs
 ```
 
-## Mocking
+## The scanner simulator
 
-External commands (`curl`, `wget`, `sshpass`, `ssh`, `pdfinfo`, `gs`,
-`pdftk`, `scanimage`, `gm`, `nawk`, etc.) are mocked by prepending a
-test-scoped directory of fake binaries to `$PATH`. See
-`helpers/common.bash` for `mock_command` / `mock_record`.
+`tests/e2e/fixtures/scanimage` is a small Python program that is bind-mounted
+over `/usr/bin/scanimage` in the test container. The real pipeline (the
+`scanto*.py` entry points, `scanner.py`, GraphicsMagick, Ghostscript, pdftk,
+the OCR queue worker) runs unchanged; only the scanner itself is simulated.
+It answers device queries, writes `SIM_PAGES` PGM pages per scan (each with a
+black rectangle so blank page removal keeps them), sleeps `SIM_SCAN_SECONDS`
+per page, and fails every scan when `SIM_FAIL=true`.
 
-## What is covered
+The test container also runs with `REAR_PAGE_WAIT_SECONDS=6` so that a front
+scan converts after six seconds instead of two minutes, and `KEEPALIVE=false`
+since there is no device to register with.
 
-| Script | Coverage |
-|---|---|
-| `script/trigger_telegram.sh` | env gating, encoded message body, wget call |
-| `script/trigger_inotify.sh` | env gating, sshpass invocation, failure exit |
-| `script/sendtoftps.sh` | env gating, curl invocation, failure exit |
-| `script/remove_blank.sh` | env gating (no-op when threshold unset) |
-| `script/scantoemail-0.2.4-1.sh` | trigger message, scanRear delegation |
-| `script/scantoocr-0.2.4-1.sh` | placeholder error message |
-| `script/scantoimage-0.2.4-1.sh` | placeholder error message |
-| All `*.sh` | parses with `bash -n`, executable bit set |
+## What is not covered
 
-What is *not* covered (would require live hardware or hours of
-mocked-up fixtures): the full `scantofile`/`scanRear` scan pipeline,
-`runScanner.sh` interface detection, the lighttpd PHP front-end.
+The Brother driver itself (`brscan4`, `brscan-skey`): registration with the
+device, the button events, and the SNMP keepalive. Those need real hardware.

@@ -6,20 +6,10 @@ setup() {
   load '../helpers/common'
 }
 
-# List of scripts to lint. Symlinks (scantofile.sh -> scantofile-0.2.4-1.sh
-# etc.) are handled by globbing the versioned files plus the standalone
-# helpers.
+# Shell scripts left after the Python rewrite: the container entrypoint
+# and the two maintainer helpers.
 shell_scripts() {
   printf '%s\n' \
-    "$SCRIPT_DIR/remove_blank.sh" \
-    "$SCRIPT_DIR/scanRear.sh" \
-    "$SCRIPT_DIR/scantoemail-0.2.4-1.sh" \
-    "$SCRIPT_DIR/scantofile-0.2.4-1.sh" \
-    "$SCRIPT_DIR/scantoimage-0.2.4-1.sh" \
-    "$SCRIPT_DIR/scantoocr-0.2.4-1.sh" \
-    "$SCRIPT_DIR/sendtoftps.sh" \
-    "$SCRIPT_DIR/trigger_inotify.sh" \
-    "$SCRIPT_DIR/trigger_telegram.sh" \
     "$REPO_ROOT/files/runScanner.sh" \
     "$REPO_ROOT/run.sh" \
     "$REPO_ROOT/update-container.sh"
@@ -55,10 +45,10 @@ shell_scripts() {
   grep -qE '^COPY[[:space:]]+script[[:space:]]+/opt/brother/scanner/brscan-skey/script' "$REPO_ROOT/Dockerfile"
 }
 
-@test "Dockerfile installs the packages remove_blank.sh depends on" {
-  # pdfinfo from poppler-utils; gs from ghostscript; pdftk; nawk from
-  # graphicsmagick? actually nawk is not in the package list - flag it.
-  grep -qE 'poppler-utils' "$REPO_ROOT/Dockerfile"
-  grep -qE 'ghostscript'   "$REPO_ROOT/Dockerfile"
-  grep -qE 'pdftk'         "$REPO_ROOT/Dockerfile"
+@test "Dockerfile installs the packages the scan pipeline depends on" {
+  # pdfinfo from poppler-utils; gs from ghostscript; pdftk; gm from graphicsmagick
+  grep -qE 'poppler-utils'  "$REPO_ROOT/Dockerfile"
+  grep -qE 'ghostscript'    "$REPO_ROOT/Dockerfile"
+  grep -qE 'pdftk'          "$REPO_ROOT/Dockerfile"
+  grep -qE 'graphicsmagick' "$REPO_ROOT/Dockerfile"
 }

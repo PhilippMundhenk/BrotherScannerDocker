@@ -53,8 +53,9 @@ groupadd --gid "$GROUPID" NAS
 adduser "$NAME" --uid "$USERID" --gid "$GROUPID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
-touch /var/log/scanner.log
+echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
+chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 echo "-----"
@@ -107,7 +108,7 @@ else
   su - "$NAME" -s /bin/bash -c '
     export $(grep -v "^#" /opt/brother/scanner/env.txt | xargs)
     while true; do
-      /opt/brother/scanner/brscan-skey/script/ocr_worker.sh
+      python3 /opt/brother/scanner/brscan-skey/script/ocr_queue.py worker
       echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"
       sleep 5
     done
@@ -125,6 +126,9 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "<?php"
     echo "\$UID=$USERID;"
     echo "\$MODEL=\"$MODEL\";"
+    if [[ -n "$TZ" ]]; then
+      echo "\$TZ=\"$TZ\";"
+    fi
     if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
       echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
     fi
@@ -149,17 +153,23 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
+    if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+    fi
     echo "?>"
 
   } >/var/www/html/config.php
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
   fi
+
   echo "running on port $PORT"
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+
 else
   echo "webserver not configured"
 fi
