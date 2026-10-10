@@ -12,7 +12,8 @@ the persistent volume so the queue survives container restarts):
 
     pending/      newly enqueued jobs, oldest first by filename prefix
     in_progress/  the single job currently being processed
-    failed/       jobs that exceeded OCR_MAX_ATTEMPTS
+    failed/       jobs that exceeded OCR_MAX_ATTEMPTS, plus any invalid
+                  response the OCR service returned (<job>.response-<n>)
 
 A job file is plain KEY=VALUE text:
 
@@ -24,6 +25,11 @@ A job file is plain KEY=VALUE text:
 All state transitions are a single rename within the same directory tree, so
 the queue is safe on filesystems without inotify or flock (SMB mounts).
 
+The OCR result is downloaded to a temporary name and only moved to
+<date>-ocr.pdf after it has been validated (PDF header, parseable, same page
+count as the original). The original scan is removed (REMOVE_ORIGINAL_AFTER_OCR)
+only after that validation passed, never otherwise.
+
 Usage:
     ocr_queue.py worker                       run the worker loop (forever)
     ocr_queue.py enqueue <pdf> <date> <side>  add a job (used by tests/tools)
@@ -31,10 +37,11 @@ Usage:
 
 import glob
 import os
+import re
 import subprocess
 import sys
 import time
-from typing import Callable, Dict, Optional, TextIO
+from typing import Callable, Dict, Optional, TextIO, Tuple
 
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
@@ -42,6 +49,7 @@ from trigger_telegram import trigger_telegram
 
 DEFAULT_QUEUE_DIR = "/scans/.ocr_queue"
 DEFAULT_OUTPUT_DIR = "/scans"
+PART_SUFFIX = ".part"
 
 
 def queue_root() -> str:
@@ -120,6 +128,43 @@ def recover(root: Optional[str] = None) -> int:
 
 
 #
+# PDF validation
+#
+def pdf_page_count(path: str) -> Optional[int]:
+    """Page count via pdfinfo, or None when the file is not a readable PDF."""
+    try:
+        result = subprocess.run(["pdfinfo", path], capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    match = re.search(r"^Pages:\s*(\d+)", result.stdout, re.MULTILINE)
+    return int(match.group(1)) if match else None
+
+
+def validate_pdf(
+    path: str, expected_pages: Optional[int], count_pages: Callable[[str], Optional[int]] = pdf_page_count
+) -> Tuple[bool, str]:
+    """Check that path is a usable PDF with the expected number of pages."""
+    try:
+        size = os.path.getsize(path)
+    except OSError as error:
+        return False, f"missing: {error}"
+    if size == 0:
+        return False, "empty file"
+    with open(path, "rb") as handle:
+        head = handle.read(5)
+    if head != b"%PDF-":
+        return False, f"not a PDF (starts with {head!r}, {size} bytes)"
+    pages = count_pages(path)
+    if pages is None:
+        return False, "pdfinfo cannot read it"
+    if expected_pages is not None and pages != expected_pages:
+        return False, f"{pages} pages, original has {expected_pages}"
+    return True, f"{pages} pages, {size} bytes"
+
+
+#
 # Processing
 #
 def upload(pdf_path: str, output_path: str, url: str, run: Callable = subprocess.run) -> bool:
@@ -135,8 +180,31 @@ def upload(pdf_path: str, output_path: str, url: str, run: Callable = subprocess
     return result.returncode == 0
 
 
-def process_job(job: Dict[str, str], output_dir: Optional[str] = None, run: Callable = subprocess.run) -> bool:
-    """Upload one job and run the post-OCR side effects. True on success."""
+def keep_invalid_response(part_path: str, job: Dict[str, str], root: Optional[str]) -> Optional[str]:
+    """Move an invalid OCR response into failed/ next to the job for inspection."""
+    dirs = ensure_dirs(root)
+    attempt = job.get("ATTEMPTS", "0")
+    target = os.path.join(dirs["failed"], f"{job.get('DATE', 'unknown')}.response-{attempt}")
+    try:
+        os.replace(part_path, target)
+        return target
+    except OSError as error:
+        log(f"could not keep invalid response {part_path}: {error}")
+        try:
+            os.remove(part_path)
+        except OSError:
+            pass
+        return None
+
+
+def process_job(
+    job: Dict[str, str],
+    output_dir: Optional[str] = None,
+    run: Callable = subprocess.run,
+    count_pages: Callable[[str], Optional[int]] = pdf_page_count,
+    root: Optional[str] = None,
+) -> bool:
+    """Upload one job, validate the result and run the post-OCR side effects. True on success."""
     env = os.environ
     pdf = job.get("PDF", "")
     date = job.get("DATE", "")
@@ -154,16 +222,29 @@ def process_job(job: Dict[str, str], output_dir: Optional[str] = None, run: Call
         log(f"input PDF missing: {pdf}")
         return False
 
+    expected_pages = count_pages(pdf)
+    if expected_pages is None:
+        log(f"warning: cannot determine page count of {pdf}; the result's page count will not be compared")
+
     ocr_name = f"{date}-ocr.pdf"
     output_path = os.path.join(output_dir, ocr_name)
+    part_path = output_path + PART_SUFFIX
     url = f"{server}:{port}/{path}"
-    log(f"uploading {pdf} to {url}")
-    if not upload(pdf, output_path, url, run=run):
+    log(f"uploading {pdf} ({expected_pages} pages) to {url}")
+    if not upload(pdf, part_path, url, run=run):
         log(f"OCR upload failed for {pdf}")
-        if os.path.exists(output_path):
-            os.remove(output_path)
+        if os.path.exists(part_path):
+            os.remove(part_path)
         return False
-    log(f"OCR finished -> {output_path}")
+
+    valid, detail = validate_pdf(part_path, expected_pages, count_pages=count_pages)
+    if not valid:
+        kept = keep_invalid_response(part_path, job, root)
+        log(f"OCR result for {pdf} rejected: {detail}; original kept" + (f", response saved as {kept}" if kept else ""))
+        return False
+
+    os.replace(part_path, output_path)
+    log(f"OCR finished -> {output_path} ({detail})")
 
     # Best effort side effects; none of them fails the job.
     out: TextIO = sys.stdout
@@ -171,11 +252,17 @@ def process_job(job: Dict[str, str], output_dir: Optional[str] = None, run: Call
     trigger_telegram(out, f"Scanner: {ocr_name} ({side}) OCR finished", env.get("TELEGRAM_TOKEN"), env.get("TELEGRAM_CHATID"))
     sendtoftps(out, env.get("FTP_USER"), env.get("FTP_PASSWORD"), env.get("FTP_HOST"), env.get("FTP_PATH"), output_path)
 
-    if env.get("REMOVE_ORIGINAL_AFTER_OCR") == "true" and os.path.isfile(output_path):
-        try:
-            os.remove(pdf)
-        except OSError as error:
-            log(f"could not remove original {pdf}: {error}")
+    # Only now, with a validated result in place, may the original go.
+    if env.get("REMOVE_ORIGINAL_AFTER_OCR") == "true":
+        ok, why = validate_pdf(output_path, expected_pages, count_pages=count_pages)
+        if ok:
+            try:
+                os.remove(pdf)
+                log(f"removed original {pdf} (REMOVE_ORIGINAL_AFTER_OCR)")
+            except OSError as error:
+                log(f"could not remove original {pdf}: {error}")
+        else:
+            log(f"original {pdf} kept: result failed re-validation ({why})")
     return True
 
 
@@ -187,6 +274,7 @@ def run_worker(
     once: bool = False,
     sleep: Callable[[float], None] = time.sleep,
     run: Callable = subprocess.run,
+    count_pages: Callable[[str], Optional[int]] = pdf_page_count,
 ) -> None:
     """Drain the queue. With once=True, return as soon as pending/ is empty."""
     env = os.environ
@@ -219,7 +307,7 @@ def run_worker(
         # Persist the attempt before uploading so a crash mid-upload still counts.
         write_job(claim, job)
 
-        if process_job(job, run=run):
+        if process_job(job, run=run, count_pages=count_pages, root=root):
             os.remove(claim)
             continue
 
