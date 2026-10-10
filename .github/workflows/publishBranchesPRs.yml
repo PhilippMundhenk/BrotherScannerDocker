@@ -59,3 +59,5 @@ jobs:
           push: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ github.head_ref || github.ref_name }}-${{ github.sha }}

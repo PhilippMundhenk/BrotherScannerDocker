@@ -169,6 +169,24 @@ paths:
               schema:
                 type: object
                 properties:
+                  api_version:
+                    type: integer
+                    description: Incremented when the API changes incompatibly (integrations check this)
+                  version:
+                    type: string
+                    description: Image version (tag, branch and commit, or dev)
+                  device:
+                    type: object
+                    description: Name, model and address of the scanner; capabilities holds the mode, resolution and source options the device listed at startup, each with the device default
+                    properties:
+                      name:
+                        type: string
+                      model:
+                        type: string
+                      host:
+                        type: string
+                      capabilities:
+                        type: object
                   actions:
                     type: array
                     items:

@@ -26,6 +26,7 @@ def main(argv):
     if any(a in ("-A", "-L", "--all-options", "--list-devices", "--help", "-h", "-V", "--version") for a in argv):
         print("device `brother4:net1;dev0' is a Brother MFC-SIMULATOR USB scanner (simulated)")
         print("    --mode Black & White|Gray[Error Diffusion]|True Gray|24bit Color[Fast] [24bit Color[Fast]]")
+        print("    --resolution 100|150|200|300|400|600dpi [300]")
         print("    --source FlatBed|Automatic Document Feeder(left aligned)|Automatic Document Feeder(left aligned,Duplex) [Automatic Document Feeder(left aligned)]")
         return 0
 

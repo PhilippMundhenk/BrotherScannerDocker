@@ -29,6 +29,14 @@ $defaults = array(
 );
 
 json(array(
+        'api_version' => 1,
+        'version' => container_version(),
+        'device' => array(
+                'name' => isset($NAME) && $NAME !== '' ? $NAME : 'Scanner',
+                'model' => isset($MODEL) && $MODEL !== '' ? $MODEL : null,
+                'host' => isset($IPADDRESS) && $IPADDRESS !== '' ? $IPADDRESS : null,
+                'capabilities' => device_capabilities(),
+        ),
         'actions' => array(
                 action_entry('file', 'Scan to file',
                         'Scans the front pages, waits REAR_PAGE_WAIT_SECONDS for a rear scan, converts to PDF and runs the post-processing.',
