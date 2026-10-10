@@ -136,8 +136,9 @@ else
   # starts with a clean environment, so the container environment (OCR_*,
   # FTP_*, SSH_*, TELEGRAM_*, REMOVE_ORIGINAL_AFTER_OCR) is loaded from env.txt
   # the same way the scan scripts do it.
+  # ocr_queue.py loads the container environment from env.txt itself, so no
+  # shell export is needed (env.txt contains UID, which bash refuses to export).
   su - "$NAME" -s /bin/bash -c '
-    export $(grep -v "^#" /opt/brother/scanner/env.txt | xargs)
     while true; do
       python3 /opt/brother/scanner/brscan-skey/script/ocr_queue.py worker
       echo "[ocr_worker supervisor] worker exited with $?; restarting in 5s"

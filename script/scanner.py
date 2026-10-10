@@ -77,6 +77,19 @@ def read_environment() -> None:
                 continue  # blank lines, comments, anything that is not KEY=VALUE
             key, value = line.split("=", 1)  # values may contain "=" themselves
             os.environ[key] = value
+    apply_timezone()
+
+
+def apply_timezone() -> None:
+    """Make the C library pick up TZ from the environment.
+
+    The scan scripts are started by brscan-skey from a login shell without TZ;
+    read_environment() puts TZ into os.environ, but datetime.now() keeps using
+    the time zone cached at process start until time.tzset() is called.
+    Without this, job names and log times were in UTC.
+    """
+    if hasattr(time, "tzset"):
+        time.tzset()
 
 
 def execute_command(log: TextIO, command: List[str], **kwargs) -> None:
@@ -452,6 +465,10 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
         clear_status('scan')
 
     # Run conversion process in the background
+    # Everything printed so far sits in the log buffer; flush it before forking,
+    # otherwise parent and child both write it out and every line appears twice.
+    log.flush()
+    sys.stdout.flush()
     pid = os.fork()
     if pid == 0:  # Child process
         wait_for_rear_pages_or_convert(job_name)
@@ -539,6 +556,10 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     if remove_blank_threshold_str is not None and remove_blank_threshold_str != "":
         remove_blank_threshold = float(remove_blank_threshold_str)
 
+    # Everything printed so far sits in the log buffer; flush it before forking,
+    # otherwise parent and child both write it out and every line appears twice.
+    log.flush()
+    sys.stdout.flush()
     pid = os.fork()
     if pid == 0:  # Child process
         convert_and_post_process(job_name, "rear", remove_blank_threshold)
