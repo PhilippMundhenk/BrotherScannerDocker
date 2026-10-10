@@ -81,8 +81,8 @@ To change these IDs, set the `UID` and `GID` environment variables to numeric va
 Unset or empty values use the defaults. `UID=0` also uses UID 1000.
 
 Note that only "Scan to File" and "Scan to Email" are currently implemented.
-The earlier is configured to scan the front page(s) of documents and wait up to two minutes before converting to PDF.
-Within these two minutes, the latter may be called (via scanner buttons, GUI, API) to scan the rear of the same set of pages (just put the scanned stack into document feeder, no prior resorting needed).
+The earlier is configured to scan the front page(s) of documents and wait up to two minutes (`REAR_PAGE_WAIT_SECONDS`) before converting to PDF.
+Within this time, the latter may be called (via scanner buttons, GUI, API) to scan the rear of the same set of pages (just put the scanned stack into document feeder, no prior resorting needed).
 All scans are in turn interleaved correctly and a PDF is created.
 If OCR, FTP, SSH options are specified, these will be executed, as well.
 
@@ -98,6 +98,7 @@ You can configure the tool via environment variables:
 | MODEL                                    | mandatory | Model of your scanner (e.g., MFC-L2700DW)                                                                                                        |
 | IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
 | RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
+| REAR_PAGE_WAIT_SECONDS | optional | How long a front scan waits for a rear scan before it is converted to PDF (default: 120) |
 | REMOVE_BLANK_THRESHOLD                   | optional  | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
 | REMOVE_ORIGINAL_AFTER_OCR                | optional  | Deletes the original scan, once OCR file is saved (default: false)                                                                               |
 | FTP_USER                                 | optional  | Username of an FTP(S) server to upload the completed scan to (see below)                                                                         |
@@ -211,8 +212,10 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 #### API
 
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
-To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|OCR>`
-Also check out the swagger file in the doc directory to see all available endpoints.
+To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|ocr>` (waits for the scan script to finish) or `POST` a form field `target=<file|email|image|ocr>` to `/api/scanner/scanto` (returns immediately).
+`GET /api/scanner/status` tells whether a scan is running, a front scan is waiting for rear pages, or OCR is in progress.
+Files are available via `/api/file-list`, `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` they can also be renamed (`PUT /api/file/<name>/rename`) and deleted (`DELETE /api/file/<name>/delete`).
+The full description is in [doc/swagger.yaml](doc/swagger.yaml).
 
 ## Full Docker Compose Example
 
@@ -260,15 +263,24 @@ services:
 
 ## Customize Scan Scripts
 
-As the standard scripts might not working particularly well for your purpose, you may customize them to your needs.
-You may also add additional scripts, as currently "Scan to Image" and "Scan to OCR" are not being used.
-Have a look in the folder `script/` in this repository for ideas.
-These scripts show some examples on how one might use the buttons on the printer.
-If you change these scripts, make sure to leave the filename as is, as the Brother drivers will call these scripts (or adapt /opt/brother/scanner/brscan-skey/brscan-skey.config).
-Each script corresponds to a shortcut button on the scanner.
-This way you can customize the actions running on your scanner.
+The scan actions are implemented in Python in the folder `script/` of this repository:
 
-Hint: These scripts don't necessarily need to do scanning tasks.
-You can add any shell script here.
+| File | Called for | Does |
+|---|---|---|
+| `scantofile.py` | "Scan to File" button, GUI, API | scans the front pages, waits for rear pages, converts to PDF, runs the post-processing |
+| `scantoemail.py` | "Scan to E-mail" button, GUI, API | scans the rear pages of the last front scan and merges them into one PDF |
+| `scantoocr.py` | "Scan to OCR" button, GUI, API | like scan to file, but in gray mode |
+| `scantoimage.py` | "Scan to Image" button, GUI, API | placeholder, only logs that it is not implemented |
+| `scanner.py` | | the shared pipeline: scanning, blank page removal, PDF conversion, notifications, OCR queueing |
+| `ocr_queue.py` | started by the container | the OCR upload queue worker |
 
-You may mount the scripts in this repository like this: `-v "$PWD/script/:/opt/brother/scanner/brscan-skey/script/"`
+The Brother driver calls these through `/opt/brother/scanner/brscan-skey/brscan-skey.config`, one entry per shortcut button on the scanner.
+If you want different behaviour, mount your own versions over `/opt/brother/scanner/brscan-skey/script/` (for example `-v "$PWD/script/:/opt/brother/scanner/brscan-skey/script/"`) and keep the file names, or point `brscan-skey.config` at anything executable.
+A script does not need to scan at all; any program that the scanner user can run works.
+All scripts log to `/var/log/scanner.log`, which the container prints to its output.
+
+## Development and Testing
+
+Four test layers run in GitHub Actions for every pull request and before every image is published (`.github/workflows/test.yml`): shellcheck and bats for the remaining shell scripts, pytest for the Python pipeline and the OCR queue, and Playwright end-to-end tests that run the built image with a simulated scanner and a fake OCR service and drive the web UI and the API.
+See [tests/README.md](tests/README.md) for how to run them locally and what they cover.
+The Brother driver itself (registration with the device, button events, the SNMP keepalive) cannot be simulated and needs real hardware.

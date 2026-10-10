@@ -126,6 +126,9 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "<?php"
     echo "\$UID=$USERID;"
     echo "\$MODEL=\"$MODEL\";"
+    if [[ -n "$TZ" ]]; then
+      echo "\$TZ=\"$TZ\";"
+    fi
     if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
       echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
     fi

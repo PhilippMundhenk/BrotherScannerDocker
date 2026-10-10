@@ -28,9 +28,18 @@ test.describe('API', () => {
     expect(body.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
-  test('rejects path traversal and unknown files', async ({ request }) => {
-    expect((await request.get('/api/file/..%2F..%2Fetc%2Fpasswd/info')).status()).toBe(400);
+  test('unknown files answer 404, path traversal never leaves /scans', async ({ request }) => {
     expect((await request.get('/api/file/does-not-exist.pdf/info')).status()).toBe(404);
+    const traversal = await request.get('/api/file/..%2F..%2Fetc%2Fpasswd/download');
+    expect([400, 404]).toContain(traversal.status());
+    expect(await traversal.text()).not.toContain('root:');
+    const encoded = await request.get('/api/file/%2E%2E%2F%2E%2E%2Fetc%2Fpasswd/download');
+    expect([400, 404]).toContain(encoded.status());
+  });
+
+  test('timezone of the container is used by the backend', async ({ request }) => {
+    const tz = await (await request.get('/api/dev/timezone')).json();
+    expect(tz.timezone).toBe('UTC');
   });
 
   test('rejects invalid scan targets', async ({ request }) => {
@@ -53,15 +62,19 @@ test.describe('API', () => {
       data: { new_filename: 'Invoice Müller', new_filename_prefix: 'date' },
     });
     expect(rename.status()).toBe(200);
+
+    // The prefix is the file's modification date (container runs in UTC), not the date in the old name.
+    const datePrefix = new Date(before.fileModificationTime * 1000).toISOString().slice(0, 10);
+    const renamedName = `${datePrefix} Invoice Müller.pdf`;
     const after = await listFiles(request);
     expect(after.some((f) => f.file === copy)).toBe(false);
-    const renamed = after.find((f) => f.file === '2026-02-03 Invoice Müller.pdf');
-    expect(renamed).toBeDefined();
+    const renamed = after.find((f) => f.file === renamedName);
+    expect(renamed, `expected ${renamedName} in ${after.map((f) => f.file).join(', ')}`).toBeDefined();
     expect(renamed!.fileModificationTime).toBe(before.fileModificationTime);
 
-    const del = await request.delete(`/api/file/${encodeURIComponent('2026-02-03 Invoice Müller.pdf')}/delete`);
+    const del = await request.delete(`/api/file/${encodeURIComponent(renamedName)}/delete`);
     expect(del.status()).toBe(200);
-    expect((await listFiles(request)).some((f) => f.file === '2026-02-03 Invoice Müller.pdf')).toBe(false);
+    expect((await listFiles(request)).some((f) => f.file === renamedName)).toBe(false);
   });
 
   test('rename rejects invalid names', async ({ request }) => {

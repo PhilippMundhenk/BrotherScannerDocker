@@ -40,11 +40,26 @@ function send_error_page($http_code, $page_title='', $page_message=''){
 function file_get_real_filepath($directory, $filename) {
 
     $filename = basename($filename);
-    $filePath = $directory . DIRECTORY_SEPARATOR . $filename;
+    if ($filename === '' || $filename === '.' || $filename === '..') {
+        return false;
+    }
+
+    $realDirectory = realpath($directory);
+    if ($realDirectory === false) {
+        return false;
+    }
+
+    $filePath = $realDirectory . DIRECTORY_SEPARATOR . $filename;
     $realPath = realpath($filePath);
 
-    if ($realPath === false || strpos($realPath, realpath($directory)) !== 0) {
-        return false; 
+    if ($realPath === false) {
+        // The file does not exist. The path is still confined to the directory
+        // (basename() stripped any directory parts), so let the caller report 404.
+        return $filePath;
+    }
+
+    if (strpos($realPath, $realDirectory . DIRECTORY_SEPARATOR) !== 0) {
+        return false;
     }
 
     return $realPath;
