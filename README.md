@@ -75,6 +75,10 @@ The startup scripts automatically tries to guess the host interface and adjust t
 
 ### Further Notes
 
+File sizes: a 300 dpi 24-bit colour page is about 4 MB as a lossless PDF. For documents, set `SCAN_MODE=True Gray` (about a third) or `SCAN_MODE=Black & White` (a few tens of KB), and/or `USE_JPEG_COMPRESSION=true`. The OCR service keeps the page images it receives, so these settings also decide the size of the OCR copy.
+
+Calibration: the ADF feeds the sheet a little before the sensor starts, so the first millimetre or two of a page are not scanned and the 297 mm window reaches past the trailing edge, which shows as a dark or white bar at the bottom. The lost top edge cannot be recovered, but the window can be adjusted with `SCAN_TOP_MM`, `SCAN_HEIGHT_MM`, `SCAN_LEFT_MM` and `SCAN_WIDTH_MM`: scan a page with a ruler on it, compare, and set the values accordingly (`SCAN_HEIGHT_MM=295` is the usual fix for the bar). The device clamps the width to its maximum (211.9 mm on the MFC-L2700DW).
+
 Note that the mounted folder /scans needs to have the correct permissions.
 By default, the scanner runs with UID 1000 and GID 1000.
 To change these IDs, set the `UID` and `GID` environment variables to numeric values.
@@ -98,6 +102,8 @@ You can configure the tool via environment variables:
 | MODEL                                    | mandatory | Model of your scanner (e.g., MFC-L2700DW)                                                                                                        |
 | IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
 | RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
+| SCAN_MODE | optional | Scan mode as listed by the device in the capabilities at startup, e.g. `True Gray` or `Black & White` (default: device default, usually 24-bit colour). Scan to OCR uses `True Gray` unless this is set |
+| SCAN_LEFT_MM, SCAN_TOP_MM, SCAN_WIDTH_MM, SCAN_HEIGHT_MM | optional | Scan window in millimetres (defaults 0, 0, 215, 297). Use to calibrate the page position, e.g. `SCAN_HEIGHT_MM=295` removes the bar at the bottom of ADF scans |
 | REAR_PAGE_WAIT_SECONDS | optional | How long a front scan waits for a rear scan before it is converted to PDF (default: 120) |
 | REMOVE_BLANK_THRESHOLD                   | optional  | Percentage of content in page until which a page is considered blank. A good default is 0.3. Blank pages are removed if this variable is defined |
 | REMOVE_ORIGINAL_AFTER_OCR                | optional  | Deletes the original scan, once OCR file is saved (default: false)                                                                               |
@@ -131,7 +137,7 @@ The refresh is skipped while a scan is running or a front scan is waiting for re
 | RENAME_GUI_SCANTOEMAIL="Scan rear pages" | optional  | renames GUI button "Scan to email" to "Scan rear pages"                                                                                          |
 | RENAME_GUI_SCANTOIMAGE="Scan photo"      | optional  | renames GUI button "Scan to image" to "Scan photo"                                                                                               |
 | RENAME_GUI_SCANTOOCR="Scan High-Res"     | optional  | renames GUI button "Scan to OCR" to "Scan High-Res"                                                                                              |
-| USE_JPEG_COMPRESSION                     | optional  | use JPEG compression when creating PDFs                                                                                                          |
+| USE_JPEG_COMPRESSION | optional | use JPEG compression when creating PDFs; a 300 dpi colour page shrinks from about 4 MB to a few hundred KB (default: false, lossless) |
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |

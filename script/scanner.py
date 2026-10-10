@@ -12,7 +12,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime
-from typing import List, Optional, TextIO
+from typing import Dict, List, Optional, TextIO
 
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
@@ -111,20 +111,57 @@ def execute_command_pid(log: TextIO, command: List[str], **kwargs) -> int:
     return process.pid
 
 
+DEFAULT_SCAN_AREA_MM = {"left": "0", "top": "0", "width": "215", "height": "297"}
+
+
+def scan_area_mm() -> Dict[str, str]:
+    """Scan window in mm from SCAN_LEFT_MM, SCAN_TOP_MM, SCAN_WIDTH_MM, SCAN_HEIGHT_MM.
+
+    Lets the window be calibrated to the device: the ADF feeds the sheet a
+    little before scanning starts, so a 297 mm window reaches past the trailing
+    edge and shows a dark or white bar; SCAN_HEIGHT_MM=295 trims it. Values
+    that are not numbers fall back to the defaults.
+    """
+    area = dict(DEFAULT_SCAN_AREA_MM)
+    for key, variable in (("left", "SCAN_LEFT_MM"), ("top", "SCAN_TOP_MM"),
+                          ("width", "SCAN_WIDTH_MM"), ("height", "SCAN_HEIGHT_MM")):
+        value = os.environ.get(variable, "").strip()
+        if not value:
+            continue
+        try:
+            number = float(value)
+        except ValueError:
+            print(f"  WARNING: {variable}={value!r} is not a number, using {area[key]} mm")
+            continue
+        if number < 0 or (key in ("width", "height") and number == 0):
+            print(f"  WARNING: {variable}={value!r} out of range, using {area[key]} mm")
+            continue
+        area[key] = f"{number:g}"
+    return area
+
+
 def scan_cmd(
     log: TextIO, device: Optional[str], output_batch: str, scanimage_args: List[str]
 ) -> None:
     log.flush()  # Required, otherwise scanimage output will appear before the already printed output
 
     resolution = os.environ.get("RESOLUTION", 300)
+    area = scan_area_mm()
+    # SCAN_MODE selects the device mode (e.g. "True Gray", "Black & White") for all
+    # scans; an explicit --mode in scanimage_args (scan to OCR) takes precedence.
+    mode_args: List[str] = []
+    scan_mode = os.environ.get("SCAN_MODE", "").strip()
+    if scan_mode and not any(arg.startswith("--mode=") for arg in scanimage_args):
+        mode_args = [f"--mode={scan_mode}"]
     # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name
     #   for some reason.
     # Let's use the default scanner for now
     # fmt: off
     scan_command = [
         "scanimage",
-        "-l", "0", "-t", "0", "-x", "215", "-y", "297",
+        "-l", area["left"], "-t", area["top"], "-x", area["width"], "-y", area["height"],
         "--format=pnm",
+        *mode_args,
         *scanimage_args,
         f"--resolution={resolution}",
         f"--batch={output_batch}",
@@ -315,7 +352,11 @@ def convert_and_post_process(
     input_files.sort()
 
     # Convert pages to single PDF with optional JPEG compression
-    gm_opts = []
+    # The pages are RESOLUTION dpi pixels; tell gm so the PDF page size is right
+    # (A4 at 300 dpi gives 595 x 842 pt). Without this the page is the pixel
+    # size at 72 dpi, i.e. 34 x 49 inches, and every consumer that renders the
+    # page at a fixed dpi (the OCR service, gs) produces 4x the pixels.
+    gm_opts = ["-density", str(os.environ.get("RESOLUTION", 300)), "-units", "PixelsPerInch"]
     if os.environ.get("USE_JPEG_COMPRESSION", "false") == "true":
         gm_opts += GM_COMPRESSED_JPEG_SETTINGS
     execute_command(

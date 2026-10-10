@@ -4,6 +4,7 @@ import {
   listFiles,
   ownerOf,
   pdfPageCount,
+  pdfPageSize,
   queueContents,
   scannerStatus,
   triggerScan,
@@ -36,6 +37,8 @@ test.describe('scan pipeline (simulated scanner)', () => {
     const scanned = await waitForNewFile(request, before, 60_000, (n) => !n.endsWith('-ocr.pdf'));
     expect(scanned).toMatch(/^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.pdf$/);
     expect(pdfPageCount(scanned)).toBe(2);
+    // #120: the page must be A4, not the pixel size at 72 dpi
+    expect(pdfPageSize(scanned)).toContain('595 x 842');
     expect(ownerOf(scanned)).toBe('Scanner');
     // #108: API-triggered scans are attributed in the log; a scan without such a line came from the device
     expect(inContainer(['cat', '/var/log/scanner.log'])).toContain('[API] scan to file triggered via API (return)');

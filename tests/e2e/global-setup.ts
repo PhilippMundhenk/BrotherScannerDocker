@@ -51,6 +51,8 @@ export default async function globalSetup() {
     '-e', 'NAME=Scanner', '-e', 'MODEL=MFC-SIMULATOR', '-e', 'IPADDRESS=192.0.2.10',
     '-e', 'TZ=UTC', '-e', 'KEEPALIVE=false',
     '-e', 'REAR_PAGE_WAIT_SECONDS=6',
+    // A4 pages at 100 dpi keep the simulated scans small; the PDF page size must still be A4.
+    '-e', 'RESOLUTION=100',
     '-e', 'ALLOW_GUI_FILEOPERATIONS=true',
     '-e', 'OCR_SERVER=host.docker.internal', '-e', `OCR_PORT=${ocrPort}`, '-e', 'OCR_PATH=ocr.php',
     '-e', 'OCR_QUEUE_POLL_SECONDS=1', '-e', 'OCR_RETRY_BACKOFF_SECONDS=1', '-e', 'OCR_MAX_ATTEMPTS=3',

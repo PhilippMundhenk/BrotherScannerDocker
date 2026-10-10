@@ -89,6 +89,13 @@ export function pdfPageCount(file: string): number {
   return Number(match[1]);
 }
 
+/** Page size line from pdfinfo, e.g. "595 x 842 pts (A4)". */
+export function pdfPageSize(file: string): string {
+  const info = inContainer(['pdfinfo', `/scans/${file}`]);
+  const match = /^Page size:\s+(.+)$/m.exec(info);
+  return match ? match[1].trim() : '';
+}
+
 export function ownerOf(file: string): string {
   return inContainer(['stat', '-c', '%U', `/scans/${file}`]);
 }

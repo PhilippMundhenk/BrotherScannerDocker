@@ -7,9 +7,11 @@ unchanged against a scanner that does not exist.
 
 Behaviour:
   * device queries (-A, -L, --help, --version) print a fake device line and exit 0
-  * a scan (--batch=<pattern>) writes SIM_PAGES (default 2) binary PGM pages,
-    each with a large black rectangle so blank page removal keeps them,
-    sleeping SIM_SCAN_SECONDS (default 0.5) per page like a real ADF would
+  * a scan (--batch=<pattern>) writes SIM_PAGES (default 2) binary PGM pages of
+    A4 size at the requested --resolution (default 300 dpi), each with a large
+    black rectangle so blank page removal keeps them, sleeping SIM_SCAN_SECONDS
+    (default 0.5) per page like a real ADF would
+  * the --mode value, if any, is echoed to stderr so tests can check it
   * SIM_FAIL=true makes every scan exit 1 without writing pages
 """
 
@@ -17,10 +19,13 @@ import os
 import sys
 import time
 
+A4_INCHES = (8.27, 11.69)
+
 
 def main(argv):
     if any(a in ("-A", "-L", "--all-options", "--list-devices", "--help", "-h", "-V", "--version") for a in argv):
         print("device `brother4:net1;dev0' is a Brother MFC-SIMULATOR USB scanner (simulated)")
+        print("    --mode Black & White|Gray[Error Diffusion]|True Gray|24bit Color[Fast] [24bit Color[Fast]]")
         return 0
 
     batch = next((a.split("=", 1)[1] for a in argv if a.startswith("--batch=")), None)
@@ -28,13 +33,17 @@ def main(argv):
         print("scanimage simulator: --batch=<pattern> is required", file=sys.stderr)
         return 1
 
+    resolution = int(next((a.split("=", 1)[1] for a in argv if a.startswith("--resolution=")), "300"))
+    mode = next((a.split("=", 1)[1] for a in argv if a.startswith("--mode=")), "24bit Color[Fast]")
+    print(f"scanimage simulator: mode={mode} resolution={resolution}", file=sys.stderr)
+
     if os.environ.get("SIM_FAIL", "").lower() == "true":
         print("scanimage: sane_start: Document feeder jammed (simulated)", file=sys.stderr)
         return 1
 
     pages = int(os.environ.get("SIM_PAGES", "2"))
     delay = float(os.environ.get("SIM_SCAN_SECONDS", "0.5"))
-    width, height = 210, 297
+    width, height = round(A4_INCHES[0] * resolution), round(A4_INCHES[1] * resolution)
     dark = b"\x00" * (int(width * 0.8) - int(width * 0.2))
 
     for number in range(1, pages + 1):
