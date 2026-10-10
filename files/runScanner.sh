@@ -26,6 +26,25 @@ keepAliveRegistration() {
   done
 }
 
+echo "setting up secrets:"
+# Docker secrets / *_FILE convention: when VAR is empty and VAR_FILE names a
+# readable file, VAR is read from that file (trailing newlines stripped). This
+# keeps passwords and tokens out of the compose file and the container
+# environment listing.
+for var in FTP_USER FTP_PASSWORD SSH_USER SSH_PASSWORD TELEGRAM_TOKEN TELEGRAM_CHATID; do
+  file_var="${var}_FILE"
+  if [[ -z "${!var}" && -n "${!file_var}" ]]; then
+    if [[ -r "${!file_var}" ]]; then
+      printf -v "$var" '%s' "$(<"${!file_var}")"
+      export "${var?}"
+      echo "read $var from ${!file_var}"
+    else
+      echo "WARNING: $file_var=${!file_var} is not readable, $var stays empty"
+    fi
+  fi
+done
+echo "-----"
+
 echo "setting up user & logfile:"
 
 NAME="${NAME:-Scanner}"
@@ -58,6 +77,10 @@ chown "$NAME" /var/log/scanner.log
 chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
+# env.txt carries the secrets to the scan scripts and the OCR worker, which
+# run as the scanner user; nobody else needs to read it.
+chown "$NAME" /opt/brother/scanner/env.txt
+chmod 600 /opt/brother/scanner/env.txt
 echo "-----"
 
 echo "setting up interface:"
