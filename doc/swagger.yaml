@@ -68,9 +68,31 @@ paths:
   /file-list:
     get:
       summary: List Scanned Files
+      description: Newest first. Without limit the whole list is returned; with limit one page and X-Total-Count carries the total number of files.
+      parameters:
+        - in: query
+          name: offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+          description: Index of the first entry to return (default 0)
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+          description: Number of entries to return (default all)
       responses:
         '200':
           description: Returns a list of scanned files.
+          headers:
+            X-Total-Count:
+              schema:
+                type: integer
+              description: Total number of files in the directory
           content:
             application/json:
               schema:

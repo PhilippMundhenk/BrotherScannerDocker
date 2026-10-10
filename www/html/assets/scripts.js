@@ -44,17 +44,60 @@ function set_state(state) {
     }
 }
 
+// The file drawer loads the newest FILES_BATCH entries first and shows them
+// right away, then keeps appending batches in the background until the whole
+// directory is listed. A generation counter cancels a running load when the
+// drawer is (re)opened or refreshed.
+var FILES_BATCH = 20;
+var files_load_generation = 0;
+
 function load_files_offcanvas(){
+    var generation = ++files_load_generation;
     $.ajax({
-        url: '/list-files',
+        url: '/list-files?offset=0&limit=' + FILES_BATCH,
         method: 'GET',
         success: function(response) {
-            // Populate the Offcanvas with the response content
+            if (generation !== files_load_generation) { return; }
+            // Populate the Offcanvas with the first batch
             $('#offcanvasContent').html(response);
-            
+            load_more_files(generation);
         },
         error: function(xhr, status, error) {
             console.error('Failed to load content:', error);
+        }
+    });
+}
+
+function load_more_files(generation) {
+    var list = $('#fileslist');
+    if (list.length === 0 || generation !== files_load_generation) { return; }
+    var loaded = parseInt(list.attr('data-loaded'), 10) || 0;
+    var total = parseInt(list.attr('data-total'), 10) || 0;
+    var limit = parseInt(list.attr('data-limit'), 10) || FILES_BATCH;
+    if (loaded >= total) {
+        $('#fileslist-loading').addClass('d-none');
+        return;
+    }
+    $.ajax({
+        url: '/list-files?offset=' + loaded + '&limit=' + limit + '&fragment=1',
+        method: 'GET',
+        success: function(response) {
+            if (generation !== files_load_generation) { return; }
+            var items = $(response).filter('.list-group-item');
+            $('#fileslist-items').append(items);
+            loaded += items.length;
+            list.attr('data-loaded', loaded);
+            $('#fileslist-loaded').text(loaded);
+            if (items.length === 0) {
+                // Directory shrank meanwhile; stop instead of looping.
+                $('#fileslist-loading').addClass('d-none');
+                return;
+            }
+            load_more_files(generation);
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load more files:', error);
+            $('#fileslist-loading').addClass('d-none');
         }
     });
 }
@@ -70,7 +113,7 @@ $(document).ready(function() {
         }, function(data) {
             console.log(data);
             $(this).blur();
-            
+
         });
     });
 
@@ -80,7 +123,7 @@ $(document).ready(function() {
 
 
             let state = 'idle';
-            
+
 
             if (data.ocr && data.waiting && !data.scan) {
                 state = 'ocr';
@@ -106,7 +149,7 @@ $(document).ready(function() {
         load_files_offcanvas();
         var offcanvas = new bootstrap.Offcanvas($('#offcanvasFiles')[0]);
         offcanvas.show();
-        
+
     });
 
 
@@ -118,13 +161,13 @@ function toggle_file_rename(source_element){
     var parentDiv = source_element.closest('.list-group-item');
     var parentId = parentDiv.attr('id');
 
-    
+
     $("#"+parentId+" .file-info-label-default").toggleClass('d-none');
     $("#"+parentId+" .file-info-label-rename").toggleClass('d-none');
-    
+
     $("#"+parentId+" .file-name").toggleClass('d-none');
     $("#"+parentId+" .file-name-new").toggleClass('d-none');
-    
+
     $("#"+parentId+" .file-buttons-default").toggleClass('d-none');
     $("#"+parentId+" .file-buttons-rename").toggleClass('d-none');
 
@@ -138,7 +181,7 @@ function toggle_file_delete(source_element){
 
     $("#"+parentId+" .file-info-label-default").toggleClass('d-none');
     $("#"+parentId+" .file-info-label-delete").toggleClass('d-none');
-    
+
     $("#"+parentId+" .file-buttons-default").toggleClass('d-none');
     $("#"+parentId+" .file-buttons-delete").toggleClass('d-none');
 }
@@ -154,7 +197,7 @@ function toggle_file_error(parentId, message){
                 </div>`;
     $('#'+parentId).html(html);
 
-}   
+}
 
 
 function toggle_file_success(parentId, message){
@@ -167,7 +210,7 @@ function toggle_file_success(parentId, message){
                 </div>`;
     $('#'+parentId).html(html);
 
-}   
+}
 
 
 $(document).on("click", ".refresh-files", function (e) {
@@ -195,21 +238,21 @@ $(document).on("click", ".file-rename-confirm", function (e) {
 
     var new_filename_prefix = 'none';
 
-    if($("#"+parentId+" .file-rename-prefix-none").is(':checked')) { 
+    if($("#"+parentId+" .file-rename-prefix-none").is(':checked')) {
         new_filename_prefix = 'none';
     }
-    if($("#"+parentId+" .file-rename-prefix-date").is(':checked')) { 
+    if($("#"+parentId+" .file-rename-prefix-date").is(':checked')) {
         new_filename_prefix = 'date';
     }
     if($("#"+parentId+" .file-rename-prefix-datetime").is(':checked')) {
         new_filename_prefix = 'datetime';
     }
 
-    
+
     console.log('url: '+url);
     console.log('filename: '+filename);
     console.log('new_filename: '+new_filename);
-    console.log('new_filename_prefix: '+new_filename_prefix); 
+    console.log('new_filename_prefix: '+new_filename_prefix);
 
 
     if (new_filename == '' && new_filename_prefix == 'none') {
@@ -228,7 +271,7 @@ $(document).on("click", ".file-rename-confirm", function (e) {
             contentType: 'application/json',
             data: JSON.stringify(payload),
             success: function(response) {
-                
+
                 console.log(response);
                 console.log('File renamed');
                 toggle_file_rename($(this));
@@ -240,13 +283,13 @@ $(document).on("click", ".file-rename-confirm", function (e) {
                 toggle_file_error(parentId, 'Rename failed');
             }
         });
-        
+
     }
 
-      
 
 
-    
+
+
 });
 
 $(document).on("click", ".file-rename-cancel", function (e) {
@@ -275,28 +318,17 @@ $(document).on("click", ".file-delete-confirm", function (e) {
             setTimeout(() => {
                 load_files_offcanvas();
             }, 500);
-            
-            
+
+
         },
         error: function(response, xhr, status, error) {
             toggle_file_error(parentId, 'Delete failed');
         }
     });
-    
+
 });
 
 $(document).on("click", ".file-delete-cancel", function (e) {
     e.preventDefault();
     toggle_file_delete($(this));
 });
-
-
-
-//document.addEventListener('DOMContentLoaded', function () {
-//    var offcanvasElement = document.getElementById('offcanvasExample');
-//    offcanvasElement.addEventListener('shown.bs.offcanvas', function () {
-//        // Trigger any necessary initialization here
-//        // For example, you can reinitialize the radio buttons or any other components
-//        console.log('Offcanvas is shown');
-//    });
-//});
