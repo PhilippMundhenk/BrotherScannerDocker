@@ -11,6 +11,6 @@
     cd "$(dirname "$0")" || exit
     pwd -P
   )"
-  /bin/bash "$SCRIPTPATH"/scanRear.sh $@
+  /bin/bash "$SCRIPTPATH"/scanRear.sh "$@"
 
 } >>/var/log/scanner.log 2>&1
