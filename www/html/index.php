@@ -31,9 +31,6 @@ require_once('classes/AltoRouter.php');
 require_once('helper.php');
 require_once('settings.php');
 
-// Settings from the configuration file for keys the environment does not set
-settings_overlay_globals();
-
 if (!isset($TZ)) {
 	$TZ = 'Europe/Berlin';
 }

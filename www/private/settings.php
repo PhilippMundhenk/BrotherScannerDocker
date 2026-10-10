@@ -26,6 +26,9 @@ function settings_catalogue_entry($key) {
 
 function settings_config_path() {
     global $SCANNER_CONFIG_FILE;
+    if (!isset($SCANNER_CONFIG_FILE) && getenv('SCANNER_CONFIG_FILE')) {
+        return getenv('SCANNER_CONFIG_FILE');
+    }
     if (isset($SCANNER_CONFIG_FILE) && $SCANNER_CONFIG_FILE !== '') {
         return $SCANNER_CONFIG_FILE;
     }
@@ -70,6 +73,19 @@ function settings_file_values($path = null) {
         $values[$key] = $value;
     }
     return $values;
+}
+
+/** Non-locked file values for catalogue keys, for extract() in config.php. */
+function settings_file_overlay() {
+    $overlay = array();
+    $locked = settings_locked_keys();
+    foreach (settings_file_values() as $key => $value) {
+        if (isset($locked[$key]) || settings_catalogue_entry($key) === null) {
+            continue;
+        }
+        $overlay[$key] = $value;
+    }
+    return $overlay;
 }
 
 /** Make file values visible to the views: the generated config.php holds the

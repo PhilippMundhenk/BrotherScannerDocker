@@ -34,27 +34,6 @@ keepAliveRegistration() {
   done
 }
 
-echo "setting up configuration file:"
-# Settings may come from a file on the volume (settings page) in addition to
-# the environment. Environment wins; what the environment sets is recorded in
-# locked.txt so the scripts and the settings page know which keys are fixed.
-# shellcheck source=files/config.sh
-source /opt/brother/config.sh
-CONFIG_FILE="$(config_file_path)"
-mkdir -p "$(dirname "$CONFIG_FILE")" && chmod 777 "$(dirname "$CONFIG_FILE")"
-mkdir -p /opt/brother/scanner
-record_locked_keys /opt/brother/scanner/locked.txt
-chmod 644 /opt/brother/scanner/locked.txt
-load_config_file "$CONFIG_FILE" /opt/brother/scanner/locked.txt
-export SCANNER_CONFIG_FILE="$CONFIG_FILE"
-# Defaults for what neither the environment nor the file sets (these used to
-# be ENV lines in the Dockerfile, which made them look environment-set).
-export MODEL="${MODEL:-MFC-L2700DW}"
-export IPADDRESS="${IPADDRESS:-192.168.1.123}"
-export REMOVE_BLANK_THRESHOLD="${REMOVE_BLANK_THRESHOLD-0.3}"
-export FTP_PATH="${FTP_PATH:-/scans/}"
-echo "-----"
-
 echo "setting up secrets:"
 # Docker secrets / *_FILE convention: when VAR is empty and VAR_FILE names a
 # readable file, VAR is read from that file (trailing newlines stripped). This
@@ -72,6 +51,28 @@ for var in FTP_USER FTP_PASSWORD SSH_USER SSH_PASSWORD TELEGRAM_TOKEN TELEGRAM_C
     fi
   fi
 done
+echo "-----"
+
+echo "setting up configuration file:"
+# Settings may come from a file on the volume (settings page) in addition to
+# the environment. Environment wins; what the environment sets (including
+# secrets read from *_FILE above) is recorded in locked.txt so the scripts and
+# the settings page know which keys are fixed.
+# shellcheck source=files/config.sh
+source /opt/brother/config.sh
+CONFIG_FILE="$(config_file_path)"
+mkdir -p "$(dirname "$CONFIG_FILE")" && chmod 777 "$(dirname "$CONFIG_FILE")"
+mkdir -p /opt/brother/scanner
+record_locked_keys /opt/brother/scanner/locked.txt
+chmod 644 /opt/brother/scanner/locked.txt
+load_config_file "$CONFIG_FILE" /opt/brother/scanner/locked.txt
+export SCANNER_CONFIG_FILE="$CONFIG_FILE"
+# Defaults for what neither the environment nor the file sets (these used to
+# be ENV lines in the Dockerfile, which made them look environment-set).
+export MODEL="${MODEL:-MFC-L2700DW}"
+export IPADDRESS="${IPADDRESS:-192.168.1.123}"
+export REMOVE_BLANK_THRESHOLD="${REMOVE_BLANK_THRESHOLD-0.3}"
+export FTP_PATH="${FTP_PATH:-/scans/}"
 echo "-----"
 
 echo "setting up user & logfile:"
@@ -215,6 +216,21 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
       echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
     fi
+    # every other environment variable with a setting-like name, escaped as a PHP
+    # string literal, so the settings page can show environment-set values
+    while IFS= read -r key; do
+      case "$key" in PATH|HOME|HOSTNAME|PWD|SHLVL|TERM|OLDPWD|UID|GID|EUID|PPID|LANG|LC_ALL|_|TZ|MODEL) continue ;; esac
+      [[ -n "${!key+x}" ]] || continue
+      value="${!key}"
+      value="${value//\\/\\\\}"
+      value="${value//\"/\\\"}"
+      value="${value//\$/\\\$}"
+      echo "\$${key}=\"${value}\";"
+    done </opt/brother/scanner/locked.txt
+    # settings from the configuration file for keys the environment does not set;
+    # extract() runs in the scope of whoever includes config.php (every view)
+    echo "require_once('settings.php');"
+    echo "extract(settings_file_overlay(), EXTR_OVERWRITE);"
     echo "?>"
 
   } >/var/www/html/config.php
