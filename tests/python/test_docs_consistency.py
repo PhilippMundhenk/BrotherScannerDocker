@@ -27,7 +27,7 @@ def readme_table_keys():
         if not line.startswith("| ") or line.startswith("| Variable") or line.startswith("| ---"):
             continue
         first = line.split("|")[1]
-        keys.update(re.findall(r"\b([A-Z][A-Z0-9_]{2,})\b", first))
+        keys.update(re.findall(r"\b([A-Z][A-Z0-9_]+)\b", first))
     return keys
 
 
