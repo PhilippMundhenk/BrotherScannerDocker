@@ -29,6 +29,9 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 <head>
     <?php include('views/frontend/common-head.php'); ?>
     <title>Brother <?php echo($MODEL); ?></title>
+    <?php if (isset($API_TOKEN) && $API_TOKEN !== '') { ?>
+    <meta name="api-token" content="<?php echo htmlspecialchars($API_TOKEN); ?>">
+    <?php } ?>
     <style>
         /* prevent persistent highlight after click to scan */
         .trigger-scan:focus, .trigger-scan:active:focus {
@@ -105,7 +108,7 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
     <?php include('views/frontend/common-javascript.php'); ?>
 
 
-    <script src="/assets/scripts.min.js?ver=1.1"></script>
+    <script src="/assets/scripts.min.js?ver=1.2"></script>
 
 
 </body>

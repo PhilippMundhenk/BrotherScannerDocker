@@ -19,7 +19,8 @@ def clean_env(monkeypatch):
         "FTP_USER", "FTP_PASSWORD", "FTP_HOST", "FTP_PATH",
         "TELEGRAM_TOKEN", "TELEGRAM_CHATID", "REMOVE_ORIGINAL_AFTER_OCR",
         "REMOVE_BLANK_THRESHOLD", "RESOLUTION", "USE_JPEG_COMPRESSION",
-        "REAR_PAGE_WAIT_SECONDS",
+        "REAR_PAGE_WAIT_SECONDS", "SCAN_MODE", "SCAN_SOURCE",
+        "SCAN_LEFT_MM", "SCAN_TOP_MM", "SCAN_WIDTH_MM", "SCAN_HEIGHT_MM", "SCANNER_JOBS_DIR",
     ]:
         monkeypatch.delenv(name, raising=False)
     return monkeypatch

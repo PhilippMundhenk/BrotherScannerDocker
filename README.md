@@ -144,6 +144,8 @@ The refresh is skipped while a scan is running or a front scan is waiting for re
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
+| API_TOKEN | optional | When set, every request that starts a scan or changes a file must carry it (`Authorization: Bearer <token>`, `X-API-Token` header, or a `token` field). The web UI sends it itself (default: no token) |
+| SCANNER_PING_INTERVAL | optional | Seconds between checks whether the scanner answers on its scan port, reported as `reachable` by the status endpoint; 0 disables (default: 60) |
 | FTP_PASSWORD_FILE, SSH_PASSWORD_FILE, TELEGRAM_TOKEN_FILE, FTP_USER_FILE, SSH_USER_FILE, TELEGRAM_CHATID_FILE | optional | Path of a file inside the container to read the value from, for Docker secrets (see below) |
 
 ### FTPS upload
@@ -253,11 +255,29 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 
 #### API
 
-The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
-To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|ocr>` (waits for the scan script to finish) or `POST` a form field `target=<file|email|image|ocr>` to `/api/scanner/scanto` (returns immediately).
-`GET /api/scanner/status` tells whether a scan is running, a front scan is waiting for rear pages, or OCR is in progress.
-Files are available via `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` they can also be renamed (`PUT /api/file/<name>/rename`) and deleted (`DELETE /api/file/<name>/delete`).
-The full description is in [doc/swagger.yaml](doc/swagger.yaml).
+The GUI uses a REST API that other systems (Home Assistant, a control panel next to the scanner, scripts) can use as well. The full description is in [doc/swagger.yaml](doc/swagger.yaml).
+
+Start a scan and get a job id back:
+
+```
+curl -X POST -d target=file http://<ContainerIP>:<Port>/api/scanner/scanto
+{"message": "Scan triggered", "target": "file", "job": "2026-10-10-19-25-20", "status_url": "/api/jobs/2026-10-10-19-25-20"}
+```
+
+Optional form fields override the container settings for this job only: `resolution` (dpi), `mode` and `source` (the values the device lists at startup), and `wait=true` to answer only when the scan script has finished. `GET /api/scanner/scanto/<target>` does the same and always waits.
+
+Follow the job:
+
+```
+curl http://<ContainerIP>:<Port>/api/jobs/2026-10-10-19-25-20
+{"job": "...", "action": "file", "state": "waiting_for_rear", "pages": 2, "waiting_until": "...", ...}
+```
+
+States: `queued`, `scanning`, `waiting_for_rear`, `scanning_rear`, `converting`, `done` (with `file`, `file_url`, and `ocr` being `none`, `pending`, `in_progress`, `failed` or `done` with `ocr_file_url`), `failed` (with `error`). `GET /api/jobs` lists the recent jobs, newest first. `POST /api/jobs/<id>/rear` scans the rear pages for that specific job while it is waiting for them (the "Scan to E-mail" action always addresses the latest job).
+
+Other endpoints: `GET /api/actions` describes the available actions, their labels and the accepted parameters; `GET /api/scanner/status` reports `scan`, `waiting`, `ocr` and `reachable` (whether the device answered the last connection check); files via `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` also rename (`PUT /api/file/<name>/rename`) and delete (`DELETE /api/file/<name>/delete`).
+
+Set `API_TOKEN` to require a token for everything that starts a scan or changes a file; the web UI sends it itself, so anyone who can open the UI can use the API, which is the same trust level as before.
 
 ## Full Docker Compose Example
 

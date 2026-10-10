@@ -2,6 +2,7 @@
 # $1 = scanner device
 # $2 = friendly name
 
+import argparse
 import glob
 import os
 import re
@@ -18,6 +19,7 @@ from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
 from trigger_telegram import trigger_telegram
 from ocr_queue import enqueue as enqueue_ocr
+import jobstate
 
 ENVIRONMENT_FILE_PATH = "/opt/brother/scanner/env.txt"
 SCRIPT_DIR = "/opt/brother/scanner/brscan-skey/script"
@@ -78,6 +80,53 @@ def read_environment() -> None:
             key, value = line.split("=", 1)  # values may contain "=" themselves
             os.environ[key] = value
     apply_timezone()
+
+
+JOB_NAME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$")
+DEVICE_VALUE_PATTERN = re.compile(r"^[A-Za-z0-9 \[\]\(\),&-]{1,60}$")
+
+
+def parse_entry_args(argv: List[str]) -> argparse.Namespace:
+    """Arguments of the scanto*.py entry points.
+
+    brscan-skey calls them as "<script> <device> <friendly name>"; the API adds
+    --job-id and optional per-job parameters. Invalid values are rejected here
+    so nothing unexpected reaches scanimage.
+    """
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("device", nargs="?", default=None)
+    parser.add_argument("friendly_name", nargs="?", default=None)
+    parser.add_argument("--job-id", dest="job_id", default=None)
+    parser.add_argument("--resolution", type=int, default=None)
+    parser.add_argument("--mode", default=None)
+    parser.add_argument("--source", default=None)
+    args, _unknown = parser.parse_known_args(argv)
+    if args.job_id is not None and not JOB_NAME_PATTERN.match(args.job_id):
+        parser.error(f"invalid --job-id {args.job_id!r}")
+    if args.resolution is not None and not (50 <= args.resolution <= 9600):
+        parser.error(f"invalid --resolution {args.resolution}")
+    for name in ("mode", "source"):
+        value = getattr(args, name)
+        if value is not None and not DEVICE_VALUE_PATTERN.match(value):
+            parser.error(f"invalid --{name} {value!r}")
+    return args
+
+
+def entry_overrides(args: argparse.Namespace) -> Dict[str, str]:
+    """Per-job scan parameters as environment overrides (RESOLUTION, SCAN_MODE, SCAN_SOURCE)."""
+    overrides: Dict[str, str] = {}
+    if args.resolution is not None:
+        overrides["RESOLUTION"] = str(args.resolution)
+    if args.mode is not None:
+        overrides["SCAN_MODE"] = args.mode
+    if args.source is not None:
+        overrides["SCAN_SOURCE"] = args.source
+    return overrides
+
+
+def apply_overrides(overrides: Dict[str, str]) -> None:
+    for key, value in overrides.items():
+        os.environ[key] = value
 
 
 def apply_timezone() -> None:
@@ -345,6 +394,7 @@ def convert_and_post_process(
     log.flush()
 
     print(f"  {side} side: converting to PDF for {job_name}...")
+    jobstate.update(job_name, state="converting", side=side)
 
     # Find job pages, sorted in the correct order
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
@@ -388,19 +438,27 @@ def convert_and_post_process(
 
     # OCR is handed to the queue worker (ocr_queue.py), which uploads one scan
     # at a time and runs the post-OCR notifications itself.
+    ocr_state = "none"
     if not all([os.getenv("OCR_SERVER"), os.getenv("OCR_PORT"), os.getenv("OCR_PATH")]):
         print(f"  {side} side: OCR environment variables not set, skipping OCR.")
     else:
         print(f"  {side} side: queueing OCR for {job_name}...")
         enqueue_ocr(output_pdf_file, job_name, side)
+        ocr_state = "queued"
+    jobstate.update(job_name, state="done", side=side, file=os.path.basename(output_pdf_file),
+                    ocr=ocr_state, ocr_file=f"{job_name}-ocr.pdf" if ocr_state == "queued" else None)
 
     print(f"  {side} side: Conversion and post-processing finished.")
     print("-----------------------------------")
 
 
+def rear_page_wait_seconds() -> int:
+    return int(os.environ.get("REAR_PAGE_WAIT_SECONDS", "120"))
+
+
 def wait_for_rear_pages_or_convert(job_name: str) -> None:
     # Wait for 2 minutes in case there is a rear side scan
-    wait_seconds = int(os.environ.get("REAR_PAGE_WAIT_SECONDS", "120"))
+    wait_seconds = rear_page_wait_seconds()
     print(f"  front side: Waiting {wait_seconds}s for rear pages before starting file conversion for {job_name}")
     try:
         set_status('waiting')
@@ -477,12 +535,16 @@ def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
 #
 # Scan entry points
 #
-def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
+def scan_front(log: TextIO, device: Optional[str], scanimage_args=[], job_name: Optional[str] = None,
+               action: str = "file", overrides: Optional[Dict[str, str]] = None) -> None:
     # Clear any existing waiting status before starting a new scan
     clear_status('waiting')
-    
-    # Generate unique timestamp
-    job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+
+    # The job is named by its timestamp (the API passes the name it announced)
+    if job_name is None:
+        job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    jobstate.prune()
+    jobstate.update(job_name, state="queued", action=action, side="front", params=overrides or {})
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
     filepath_base = os.path.join(job_dir, f"{job_name}-front-page")
     tmp_output_batch = f"{filepath_base}%04d.pnm"
@@ -498,6 +560,7 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
     # Perform scan with retry; the status file lets the web UI show
     # 'scan in progress' without depending on process names.
     set_status('scan')
+    jobstate.update(job_name, state="scanning")
     try:
         time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
@@ -506,6 +569,7 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
             scan_cmd(log, device, tmp_output_batch, scanimage_args)
     except subprocess.CalledProcessError:
         print(" ERROR: Cancelling scanning!")
+        jobstate.update(job_name, state="failed", error="scanning failed or was cancelled")
         clean_job_files(log, 'front', job_name)
         return
     finally:
@@ -525,17 +589,28 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
         print(
             f"  front side: INFO: Waiting to start conversion process for {job_name} in process with PID {pid}"
         )
+        pages = len(glob.glob(f"{filepath_base}*.pnm"))
+        jobstate.update(job_name, state="waiting_for_rear", pages=pages,
+                        waiting_until=time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(time.time() + rear_page_wait_seconds())))
     else:
         print(f"  front side: ERROR: Fork failed ({pid}).")
 
 
-def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
-    # Find latest directory in temp directory
-    job_name = latest_batch_dir()
-    print(f"- Scanning rear to latest batch {job_name}")
+def scan_back(log: TextIO, device: Optional[str], scanimage_args=None, job_name: Optional[str] = None) -> None:
+    # The job to attach to: the one named by the API, or the latest front scan
+    if job_name is None:
+        job_name = latest_batch_dir()
+        print(f"- Scanning rear to latest batch {job_name}")
+    else:
+        print(f"- Scanning rear for job {job_name}")
+        if not os.path.isdir(os.path.join(tempfile.gettempdir(), job_name)):
+            print(f"  rear side: ERROR: job {job_name} is not waiting for rear pages")
+            return
     if job_name is None:
         print("  rear side: ERROR: Could not find front scan directory")
         return
+    record = jobstate.read(job_name) or {}
+    apply_overrides(record.get("params") or {})
 
     print(f"  rear side: Found front-side batch: {job_name}")
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
@@ -561,6 +636,7 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     # Perform scan with retry; the status file lets the web UI show
     # 'scan in progress' without depending on process names.
     set_status('scan')
+    jobstate.update(job_name, state="scanning_rear", side="rear")
     try:
         time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
@@ -569,6 +645,7 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
             scan_cmd(log, device, tmp_output_batch, scanimage_args)
     except subprocess.CalledProcessError:
         print(" ERROR: Cancelling scanning!")
+        jobstate.update(job_name, state="failed", error="rear scanning failed or was cancelled")
         clean_job_files(log, "back", job_name)
         return
     finally:
