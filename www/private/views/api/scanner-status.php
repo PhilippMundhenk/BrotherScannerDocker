@@ -8,38 +8,36 @@ function isProcessRunning($processName) {
     exec($command, $output, $status);
 
     // Check if pgrep returned a status of 0, which means the process was found
-    if ($status === 0) {
-        // Process is running
-        return true;
-    } else {
-        // Process is not running
-        return false;
-    }
+    return $status === 0;
 }
 
-function isWaitingStatus() {
-    // Check if the waiting status file exists in the temp directory
-    $tempDir = sys_get_temp_dir();
-    $statusFile = $tempDir . '/STATUS_WAITING';
-    
+/**
+ * Checks a status file written by scanner.py (STATUS_<NAME> in the temp
+ * directory). A file older than $maxAgeSeconds is considered stale (the
+ * writing process died) and is removed.
+ */
+function isStatusSet($name, $maxAgeSeconds) {
+    $statusFile = sys_get_temp_dir() . '/STATUS_' . strtoupper($name);
+
     if (!file_exists($statusFile)) {
         return false;
     }
-    
-    // Check if file is older than 3 minutes (180 seconds)
-    if (time() - filemtime($statusFile) > 180) {
-        // File is stale, remove it
-        unlink($statusFile);
+
+    if (time() - filemtime($statusFile) > $maxAgeSeconds) {
+        @unlink($statusFile);
         return false;
     }
-    
+
     return true;
 }
 
-// Check if the scanimage, sleep, and curl processes are running
+// scan:    scanner.py marks the scan phase with a status file; the process
+//          check stays as a fallback for scans started outside the scripts.
+// waiting: the front scan is waiting for rear pages (status file, 3 minutes).
+// ocr:     the OCR queue worker is uploading (curl).
 $result = array(
-    'scan' => isProcessRunning('scanimage'),
-    'waiting' => isWaitingStatus(),
+    'scan' => isStatusSet('scan', 600) || isProcessRunning('scanimage'),
+    'waiting' => isStatusSet('waiting', 180),
     'ocr' => isProcessRunning('curl')
 );
 

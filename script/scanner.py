@@ -435,7 +435,9 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
     # Save scanimage_args in a file for use with future rear side scans
     save_scanimage_args(job_dir, scanimage_args)
 
-    # Perform scan with retry
+    # Perform scan with retry; the status file lets the web UI show
+    # 'scan in progress' without depending on process names.
+    set_status('scan')
     try:
         time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
@@ -446,6 +448,8 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
         print(" ERROR: Cancelling scanning!")
         clean_job_files(log, 'front', job_name)
         return
+    finally:
+        clear_status('scan')
 
     # Run conversion process in the background
     pid = os.fork()
@@ -484,7 +488,9 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
         # Read scanimage_args used for front scanning
         scanimage_args = read_scanimage_args(job_dir)
 
-    # Perform scan with retry
+    # Perform scan with retry; the status file lets the web UI show
+    # 'scan in progress' without depending on process names.
+    set_status('scan')
     try:
         time.sleep(0.1)
         scan_cmd(log, device, tmp_output_batch, scanimage_args)
@@ -495,6 +501,8 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
         print(" ERROR: Cancelling scanning!")
         clean_job_files(log, "back", job_name)
         return
+    finally:
+        clear_status('scan')
 
     # Clear waiting status since rear pages are now scanned
     clear_status('waiting')

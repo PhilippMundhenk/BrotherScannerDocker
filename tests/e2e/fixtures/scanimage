@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+"""Scanner simulator: a stand-in for SANE's `scanimage` used by the end-to-end tests.
+
+It is bind-mounted over /usr/bin/scanimage in the test container, so the real
+scan pipeline (scantofile.py, scanner.py, gm, gs, pdftk, the OCR queue) runs
+unchanged against a scanner that does not exist.
+
+Behaviour:
+  * device queries (-A, -L, --help, --version) print a fake device line and exit 0
+  * a scan (--batch=<pattern>) writes SIM_PAGES (default 2) binary PGM pages,
+    each with a large black rectangle so blank page removal keeps them,
+    sleeping SIM_SCAN_SECONDS (default 0.5) per page like a real ADF would
+  * SIM_FAIL=true makes every scan exit 1 without writing pages
+"""
+
+import os
+import sys
+import time
+
+
+def main(argv):
+    if any(a in ("-A", "-L", "--all-options", "--list-devices", "--help", "-h", "-V", "--version") for a in argv):
+        print("device `brother4:net1;dev0' is a Brother MFC-SIMULATOR USB scanner (simulated)")
+        return 0
+
+    batch = next((a.split("=", 1)[1] for a in argv if a.startswith("--batch=")), None)
+    if batch is None:
+        print("scanimage simulator: --batch=<pattern> is required", file=sys.stderr)
+        return 1
+
+    if os.environ.get("SIM_FAIL", "").lower() == "true":
+        print("scanimage: sane_start: Document feeder jammed (simulated)", file=sys.stderr)
+        return 1
+
+    pages = int(os.environ.get("SIM_PAGES", "2"))
+    delay = float(os.environ.get("SIM_SCAN_SECONDS", "0.5"))
+    width, height = 210, 297
+    dark = b"\x00" * (int(width * 0.8) - int(width * 0.2))
+
+    for number in range(1, pages + 1):
+        time.sleep(delay)
+        name = batch % number if "%" in batch else batch
+        with open(name, "wb") as handle:
+            handle.write(f"P5\n{width} {height}\n255\n".encode())
+            for row in range(height):
+                line = bytearray(b"\xff" * width)
+                if height * 0.2 <= row < height * 0.8:
+                    line[int(width * 0.2):int(width * 0.8)] = dark
+                handle.write(bytes(line))
+        print(f"Scanned page {number}. (scanner status = Scanning)", file=sys.stderr)
+    print("Batch terminated, scanner status = Document feeder out of documents", file=sys.stderr)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -40,3 +40,34 @@ jobs:
         run: pip install pytest requests==2.32.3
       - name: Run Python unit tests
         run: pytest tests/python
+
+  # End-to-end: build the image, run it with a simulated scanner and a fake
+  # OCR service, and drive the web UI and the API with Playwright.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image under test
+        run: docker build -t brotherscanner:e2e .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Run end-to-end tests
+        working-directory: tests/e2e
+        env:
+          IMAGE: brotherscanner:e2e
+        run: npx playwright test
+      - name: Upload report and container logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-output
+          path: tests/e2e/output
+          if-no-files-found: ignore
