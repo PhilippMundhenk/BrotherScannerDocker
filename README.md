@@ -132,6 +132,7 @@ You can configure the tool via environment variables:
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
+| FTP_PASSWORD_FILE, SSH_PASSWORD_FILE, TELEGRAM_TOKEN_FILE, FTP_USER_FILE, SSH_USER_FILE, TELEGRAM_CHATID_FILE | optional | Path of a file inside the container to read the value from, for Docker secrets (see below) |
 
 ### FTPS upload
 
@@ -147,6 +148,31 @@ To do so, set the following environment variables to your values:
 
 The upload requires TLS (explicit FTPS, `curl --ssl-reqd`). If your server only speaks plain FTP, add `FTP_INSECURE=true`; the credentials and the scanned files are then sent unencrypted, so only do this on a network you trust.
 Uploads are done for every scanned PDF and, if OCR is configured, for the OCR output as well.
+
+### Secrets
+
+Passwords and tokens do not have to be written into the compose file. Every one of `FTP_USER`, `FTP_PASSWORD`, `SSH_USER`, `SSH_PASSWORD`, `TELEGRAM_TOKEN` and `TELEGRAM_CHATID` can instead be given as `<VARIABLE>_FILE`, pointing to a file inside the container whose content is used as the value (trailing newlines are stripped). This is how Docker secrets are delivered:
+
+```yaml
+services:
+  brother-scanner:
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:latest
+    environment:
+      - FTP_USER=scanner
+      - FTP_PASSWORD_FILE=/run/secrets/ftp_password
+      - TELEGRAM_TOKEN_FILE=/run/secrets/telegram_token
+    secrets:
+      - ftp_password
+      - telegram_token
+
+secrets:
+  ftp_password:
+    file: ./secrets/ftp_password.txt
+  telegram_token:
+    file: ./secrets/telegram_token.txt
+```
+
+A plain variable takes precedence over its `_FILE` counterpart when both are set. The values are only visible to the scanner user inside the container.
 
 ### Automatic Synchronization Solutions
 
