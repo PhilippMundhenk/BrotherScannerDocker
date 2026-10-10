@@ -242,7 +242,7 @@ Thus, make sure to wait for your scan to complete, before pressing another butto
 The GUI uses a minimal "API" at the backend, which you can also use from other tooling (e.g., Home Assistant or a control panel near your printer).
 To scan, simply call `http://<ContainerIP>:<Port>/api/scanner/scanto/<file|email|image|ocr>` (waits for the scan script to finish) or `POST` a form field `target=<file|email|image|ocr>` to `/api/scanner/scanto` (returns immediately).
 `GET /api/scanner/status` tells whether a scan is running, a front scan is waiting for rear pages, or OCR is in progress.
-Files are available via `/api/file-list`, `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` they can also be renamed (`PUT /api/file/<name>/rename`) and deleted (`DELETE /api/file/<name>/delete`).
+Files are available via `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info` and `/api/file/<name>/download`; with `ALLOW_GUI_FILEOPERATIONS=true` they can also be renamed (`PUT /api/file/<name>/rename`) and deleted (`DELETE /api/file/<name>/delete`).
 The full description is in [doc/swagger.yaml](doc/swagger.yaml).
 
 ## Full Docker Compose Example
