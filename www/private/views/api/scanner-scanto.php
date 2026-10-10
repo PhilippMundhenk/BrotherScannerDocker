@@ -41,6 +41,11 @@ function safe_guard_target($target) {
  */
 function trigger_script($target, $UID, $method) {
 
+        // Written to /var/log/scanner.log so a scan can be attributed to the API/web UI;
+        // a scan without this line was started by the device (button).
+        $client = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        trigger_error("scan to $target triggered via API ($method) from $client", E_API);
+
         if ($method == 'return') {
                 popen('sudo -b -u \#'.$UID.' /opt/brother/scanner/brscan-skey/script/scanto'.$target.'.py', 'r');
                 json(array('message' => 'Scan triggered','method' => 'post','target' => $target));

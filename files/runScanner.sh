@@ -22,6 +22,14 @@ keepAliveRegistration() {
   echo "starting registration keepalive (every ${INTERVAL}s, disable with KEEPALIVE=false)"
   while true; do
     sleep "$INTERVAL"
+    # Never re-register while the device is busy with one of our jobs: a refresh
+    # during a scan can stall the feeder, and it must not coincide with paper
+    # in the ADF. The scan scripts mark both phases with status files in /tmp
+    # (ignored when older than 10 minutes, i.e. left behind by a crash).
+    if [[ -n "$(find /tmp -maxdepth 1 \( -name STATUS_SCAN -o -name STATUS_WAITING \) -mmin -10 2>/dev/null)" ]]; then
+      echo "keepalive: scan active, skipping registration refresh" >>/var/log/scanner.log
+      continue
+    fi
     su - "$NAME" -c "/usr/bin/brscan-skey --refresh" >>/var/log/scanner.log 2>&1
   done
 }

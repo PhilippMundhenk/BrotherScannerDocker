@@ -116,10 +116,13 @@ You can configure the tool via environment variables:
 | OCR_QUEUE_DIR | optional | Directory of the OCR upload queue, must be on the persistent volume (default: /scans/.ocr_queue) |
 | OCR_QUEUE_POLL_SECONDS | optional | How often the OCR worker checks for queued uploads in seconds (default: 5) |
 | OCR_MAX_ATTEMPTS | optional | Upload attempts per scan before it is moved to the failed/ folder of the queue (default: 5) |
+| OCR_WAIT_FOR_IDLE_SCANNER | optional | Set to "false" to let OCR uploads run while the scanner is busy (default: true, uploads wait for the scanner to be idle) |
+| OCR_UPLOAD_LIMIT_RATE | optional | Bandwidth limit for OCR uploads and downloads in curl syntax, e.g. 2M (default: unlimited) |
 | WEBSERVER                                | optional  | activates GUI & API (default:false) (see below)                                                                                                  |
 | PORT                                     | optional  | sets port for webserver (default: 80)                                                                                                            |
 | KEEPALIVE                                | optional  | set to "false" to disable the periodic Scan-to-PC re-registration keepalive (default: true, see below)                                           |
 | KEEPALIVE_INTERVAL                       | optional  | seconds between keepalive re-registrations; must stay below the device-side lease of 360s (default: 120)                                         |
+The refresh is skipped while a scan is running or a front scan is waiting for rear pages, so it never interferes with an active job.
 | DISABLE_GUI_SCANTOFILE                   | optional  | deactivates button "Scan to file" (default: false)                                                                                               |
 | DISABLE_GUI_SCANTOEMAIL                  | optional  | deactivates button "Scan to e-mail"                                                                                                              |
 | DISABLE_GUI_SCANTOIMAGE                  | optional  | deactivates button "Scan to image"                                                                                                               |
@@ -199,6 +202,7 @@ Of course this requires SSH access to the host. If this is not available, consid
 This image is prepared to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
 This uploads, waits for OCR to complete and downloads the file again.
 Uploads are serialized through a persistent on-disk queue in `/scans/.ocr_queue`, so several scans in quick succession do not compete for upload bandwidth. Failed uploads are retried with increasing delay and end up in `/scans/.ocr_queue/failed/` after `OCR_MAX_ATTEMPTS` attempts. The queue survives container restarts.
+Uploads never start while the scanner is busy: scanning has priority and OCR waits for the scanner to be idle (`OCR_WAIT_FOR_IDLE_SCANNER`); `OCR_UPLOAD_LIMIT_RATE` can additionally cap the transfer rate so the scanner keeps enough network bandwidth.
 Every OCR result is checked before it is used: it must be a PDF that `pdfinfo` can read and it must have the same number of pages as the scan. A response that fails this check (for example the error text the OCR service sends when tesseract fails) is kept under `/scans/.ocr_queue/failed/` for inspection and the upload is retried; the scan itself is never touched. With `REMOVE_ORIGINAL_AFTER_OCR=true` the original is deleted only after a validated OCR copy is in place.
 The resulting PDF file is saved in the /scans directory, with the appendix "-ocr" in the filename.
 To use this option, set the following variables to your values:

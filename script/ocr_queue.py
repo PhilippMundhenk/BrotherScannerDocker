@@ -40,6 +40,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from typing import Callable, Dict, Optional, TextIO, Tuple
 
@@ -50,6 +51,8 @@ from trigger_telegram import trigger_telegram
 DEFAULT_QUEUE_DIR = "/scans/.ocr_queue"
 DEFAULT_OUTPUT_DIR = "/scans"
 PART_SUFFIX = ".part"
+SCAN_STATUS_MAX_AGE = 600  # a STATUS_SCAN file older than this is considered stale
+IDLE_WAIT_MAX = 1800  # never hold an upload back for more than half an hour
 
 
 def queue_root() -> str:
@@ -165,12 +168,52 @@ def validate_pdf(
 
 
 #
+# Scanner activity
+#
+def scanner_busy(max_age: float = SCAN_STATUS_MAX_AGE) -> bool:
+    """True while scanner.py marks a scan in progress (STATUS_SCAN in the temp dir).
+
+    The worker and the scan scripts run as the same user, so they share the
+    temp directory. A stale marker (crashed scan) is ignored after max_age.
+    """
+    marker = os.path.join(tempfile.gettempdir(), "STATUS_SCAN")
+    try:
+        return (time.time() - os.path.getmtime(marker)) < max_age
+    except OSError:
+        return False
+
+
+def wait_for_idle_scanner(sleep: Callable[[float], None] = time.sleep, poll: float = 2.0,
+                          max_wait: float = IDLE_WAIT_MAX, busy: Callable[[], bool] = scanner_busy) -> float:
+    """Block while a scan is running so the upload never competes with the scanner.
+
+    Scanning must stay as fast as possible; OCR is background work. Returns the
+    time waited. Disable with OCR_WAIT_FOR_IDLE_SCANNER=false.
+    """
+    if os.environ.get("OCR_WAIT_FOR_IDLE_SCANNER", "true").strip().lower() == "false":
+        return 0.0
+    waited = 0.0
+    announced = False
+    while busy() and waited < max_wait:
+        if not announced:
+            log("scan in progress; holding OCR upload until the scanner is idle")
+            announced = True
+        sleep(poll)
+        waited += poll
+    return waited
+
+
+#
 # Processing
 #
 def upload(pdf_path: str, output_path: str, url: str, run: Callable = subprocess.run) -> bool:
     """Upload pdf_path to the OCR service and store the response at output_path."""
-    command = [
-        "curl", "--fail", "--silent", "--show-error",
+    command = ["curl", "--fail", "--silent", "--show-error"]
+    limit = os.environ.get("OCR_UPLOAD_LIMIT_RATE", "").strip()
+    if limit:
+        # Leave bandwidth for the scanner, e.g. "2M" for 2 MB/s (curl --limit-rate syntax).
+        command += ["--limit-rate", limit]
+    command += [
         "-F", f"userfile=@{pdf_path}",
         "-H", "Expect:",
         "-o", output_path,
@@ -203,6 +246,7 @@ def process_job(
     run: Callable = subprocess.run,
     count_pages: Callable[[str], Optional[int]] = pdf_page_count,
     root: Optional[str] = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> bool:
     """Upload one job, validate the result and run the post-OCR side effects. True on success."""
     env = os.environ
@@ -230,6 +274,7 @@ def process_job(
     output_path = os.path.join(output_dir, ocr_name)
     part_path = output_path + PART_SUFFIX
     url = f"{server}:{port}/{path}"
+    wait_for_idle_scanner(sleep=sleep)
     log(f"uploading {pdf} ({expected_pages} pages) to {url}")
     if not upload(pdf, part_path, url, run=run):
         log(f"OCR upload failed for {pdf}")
@@ -307,7 +352,7 @@ def run_worker(
         # Persist the attempt before uploading so a crash mid-upload still counts.
         write_job(claim, job)
 
-        if process_job(job, run=run, count_pages=count_pages, root=root):
+        if process_job(job, run=run, count_pages=count_pages, root=root, sleep=sleep):
             os.remove(claim)
             continue
 
