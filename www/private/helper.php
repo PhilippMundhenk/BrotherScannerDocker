@@ -354,4 +354,18 @@ function api_token_required() {
         send_json_error(401, 'API token required');
     }
 }
+
+
+/** Thumbnails in the file list are on unless GUI_THUMBNAILS=false. */
+function thumbnails_enabled() {
+    global $GUI_THUMBNAILS;
+    return !isset($GUI_THUMBNAILS) || !in_array(strtolower((string)$GUI_THUMBNAILS), array('false', '0', 'no', 'off'));
+}
+
+/** Remove cached thumbnails of a file (after rename or delete). */
+function thumbnails_forget($filename) {
+    foreach (glob('/scans/.thumbnails/' . $filename . '.*.jpg') ?: array() as $old) {
+        @unlink($old);
+    }
+}
 ?>

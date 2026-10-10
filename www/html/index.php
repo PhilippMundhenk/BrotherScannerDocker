@@ -135,6 +135,11 @@ $router->map( 'GET', '/api/file/[char:file]/info', function( $file) {
 });
 
 
+$router->map( 'GET', '/api/file/[char:file]/thumbnail', function( $file) {
+	require_once 'views/api/file-thumbnail.php';
+});
+
+
 $router->map( 'GET', '/api/file/[char:file]/download', function( $file) {
 	require_once 'views/api/file-download.php';
 });

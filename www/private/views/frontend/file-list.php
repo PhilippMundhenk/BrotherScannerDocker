@@ -41,7 +41,10 @@ if (!$fragment) {
     ?>
     <div class="list-group-item list-group-item-action py-3" aria-current="true" id="file_<?php echo $i; ?>">
       <div class="d-flex w-100 align-items-center justify-content-between">
-        <strong class="mb-2 file-name"><?php echo htmlspecialchars($file['name']); ?></strong>
+        <?php if (thumbnails_enabled()) { ?>
+        <img class="thumb me-3 flex-shrink-0" alt="" width="48" height="64" loading="lazy" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
+        <?php } ?>
+        <strong class="mb-2 file-name flex-grow-1"><?php echo htmlspecialchars($file['name']); ?></strong>
         <input class="form-control form-control-sm file-name-new d-none m-0 me-2 " type="text" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
         <input class="form-control form-control-sm file-name-original d-none m-0 me-2 " type="hidden" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
         <small><?php echo date('D', $file['fileModificationTime']); ?></small>
