@@ -1,13 +1,9 @@
 name: Tests
 
-# Runs standalone on pushes to non-master branches and is reusable
-# (workflow_call) so the publish workflows gate their Docker builds on the
-# same checks. PRs run it through the PR publish workflow, so there is no
-# separate pull_request trigger (that would run everything twice).
+# Reusable only (workflow_call): the PR publish workflow runs these jobs for
+# every pull request and the master publish workflow before every release
+# build. No push or pull_request trigger of its own, so nothing runs twice.
 on:
-  push:
-    branches-ignore:
-      - master
   workflow_call:
 
 jobs:

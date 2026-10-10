@@ -1,8 +1,9 @@
 # Tests
 
-Four layers, all run by `.github/workflows/test.yml`, which the publish
-workflows call before building an image (so a pull request or a push to
-master only produces an image when every layer is green):
+Four layers, all defined in `.github/workflows/test.yml`. The workflow is
+reusable only: the PR publish workflow runs it for every pull request and the
+master publish workflow before every release build, so an image is only
+produced when every layer is green and nothing runs twice:
 
 | Layer | Tool | What it covers | Command |
 |---|---|---|---|
