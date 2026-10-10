@@ -53,19 +53,18 @@ ENV MODEL="MFC-L2700DW"
 ENV IPADDRESS="192.168.1.123"
 ENV REMOVE_BLANK_THRESHOLD="0.3"
 
-# Only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive):
+# Only set these variables in the compose file, if inotify needs to be triggered (e.g., for Synology Drive).
+# Secrets (SSH_PASSWORD, FTP_PASSWORD, TELEGRAM_TOKEN) have no defaults here; set them in the compose file
+# or provide them as files via SSH_PASSWORD_FILE etc. (see README, "Secrets").
 ENV SSH_USER=""
-ENV SSH_PASSWORD=""
 ENV SSH_HOST=""
 ENV SSH_PATH=""
 
 # Only set these variables in the compose file, if you need FTP upload:
 ENV FTP_USER=""
-ENV FTP_PASSWORD=""
 ENV FTP_HOST=""
 
 # Only set these variables in the compose file, if you need Telegram notifications:
-ENV TELEGRAM_TOKEN=""
 ENV TELEGRAM_CHATID=""
 
 # Make sure this ends in a slash.
