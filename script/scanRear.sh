@@ -30,8 +30,13 @@ output_pdf_file="/scans/${date}.pdf"
 
 cd "$tmp_dir"
 
-kill -9 "$(cat scan_pid)"
-rm scan_pid
+if [ -f scan_pid ]; then
+  pid=$(cat scan_pid)
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    kill -9 "$pid"
+  fi
+  rm -f scan_pid
+fi
 
 function scan_cmd() {
   # `brother4:net1;dev0` device name gets passed to scanimage, which it refuses as an invalid device name for some reason.
