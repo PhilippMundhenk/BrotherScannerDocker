@@ -7,7 +7,9 @@ require_once('helper.php');
 //
 // Starts one of the scan scripts as the scanner user and returns the job id,
 // which GET /api/jobs/<id> reports on. Parameters override the container's
-// RESOLUTION / SCAN_MODE / SCAN_SOURCE for this job only.
+// RESOLUTION / SCAN_MODE / SCAN_SOURCE for this job only. The "email" action
+// (rear pages) does not create a job: it attaches to the newest job that is
+// waiting for rear pages.
 
 function safe_guard_target($target) {
         if (empty($target)) {
@@ -59,38 +61,47 @@ function new_job_id() {
         return date('Y-m-d-H-i-s');
 }
 
+/** The newest job waiting for rear pages, or null. */
+function waiting_job_id() {
+        foreach (job_list(50) as $candidate) {
+                if (($candidate['state'] ?? '') === 'waiting_for_rear') {
+                        return $candidate['job'];
+                }
+        }
+        return null;
+}
+
 function trigger_script($target, $UID, $method, $extra_args, $job_id) {
         $client = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $script = '/opt/brother/scanner/brscan-skey/script/scanto' . $target . '.py';
-        $command = 'sudo -u \#' . $UID . ' ' . $script . ' --job-id ' . escapeshellarg($job_id);
+        $command = 'sudo -u \#' . $UID . ' ' . $script;
+        if ($job_id !== null) {
+                $command .= ' --job-id ' . escapeshellarg($job_id);
+        }
         if (!empty($extra_args)) {
                 $command .= ' ' . implode(' ', $extra_args);
         }
         // Written to /var/log/scanner.log so a scan can be attributed to the API/web UI;
         // a scan without this line was started by the device (button).
-        trigger_error("scan to $target triggered via API ($method) from $client as job $job_id" .
+        trigger_error("scan to $target triggered via API ($method) from $client" .
+                ($job_id !== null ? " as job $job_id" : '') .
                 (empty($extra_args) ? '' : ' with ' . implode(' ', $extra_args)), E_API);
 
-        if ($method == 'return') {
-                popen('sudo -b ' . substr($command, strlen('sudo ')), 'r');
-                json(array(
-                        'message' => 'Scan triggered',
-                        'method' => 'post',
-                        'target' => $target,
-                        'job' => $job_id,
-                        'status_url' => '/api/jobs/' . $job_id,
-                ));
-        }
-        shell_exec($command);
-        $record = job_record($job_id);
-        json(array(
+        $response = array(
                 'message' => 'Scan triggered',
-                'method' => 'get',
+                'method' => $method == 'return' ? 'post' : 'get',
                 'target' => $target,
                 'job' => $job_id,
-                'status_url' => '/api/jobs/' . $job_id,
-                'state' => $record === null ? 'unknown' : $record['state'],
-        ));
+                'status_url' => $job_id !== null ? '/api/jobs/' . $job_id : null,
+        );
+        if ($method == 'return') {
+                popen('sudo -b ' . substr($command, strlen('sudo ')), 'r');
+                json($response);
+        }
+        shell_exec($command);
+        $record = $job_id !== null ? job_record($job_id) : null;
+        $response['state'] = $record === null ? 'unknown' : $record['state'];
+        json($response);
 }
 
 $params = $method == 'return' ? $_POST : $_GET;
@@ -99,6 +110,7 @@ if (isset($params['wait']) && in_array(strtolower($params['wait']), array('1', '
 }
 $target = safe_guard_target($scanto);
 $extra_args = scan_parameter_args($params);
-trigger_script($target, $UID, $method, $extra_args, new_job_id());
+$job_id = $target === 'email' ? waiting_job_id() : new_job_id();
+trigger_script($target, $UID, $method, $extra_args, $job_id);
 
 ?>
