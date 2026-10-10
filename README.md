@@ -111,6 +111,9 @@ You can configure the tool via environment variables:
 | OCR_SERVER                               | optional  | Hostname of an OCR server (see below)                                                                                                            |
 | OCR_PORT                                 | optional  | Port of an OCR server (see below)                                                                                                                |
 | OCR_PATH                                 | optional  | Path of an OCR server (see below)                                                                                                                |
+| OCR_QUEUE_DIR | optional | Directory of the OCR upload queue, must be on the persistent volume (default: /scans/.ocr_queue) |
+| OCR_QUEUE_POLL_SECONDS | optional | How often the OCR worker checks for queued uploads in seconds (default: 5) |
+| OCR_MAX_ATTEMPTS | optional | Upload attempts per scan before it is moved to the failed/ folder of the queue (default: 5) |
 | WEBSERVER                                | optional  | activates GUI & API (default:false) (see below)                                                                                                  |
 | PORT                                     | optional  | sets port for webserver (default: 80)                                                                                                            |
 | DISABLE_GUI_SCANTOFILE                   | optional  | deactivates button "Scan to file" (default: false)                                                                                               |
@@ -163,6 +166,7 @@ Of course this requires SSH access to the host. If this is not available, consid
 
 This image is prepared to utilize an OCR service, such as [my TesseractOCRMicroservice](https://github.com/PhilippMundhenk/TesseractOCRMicroservice).
 This uploads, waits for OCR to complete and downloads the file again.
+Uploads are serialized through a persistent on-disk queue in `/scans/.ocr_queue`, so several scans in quick succession do not compete for upload bandwidth. Failed uploads are retried with increasing delay and end up in `/scans/.ocr_queue/failed/` after `OCR_MAX_ATTEMPTS` attempts. The queue survives container restarts.
 The resulting PDF file is saved in the /scans directory, with the appendix "-ocr" in the filename.
 To use this option, set the following variables to your values:
 
