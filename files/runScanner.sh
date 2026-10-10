@@ -1,4 +1,31 @@
 #!/bin/bash
+
+keepAliveRegistration() {
+  # brscan-skey registers Scan-to-PC functions into the device via SNMP with a
+  # hardcoded 360s lease (DURATION=360) and only (re-)registers on events:
+  # daemon startup, a button press, or a device power-on. It has no timer-based
+  # renewal, so where no such event occurs the device silently drops the
+  # destination ("Scanner" disappears from the panel) after the lease expires.
+  # brscan-skey ships an undocumented client flag, --refresh, which asks the
+  # running daemon to re-register all network scanners. Run it every few
+  # minutes to keep the registration alive.
+  # Disable with KEEPALIVE=false. Interval: KEEPALIVE_INTERVAL seconds (< 360).
+  if [[ "${KEEPALIVE,,}" == "false" ]]; then
+    echo "registration keepalive disabled"
+    return
+  fi
+  INTERVAL="${KEEPALIVE_INTERVAL:-120}"
+  if [[ "$INTERVAL" -ge 360 ]]; then
+    echo "KEEPALIVE_INTERVAL >= 360 exceeds the device lease, clamping to 120"
+    INTERVAL=120
+  fi
+  echo "starting registration keepalive (every ${INTERVAL}s, disable with KEEPALIVE=false)"
+  while true; do
+    sleep "$INTERVAL"
+    su - "$NAME" -c "/usr/bin/brscan-skey --refresh" >>/var/log/scanner.log 2>&1
+  done
+}
+
 echo "setting up user & logfile:"
 
 NAME="${NAME:-Scanner}"
@@ -26,8 +53,9 @@ groupadd --gid "$GROUPID" NAS
 adduser "$NAME" --uid "$USERID" --gid "$GROUPID" --disabled-password --force-badname --gecos ""
 mkdir -p /scans
 chmod 777 /scans
-touch /var/log/scanner.log
+echo -n "" >/var/log/scanner.log
 chown "$NAME" /var/log/scanner.log
+chmod 666 /var/log/scanner.log
 env >/opt/brother/scanner/env.txt
 chmod -R 777 /opt/brother
 echo "-----"
@@ -122,17 +150,23 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$DISABLE_GUI_SCANTOOCR" ]]; then
       echo "\$DISABLE_GUI_SCANTOOCR=$DISABLE_GUI_SCANTOOCR;"
     fi
+    if [[ -n "$ALLOW_GUI_FILEOPERATIONS" ]]; then
+      echo "\$ALLOW_GUI_FILEOPERATIONS=$ALLOW_GUI_FILEOPERATIONS;"
+    fi
     echo "?>"
 
   } >/var/www/html/config.php
+
   chown www-data /var/www/html/config.php
   if [[ -z ${PORT} ]]; then
     PORT=80
   fi
+
   echo "running on port $PORT"
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+
 else
   echo "webserver not configured"
 fi
@@ -142,6 +176,7 @@ echo "capabilities:"
 scanimage -A
 
 echo "startup successful"
+keepAliveRegistration &
 while true; do
   tail -f /var/log/scanner.log
 done
