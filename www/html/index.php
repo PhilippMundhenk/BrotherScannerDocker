@@ -64,6 +64,13 @@ $router->map( 'GET', '/file/[char:file]/delete', function( $file) {
 
 
 // API routes
+// Everything that starts a scan or changes a file calls api_token_required()
+// first; it is a no-op unless API_TOKEN is configured.
+
+$router->map( 'GET', '/api/actions', function() {
+	require_once 'views/api/actions.php';
+});
+
 
 $router->map( 'GET', '/api/scanner/status', function() {
 	require_once 'views/api/scanner-status.php';
@@ -71,16 +78,34 @@ $router->map( 'GET', '/api/scanner/status', function() {
 
 
 $router->map( 'POST', '/api/scanner/scanto', function() {
-    $scanto = $_POST["target"];
+    api_token_required();
+    $scanto = $_POST["target"] ?? '';
     $method = 'return';
 	require_once 'views/api/scanner-scanto.php';
 });
 
 
 $router->map( 'GET', '/api/scanner/scanto/[char:parameter]', function( $parameter) {
+    api_token_required();
     $scanto = $parameter;
     $method = 'wait';
 	require_once 'views/api/scanner-scanto.php';
+});
+
+
+$router->map( 'GET', '/api/jobs', function() {
+	require_once 'views/api/job-list.php';
+});
+
+
+$router->map( 'GET', '/api/jobs/[char:job_id]', function( $job_id) {
+	require_once 'views/api/job-info.php';
+});
+
+
+$router->map( 'POST', '/api/jobs/[char:job_id]/rear', function( $job_id) {
+    api_token_required();
+	require_once 'views/api/job-rear.php';
 });
 
 
@@ -97,12 +122,15 @@ $router->map( 'GET', '/api/file/[char:file]/download', function( $file) {
 	require_once 'views/api/file-download.php';
 });
 
+
 $router->map( 'DELETE', '/api/file/[char:file]/delete', function( $file) {
+    api_token_required();
 	require_once 'views/api/file-delete.php';
 });
 
 
 $router->map( 'PUT', '/api/file/[char:file]/rename', function( $file) {
+    api_token_required();
 	require_once 'views/api/file-rename.php';
 });
 

@@ -102,6 +102,14 @@ function load_more_files(generation) {
     });
 }
 
+// When the container runs with API_TOKEN, every request from this page carries it.
+(function () {
+    var token = $('meta[name="api-token"]').attr('content');
+    if (token) {
+        $.ajaxSetup({ headers: { 'X-API-Token': token } });
+    }
+})();
+
 $(document).ready(function() {
 
 

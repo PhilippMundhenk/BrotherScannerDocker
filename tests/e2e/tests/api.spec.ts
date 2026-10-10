@@ -4,7 +4,8 @@ import { inContainer, listFiles, SAMPLE_FILE, scannerStatus } from '../helpers';
 test.describe('API', () => {
   test('status reports the three booleans and is idle at rest', async ({ request }) => {
     const status = await scannerStatus(request);
-    expect(status).toEqual({ scan: false, waiting: false, ocr: false });
+    expect(status).toMatchObject({ scan: false, waiting: false, ocr: false });
+    expect(status).toHaveProperty('reachable'); // true, false or null (check disabled or stale)
   });
 
   test('file list contains the seeded scan with parsed date and size', async ({ request }) => {

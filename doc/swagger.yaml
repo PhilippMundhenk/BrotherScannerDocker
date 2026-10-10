@@ -1,70 +1,347 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: BrotherScannerDocker API
-  description: API for managing and accessing scans and files.
-  version: 1.0.0
+  description: |
+    REST API of the scanner container: start scans, follow them as jobs, and
+    manage the scanned files. The web UI uses the same endpoints.
+
+    Authentication: none by default. When the container runs with `API_TOKEN`,
+    every request that starts a scan or changes a file must carry the token as
+    `Authorization: Bearer <token>`, as an `X-API-Token` header, or as a
+    `token` form/query field. Read-only endpoints stay open.
+  version: 2.0.0
 servers:
   - url: http://localhost:8080/api
-    description: Local development server
+    description: Container with WEBSERVER=true (PORT=8080)
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+    header:
+      type: apiKey
+      in: header
+      name: X-API-Token
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+    Status:
+      type: object
+      properties:
+        scan:
+          type: boolean
+          description: a scan is in progress
+        waiting:
+          type: boolean
+          description: a front scan is waiting for rear pages
+        ocr:
+          type: boolean
+          description: an OCR upload is running
+        reachable:
+          type: boolean
+          nullable: true
+          description: the device answered the last connection check (null when the check is disabled or stale)
+    Job:
+      type: object
+      properties:
+        job:
+          type: string
+          example: "2026-10-10-19-25-20"
+          description: job id, also the base name of the resulting PDF
+        action:
+          type: string
+          enum: [file, ocr, email, image]
+        state:
+          type: string
+          enum: [queued, scanning, waiting_for_rear, scanning_rear, converting, done, failed]
+        side:
+          type: string
+          enum: [front, rear]
+        pages:
+          type: integer
+          description: pages scanned so far (front side)
+        waiting_until:
+          type: string
+          description: when the front job will convert on its own (state waiting_for_rear)
+        params:
+          type: object
+          description: per-job overrides (RESOLUTION, SCAN_MODE, SCAN_SOURCE) given at trigger time
+        file:
+          type: string
+          description: PDF in /scans (state done)
+        file_url:
+          type: string
+        file_exists:
+          type: boolean
+        ocr:
+          type: string
+          enum: [none, queued, pending, in_progress, failed, done]
+          description: OCR copy state (queue position or done)
+        ocr_file:
+          type: string
+        ocr_file_url:
+          type: string
+        error:
+          type: string
+          description: why the job failed (state failed)
+        created:
+          type: string
+        updated:
+          type: string
+        url:
+          type: string
+    TriggerResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Scan triggered
+        target:
+          type: string
+        job:
+          type: string
+        status_url:
+          type: string
+        state:
+          type: string
+          description: only when the request waited for the script
+    FileInfo:
+      type: object
+      properties:
+        full_path:
+          type: string
+        file:
+          type: string
+        name:
+          type: string
+        name_clean:
+          type: string
+        dir:
+          type: string
+        date_from_name:
+          type: string
+        time_from_name:
+          type: string
+        fileCreationTime:
+          type: integer
+        fileModificationTime:
+          type: integer
+        date_from_file:
+          type: string
+        time_from_file:
+          type: string
+        extension:
+          type: string
+        mimetype:
+          type: string
+        size:
+          type: integer
+
 paths:
+  /actions:
+    get:
+      summary: Available scan actions, their labels and the accepted parameters
+      responses:
+        '200':
+          description: Actions and parameter schema
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  actions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        target:
+                          type: string
+                        label:
+                          type: string
+                        enabled:
+                          type: boolean
+                        description:
+                          type: string
+                  parameters:
+                    type: object
+                  jobs:
+                    type: object
+                  authentication:
+                    type: string
+
   /scanner/status:
     get:
-      summary: Returns the current status of the scanner
+      summary: Current scanner status
       responses:
         '200':
           description: Scanner status
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  scan:
-                    type: boolean
-                    description: Indicates if a scan is in progress
-                  waiting:
-                    type: boolean
-                    description: Indicates if the scanner is waiting
-                  ocr:
-                    type: boolean
-                    description: Indicates if an OCR process is running
+                $ref: '#/components/schemas/Status'
+
   /scanner/scanto:
     post:
-      summary: Initiates a scan operation
+      summary: Start a scan (returns immediately with the job id)
+      security:
+        - bearer: []
+        - header: []
       requestBody:
         required: true
         content:
           application/x-www-form-urlencoded:
             schema:
               type: object
+              required: [target]
               properties:
                 target:
                   type: string
-                  description: Target for the scan operation
-                  enum:
-                    - file
-                    - email
-                    - image
-                    - ocr
+                  enum: [file, email, image, ocr]
+                resolution:
+                  type: integer
+                  description: dpi, one of the values the device lists at startup; overrides RESOLUTION for this job
+                mode:
+                  type: string
+                  description: scan mode as listed by the device, e.g. "True Gray"; overrides SCAN_MODE for this job
+                source:
+                  type: string
+                  description: paper source as listed by the device; overrides SCAN_SOURCE for this job
+                wait:
+                  type: boolean
+                  description: answer only when the scan script has finished
       responses:
         '200':
-          description: Scan operation successfully initiate
-  /scanner/scanto/{parameter}:
+          description: Scan started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+        '400':
+          description: Invalid target or parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: API token required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /scanner/scanto/{target}:
     get:
-      summary: Initiates a scan operation with a specified parameter
+      summary: Start a scan and wait for the scan script to finish
+      security:
+        - bearer: []
+        - header: []
       parameters:
-        - name: parameter
-          in: path
+        - in: path
+          name: target
           required: true
           schema:
             type: string
-            enum:
-              - file
-              - email
-              - image
-              - ocr
+            enum: [file, email, image, ocr]
+        - in: query
+          name: resolution
+          schema:
+            type: integer
+        - in: query
+          name: mode
+          schema:
+            type: string
+        - in: query
+          name: source
+          schema:
+            type: string
       responses:
         '200':
-          description: Scan operation successfully initiated, waiting for backend response
+          description: Scan script finished (the conversion may still run in the background)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+        '400':
+          description: Invalid target or parameter
+        '401':
+          description: API token required
+
+  /jobs:
+    get:
+      summary: Recent scan jobs, newest first
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 50
+      responses:
+        '200':
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+
+  /jobs/{id}:
+    get:
+      summary: State of one scan job
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$'
+      responses:
+        '200':
+          description: Job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        '400':
+          description: Invalid id
+        '404':
+          description: Unknown job
+
+  /jobs/{id}/rear:
+    post:
+      summary: Scan the rear pages for a job that is waiting for them
+      security:
+        - bearer: []
+        - header: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rear scan started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerResponse'
+        '401':
+          description: API token required
+        '404':
+          description: Unknown job
+        '409':
+          description: Job is not waiting for rear pages
+
   /file-list:
     get:
       summary: List Scanned Files
@@ -98,178 +375,58 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    full_path:
-                      type: string
-                    file:
-                      type: string
-                    name:
-                      type: string
-                    name_clean:
-                      type: string
-                    dir:
-                      type: string
-                    date_from_name:
-                      type: string
-                    time_from_name:
-                      type: string
-                    fileCreationTime:
-                      type: integer
-                    fileModificationTime:
-                      type: integer
-                    date_from_file:
-                      type: string
-                    time_from_file:
-                      type: string
-                    extension:
-                      type: string
-                    mimetype:
-                      type: string
-                    size:
-                      type: integer
-              example:
-                - full_path: "/scans/2024-09-21 Invoice Company A.pdf"
-                  file: "Invoice Company A.pdf"
-                  name: "Invoice Company A"
-                  name_clean: "Company A Invoice"
-                  dir: "/scans"
-                  date_from_name: "2024-09-21"
-                  time_from_name: ""
-                  fileCreationTime: 1726902248
-                  fileModificationTime: 1726902199
-                  date_from_file: "2024-09-21"
-                  time_from_file: "09-03-19"
-                  extension: "pdf"
-                  mimetype: "application/pdf"
-                  size: 2970761
-                - full_path: "/scans/2024-09-22 Insurance Policy Document.pdf"
-                  file: "Insurance Policy Document.pdf"
-                  name: "Insurance Policy Document"
-                  name_clean: "Insurance Policy"
-                  dir: "/scans"
-                  date_from_name: "2024-09-22"
-                  time_from_name: ""
-                  fileCreationTime: 1727016766
-                  fileModificationTime: 1726582762
-                  date_from_file: "2024-09-17"
-                  time_from_file: "16-19-22"
-                  extension: "pdf"
-                  mimetype: "application/pdf"
-                  size: 2947326
+                  $ref: '#/components/schemas/FileInfo'
+
   /file/{file}/info:
     get:
-      summary: Provides extended information about a file
+      summary: Information about one file
       parameters:
-        - name: file
-          in: path
+        - in: path
+          name: file
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Extended file information
+          description: File information
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  full_path:
-                    type: string
-                    description: The full path to the file
-                  file:
-                    type: string
-                    description: The file name
-                  name:
-                    type: string
-                    description: The file name without extension
-                  name_clean:
-                    type: string
-                    description: Cleaned version of the file name
-                  dir:
-                    type: string
-                    description: Directory where the file is located
-                  date_from_name:
-                    type: string
-                    format: date
-                    description: Date extracted from the file name
-                  time_from_name:
-                    type: string
-                    format: time
-                    description: Time extracted from the file name
-                  fileCreationTime:
-                    type: integer
-                    description: File creation time as a Unix timestamp
-                  fileModificationTime:
-                    type: integer
-                    description: File modification time as a Unix timestamp
-                  date_from_file:
-                    type: string
-                    format: date
-                    description: Date extracted from the file metadata
-                  time_from_file:
-                    type: string
-                    description: Time extracted from the file metadata
-                  extension:
-                    type: string
-                    description: File extension
-                  mimetype:
-                    type: string
-                    description: MIME type of the file
-                  size:
-                    type: integer
-                    description: Size of the file in bytes
-              example:
-                full_path: "/scans/2024-09-13-13-08-46 ganz anderes.pdf"
-                file: "2024-09-13-13-08-46 ganz anderes.pdf"
-                name: "2024-09-13-13-08-46 ganz anderes"
-                name_clean: "ganz anderes"
-                dir: "/scans"
-                date_from_name: "2024-09-13"
-                time_from_name: "13:08:46"
-                fileCreationTime: 1727176003
-                fileModificationTime: 1726225726
-                date_from_file: "2024-09-13"
-                time_from_file: "13-08-46"
-                extension: "pdf"
-                mimetype: "application/pdf"
-                size: 1161527
+                $ref: '#/components/schemas/FileInfo'
+        '400':
+          description: Invalid name
+        '404':
+          description: File does not exist
+
   /file/{file}/download:
     get:
-      summary: Download a File
+      summary: Download a file
       parameters:
-        - name: file
-          in: path
+        - in: path
+          name: file
           required: true
-          description: The name of the file to download.
           schema:
             type: string
       responses:
         '200':
-          description: The file is downloaded.
+          description: The PDF
           content:
             application/pdf:
               schema:
                 type: string
                 format: binary
-  /file/{file}/delete:
-    delete:
-      summary: Deletes the specified file
-      parameters:
-        - name: file
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: File successfully deleted
+        '404':
+          description: File does not exist
+
   /file/{file}/rename:
     put:
-      summary: Renames the specified file
+      summary: Rename a file (requires ALLOW_GUI_FILEOPERATIONS=true)
+      security:
+        - bearer: []
+        - header: []
       parameters:
-        - name: file
-          in: path
+        - in: path
+          name: file
           required: true
           schema:
             type: string
@@ -284,23 +441,51 @@ paths:
                   type: string
                 new_filename_prefix:
                   type: string
-                  enum:
-                    - none
-                    - date
-                    - datetime
+                  enum: [none, date, datetime]
       responses:
         '200':
-          description: File successfully renamed
+          description: Renamed
+        '400':
+          description: Invalid name
+        '401':
+          description: API token required
+        '403':
+          description: File operations disabled
+
+  /file/{file}/delete:
+    delete:
+      summary: Delete a file (requires ALLOW_GUI_FILEOPERATIONS=true)
+      security:
+        - bearer: []
+        - header: []
+      parameters:
+        - in: path
+          name: file
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+        '401':
+          description: API token required
+        '403':
+          description: File operations disabled
+        '404':
+          description: File does not exist
+
   /dev/timezone:
     get:
-      summary: Returns the current timezone
+      summary: Time zone and current time of the backend
       responses:
         '200':
-          description: Current timezone
+          description: Time zone information
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   timezone:
+                    type: string
+                  datetime:
                     type: string

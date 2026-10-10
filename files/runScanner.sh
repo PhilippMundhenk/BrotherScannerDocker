@@ -161,6 +161,12 @@ if [ "$WEBSERVER" == "true" ]; then
     if [[ -n "$TZ" ]]; then
       echo "\$TZ=\"$TZ\";"
     fi
+    # scan defaults and API settings for the backend (values are PHP string literals)
+    for var in RESOLUTION SCAN_MODE SCAN_SOURCE API_TOKEN; do
+      if [[ -n "${!var}" ]]; then
+        echo "\$${var}=\"${!var//\"/\\\"}\";"
+      fi
+    done
     if [[ -n "$RENAME_GUI_SCANTOFILE" ]]; then
       echo "\$RENAME_GUI_SCANTOFILE=$RENAME_GUI_SCANTOFILE;"
     fi
@@ -204,6 +210,28 @@ if [ "$WEBSERVER" == "true" ]; then
 
 else
   echo "webserver not configured"
+fi
+echo "-----"
+
+echo "setting up reachability check:"
+# Every SCANNER_PING_INTERVAL seconds (0 disables) try the scanner's scan port
+# and record the result for GET /api/scanner/status (field "reachable").
+PING_INTERVAL="${SCANNER_PING_INTERVAL:-60}"
+if [[ "$PING_INTERVAL" =~ ^[0-9]+$ && "$PING_INTERVAL" -gt 0 ]]; then
+  (
+    while true; do
+      if timeout 3 bash -c "exec 3<>/dev/tcp/$IPADDRESS/54921" 2>/dev/null; then
+        echo 1 >/tmp/STATUS_REACHABLE
+      else
+        echo 0 >/tmp/STATUS_REACHABLE
+      fi
+      chmod 644 /tmp/STATUS_REACHABLE
+      sleep "$PING_INTERVAL"
+    done
+  ) &
+  echo "checking $IPADDRESS:54921 every ${PING_INTERVAL}s"
+else
+  echo "reachability check disabled"
 fi
 echo "-----"
 
