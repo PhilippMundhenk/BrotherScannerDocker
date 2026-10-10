@@ -16,7 +16,7 @@ test.describe('API token', () => {
       'run', '-d', '--name', NAME, '-p', `${PORT}:8080`,
       '-v', `${path.join(FIXTURES, 'scanimage')}:/usr/bin/scanimage:ro`,
       '-e', 'WEBSERVER=true', '-e', 'PORT=8080', '-e', 'IPADDRESS=192.0.2.10', '-e', 'KEEPALIVE=false',
-      '-e', 'SCANNER_PING_INTERVAL=0', '-e', 'REAR_PAGE_WAIT_SECONDS=3', '-e', 'ALLOW_GUI_FILEOPERATIONS=true',
+      '-e', 'SCANNER_PING_INTERVAL=0', '-e', 'REAR_PAGE_WAIT_SECONDS=3', '-e', 'ALLOW_GUI_FILEOPERATIONS=true', '-e', 'ALLOW_GUI_SETTINGS=true',
       '-e', `API_TOKEN=${TOKEN}`, '-e', 'RESOLUTION=100',
       IMAGE,
     ]);
@@ -33,6 +33,13 @@ test.describe('API token', () => {
   });
 
   test.afterAll(async () => {
+    if (process.env.PHP_COVERAGE_DIR) {
+      try {
+        docker(['cp', `${NAME}:/var/www/coverage/.`, process.env.PHP_COVERAGE_DIR]);
+      } catch {
+        /* no coverage image */
+      }
+    }
     try {
       docker(['rm', '-f', NAME]);
     } catch {
@@ -59,6 +66,17 @@ test.describe('API token', () => {
     expect(header.status()).toBe(200);
     const field = await api.post('/api/scanner/scanto', { form: { target: 'file', token: TOKEN } });
     expect(field.status()).toBe(200);
+    await api.dispose();
+  });
+
+  test('the settings page carries the token, and the token may come as a query field', async ({ playwright }) => {
+    const api = await playwright.request.newContext({ baseURL: `http://localhost:${PORT}` });
+    const page = await api.get('/settings');
+    expect(page.status()).toBe(200);
+    expect(await page.text()).toContain(`<meta name="api-token" content="${TOKEN}">`);
+    expect((await api.put('/api/settings', { data: { SCAN_MODE: 'True Gray' } })).status()).toBe(401);
+    expect((await api.put('/api/settings?token=' + TOKEN, { data: { SCAN_MODE: 'True Gray' } })).status()).toBe(200);
+    expect((await api.put('/api/settings?token=' + TOKEN, { data: { SCAN_MODE: '' } })).status()).toBe(200);
     await api.dispose();
   });
 

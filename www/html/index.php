@@ -59,15 +59,6 @@ $router->map( 'GET', '/list-files', function() {
 });
 
 
-$router->map( 'GET', '/file/[char:file]/rename', function( $file) {
-	require_once 'views/frontend/file-rename.php';
-});
-
-
-$router->map( 'GET', '/file/[char:file]/delete', function( $file) {
-	require_once 'views/frontend/file-delete.php';
-});
-
 
 // API routes
 // Everything that starts a scan or changes a file calls api_token_required()
@@ -175,6 +166,5 @@ if( is_array($match) && is_callable( $match['target'] ) ) {
     } else {
         send_error_page(404, $page_title='404', $page_message='Sorry, the page you are looking for could not be found.');
     }
-    exit();
 }
 ?>

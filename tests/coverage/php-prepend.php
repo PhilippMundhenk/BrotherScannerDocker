@@ -5,7 +5,7 @@ if (function_exists('pcov\\start')) {
     \pcov\start();
     register_shutdown_function(function () {
         \pcov\stop();
-        $data = \pcov\collect(\pcov\inclusive, array());
+        $data = \pcov\collect();  // every file under pcov.directory that was executed
         $out = array();
         foreach ($data as $file => $lines) {
             if (strpos($file, '/var/www/') !== 0 || strpos($file, 'coverage-prepend') !== false) {

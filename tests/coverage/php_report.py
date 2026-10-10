@@ -36,6 +36,8 @@ def main(argv):
                 data = json.load(handle)
         except (OSError, ValueError):
             continue
+        if not isinstance(data, dict):
+            continue  # a request that loaded no PHP file dumps an empty list
         for file, lines in data.items():
             executable.setdefault(file, set())
             covered.setdefault(file, set())
@@ -44,6 +46,20 @@ def main(argv):
                     executable[file].add(int(line))
                 if state == 1:
                     covered[file].add(int(line))
+
+    # pcov marks the line after a call that never returns (json(), exit) as
+    # executable: usually a closing ?>, a brace or a blank line. Those are no
+    # statements and are dropped from the count.
+    for file in list(executable):
+        source = os.path.join(www, file.replace('/var/www/', '', 1))
+        if not os.path.isfile(source):
+            continue
+        with open(source, encoding='utf-8', errors='replace') as handle:
+            lines = handle.read().splitlines()
+        artifacts = {n for n in executable[file]
+                     if n > len(lines) or lines[n - 1].strip() in ('', '?>', '}', '};', '{', '<?php')}
+        executable[file] -= artifacts
+        covered[file] -= artifacts
 
     # files never loaded
     for root, _dirs, files in os.walk(www):
