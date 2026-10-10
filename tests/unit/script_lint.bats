@@ -12,8 +12,8 @@ shell_scripts() {
   printf '%s\n' \
     "$REPO_ROOT/files/config.sh" \
     "$REPO_ROOT/files/runScanner.sh" \
-    "$REPO_ROOT/run.sh" \
-    "$REPO_ROOT/update-container.sh"
+    "$REPO_ROOT/tools/run.sh" \
+    "$REPO_ROOT/tools/update-container.sh"
 }
 
 @test "every shell script parses with bash -n" {

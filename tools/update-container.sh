@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Developer helper: run from the repository root.
 docker cp ./www brotherscannerdocker-brother-scanner-1:/var/
 docker exec brotherscannerdocker-brother-scanner-1 chown -R www-data:root /var/www/
 docker cp ./script brotherscannerdocker-brother-scanner-1:/opt/brother/scanner/brscan-skey/

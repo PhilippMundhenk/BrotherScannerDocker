@@ -6,7 +6,7 @@ brotherscanner:
 	docker build --no-cache -t brotherscanner -f Dockerfile .
 
 update-container:
-	./update-container.sh
+	./tools/update-container.sh
 
 # Run the bats test suite. Requires bats-core on PATH.
 test: bats
@@ -21,5 +21,5 @@ lint:
 	shellcheck --severity=error \
 		files/config.sh \
 		files/runScanner.sh \
-		run.sh \
-		update-container.sh
+		tools/run.sh \
+		tools/update-container.sh

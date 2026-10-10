@@ -7,7 +7,7 @@ produced when every layer is green and nothing runs twice:
 
 | Layer | Tool | What it covers | Command |
 |---|---|---|---|
-| static analysis | shellcheck | the remaining shell scripts: `files/runScanner.sh`, `run.sh`, `update-container.sh` | `make lint` |
+| static analysis | shellcheck | the remaining shell scripts: `files/runScanner.sh`, `tools/run.sh`, `tools/update-container.sh` | `make lint` |
 | shell hygiene | bats-core | `bash -n` on the shell scripts, executable bits in `script/`, Dockerfile sanity | `bats tests/unit` |
 | Python units | pytest | `script/scanner.py` (environment parsing, blank page removal, post-processing, rear wait), the OCR queue (`script/ocr_queue.py`) and the notification helpers, with subprocesses mocked | `pytest tests/python` |
 | end-to-end | Playwright | the built image running with a simulated scanner and a fake OCR service: web UI, REST API, scan pipeline, OCR queue, file ownership | `cd tests/e2e && npx playwright test` |
