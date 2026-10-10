@@ -239,10 +239,19 @@ function list_files($dir, $offset = 0, $limit = null, &$total = null){
  * Reads optional offset/limit query parameters: ints, offset >= 0, limit 1..500 or null (all).
  */
 function paging_from_query() {
-    $offset = isset($_GET['offset']) && is_numeric($_GET['offset']) ? max(0, intval($_GET['offset'])) : 0;
+    $query = $_GET;
+    if (empty($query) && isset($_SERVER['REQUEST_URI'])) {
+        // A rewrite rule in front of index.php may have dropped the query string
+        // from $_GET; REQUEST_URI still carries it.
+        $raw = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        if (is_string($raw) && $raw !== '') {
+            parse_str($raw, $query);
+        }
+    }
+    $offset = isset($query['offset']) && is_numeric($query['offset']) ? max(0, intval($query['offset'])) : 0;
     $limit = null;
-    if (isset($_GET['limit']) && is_numeric($_GET['limit'])) {
-        $limit = max(1, min(500, intval($_GET['limit'])));
+    if (isset($query['limit']) && is_numeric($query['limit'])) {
+        $limit = max(1, min(500, intval($query['limit'])));
     }
     return array($offset, $limit);
 }

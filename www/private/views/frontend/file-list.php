@@ -17,6 +17,13 @@ if ($limit === null) {
   $limit = 20;
 }
 $fragment = isset($_GET['fragment']) && $_GET['fragment'] == '1';
+if (!$fragment && isset($_SERVER['REQUEST_URI'])) {
+  $raw = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+  if (is_string($raw)) {
+    parse_str($raw, $q);
+    $fragment = isset($q['fragment']) && $q['fragment'] == '1';
+  }
+}
 $total = 0;
 $files = list_files('/scans/', $offset, $limit, $total);
 $loaded = $offset + count($files);
