@@ -452,6 +452,10 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[]) -> None:
         clear_status('scan')
 
     # Run conversion process in the background
+    # Everything printed so far sits in the log buffer; flush it before forking,
+    # otherwise parent and child both write it out and every line appears twice.
+    log.flush()
+    sys.stdout.flush()
     pid = os.fork()
     if pid == 0:  # Child process
         wait_for_rear_pages_or_convert(job_name)
@@ -539,6 +543,10 @@ def scan_back(log: TextIO, device: Optional[str], scanimage_args=None) -> None:
     if remove_blank_threshold_str is not None and remove_blank_threshold_str != "":
         remove_blank_threshold = float(remove_blank_threshold_str)
 
+    # Everything printed so far sits in the log buffer; flush it before forking,
+    # otherwise parent and child both write it out and every line appears twice.
+    log.flush()
+    sys.stdout.flush()
     pid = os.fork()
     if pid == 0:  # Child process
         convert_and_post_process(job_name, "rear", remove_blank_threshold)
