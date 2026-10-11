@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { SAMPLE_FILE } from '../helpers';
+import { inContainer, SAMPLE_FILE } from '../helpers';
 
 test.describe('home page', () => {
   test('shows the model, the status and the four scan buttons', async ({ page }) => {
@@ -50,5 +50,45 @@ test.describe('home page', () => {
     const api = await request.get('/api/no/such/thing');
     expect(api.status()).toBe(404);
     expect(await api.json()).toMatchObject({ code: 404 });
+  });
+});
+
+test.describe('scan options', () => {
+  test('resolution, mode and source come from the device, are remembered and sent with the scan', async ({ page, request }) => {
+    await page.goto('/');
+    const options = page.locator('#scan-options');
+    await expect(options).toBeVisible();
+    const resolution = page.locator('select[data-option="resolution"]');
+    const mode = page.locator('select[data-option="mode"]');
+    const source = page.locator('select[data-option="source"]');
+    // the simulator lists 100..600 dpi with 300 as device default; the container runs with RESOLUTION=100
+    await expect(resolution.locator('option').first()).toHaveText('Default (100 dpi)');
+    await expect(page.locator('label[for="scan-resolution"]')).toHaveText('Resolution');
+    await expect(resolution.locator('option')).toHaveCount(7);
+    await expect(mode.locator('option')).toHaveText(['Default (24bit Color[Fast])', 'Black & White', 'Gray[Error Diffusion]', 'True Gray', '24bit Color[Fast]']);
+    await expect(source.locator('option')).toHaveCount(4);
+
+    await resolution.selectOption('200');
+    await mode.selectOption('True Gray');
+    await page.reload();
+    await expect(page.locator('select[data-option="resolution"]')).toHaveValue('200');
+    await expect(page.locator('select[data-option="mode"]')).toHaveValue('True Gray');
+    await expect(page.locator('select[data-option="source"]')).toHaveValue('');
+
+    const trigger = page.waitForResponse((res) => res.url().endsWith('/api/scanner/scanto') && res.request().method() === 'POST');
+    await page.locator('a.trigger-scan[data-trigger="file"]').click();
+    const response = await trigger;
+    const body = new URLSearchParams(response.request().postData() || '');
+    const job = await response.json();
+    expect(body.get('target')).toBe('file');
+    expect(body.get('resolution')).toBe('200');
+    expect(body.get('mode')).toBe('True Gray');
+    expect(body.has('source')).toBe(false);
+    await expect.poll(async () => (await (await request.get(`/api/jobs/${job.job}`)).json()).state, { timeout: 60_000 }).toBe('done');
+    expect(inContainer(['cat', '/var/log/scanner.log'])).toContain(`as job ${job.job} with --resolution '200' --mode 'True Gray'`);
+
+    // back to the defaults for the other specs
+    await page.locator('select[data-option="resolution"]').selectOption('');
+    await page.locator('select[data-option="mode"]').selectOption('');
   });
 });

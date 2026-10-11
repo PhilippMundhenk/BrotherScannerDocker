@@ -267,6 +267,8 @@ here is an example of the environment:
 #### GUI
 
 You can access the GUI under the IP of your container and the set port (or 80 in default case).
+Below the status, three selectors offer the resolution, colour mode and paper source the device listed at startup (`scanimage -A`), with the container's setting as default; the choice is remembered in the browser and sent with every scan started from the page. A selector is hidden when the device did not report options for it.
+
 With the full config example below, the result will look something like this:
 ![Screenshot of the main web interface](doc/gui-main.png)
 

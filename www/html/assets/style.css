@@ -13,6 +13,11 @@
     box-shadow: none;
     outline: none;
 }
+/* scan option selectors on the dark home page */
+#scan-options .form-select{background-color:transparent;color:#f8f9fa;border-color:#f8f9fa;background-image:url("data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23f8f9fa%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e")}
+#scan-options .form-select option{color:#212529}
+#scan-options .form-select:focus{box-shadow:0 0 0 .25rem rgba(248,249,250,.25);border-color:#f8f9fa}
+
 /* file list thumbnails: the top third of the first page across the whole drawer (640 x 302 as rendered);
    document placeholder until the image is loaded or after it was released */
 img.thumb{display:block;width:100%;height:auto;aspect-ratio:640/302;object-fit:cover;object-position:top;background:#e9ecef url("data:image/svg+xml;utf8,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 640 302%27><path d=%27M284 95h56l32 32v80h-88z%27 fill=%27%23fff%27 stroke=%27%23adb5bd%27 stroke-width=%274%27/><path d=%27M340 95v32h32%27 fill=%27none%27 stroke=%27%23adb5bd%27 stroke-width=%274%27/></svg>") center/contain no-repeat;border-bottom:1px solid #dee2e6}
