@@ -11,7 +11,7 @@ The scanner contacts the container when a shortcut button is pressed, so the con
 ```yaml
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2
     volumes:
       - /path/on/host:/scans
     ports:
@@ -38,7 +38,7 @@ The fallback is a little more robust but requires the container to be bridged to
 ```yaml
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2
     volumes:
       - /path/on/host:/scans
     environment:
@@ -53,6 +53,19 @@ services:
 ```
 
 No host IP address is needed; the startup scripts guess the host interface and adjust the Brother driver settings.
+
+## Image tags
+
+| Tag | Points to |
+|---|---|
+| `v2.0.1` | exactly that release |
+| `v2.0` | the newest patch release of that minor version |
+| `v2` | the newest release of that major version (no breaking changes within it); the examples use this |
+| `stable` | the newest release overall |
+| `latest` | the current master build, i.e. the development state |
+| branch name | the build of a pull request's branch |
+
+Pre-releases (`v2.1.0-rc1`) only get their exact tag. The tags are set by the tag workflow when a `vX.Y.Z` tag is pushed.
 
 ## Permissions
 
@@ -88,7 +101,7 @@ This compose file runs with minimal adaptions (MODEL, IPADDRESS, HOST_IPADDRESS 
 ```yaml
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2
     volumes:
       - /path/on/host:/scans
     ports:

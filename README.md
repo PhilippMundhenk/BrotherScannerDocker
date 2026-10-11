@@ -9,7 +9,7 @@ A scan server for network Brother scanners in a Docker container, so it also run
 ```yaml
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2
     volumes:
       - /path/on/host:/scans
     ports:
@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
 ```
 
-The scanner then shows "Scanner" as a Scan-to-PC destination, and the web UI is at `http://<host>:8080`. Every further setting is optional; see [Setup](doc/setup.md) for the host-networking variant, permissions and a full example, and [Configuration](doc/configuration.md) for all options.
+The scanner then shows "Scanner" as a Scan-to-PC destination, and the web UI is at `http://<host>:8080`. The `v2` tag follows the newest 2.x release; `stable` is the newest release overall, `latest` the development build (see [image tags](doc/setup.md#image-tags)). Every further setting is optional; see [Setup](doc/setup.md) for the host-networking variant, permissions and a full example, and [Configuration](doc/configuration.md) for all options.
 
 ## Migrating from v1 to v2
 

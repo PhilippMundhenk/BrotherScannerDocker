@@ -97,7 +97,7 @@ Passwords and tokens do not have to be written into the compose file. Every one 
 ```yaml
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2
     environment:
       - FTP_USER=scanner
       - FTP_PASSWORD_FILE=/run/secrets/ftp_password
