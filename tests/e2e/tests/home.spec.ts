@@ -74,16 +74,17 @@ test.describe('scan options', () => {
     await expect(page.locator('select[data-option="mode"]')).toHaveValue('True Gray');
     await expect(page.locator('select[data-option="source"]')).toHaveValue('');
 
-    const trigger = page.waitForRequest((req) => req.url().endsWith('/api/scanner/scanto') && req.method() === 'POST');
+    const trigger = page.waitForResponse((res) => res.url().endsWith('/api/scanner/scanto') && res.request().method() === 'POST');
     await page.locator('a.trigger-scan[data-trigger="file"]').click();
-    const body = new URLSearchParams((await trigger).postData() || '');
+    const response = await trigger;
+    const body = new URLSearchParams(response.request().postData() || '');
+    const job = await response.json();
     expect(body.get('target')).toBe('file');
     expect(body.get('resolution')).toBe('200');
     expect(body.get('mode')).toBe('True Gray');
     expect(body.has('source')).toBe(false);
-    const job = (await (await request.get('/api/jobs?limit=1')).json())[0];
     await expect.poll(async () => (await (await request.get(`/api/jobs/${job.job}`)).json()).state, { timeout: 60_000 }).toBe('done');
-    expect(inContainer(['cat', '/var/log/scanner.log'])).toContain('mode=True Gray source=Automatic Document Feeder(left aligned) resolution=200');
+    expect(inContainer(['cat', '/var/log/scanner.log'])).toContain(`as job ${job.job} with --resolution '200' --mode 'True Gray'`);
 
     // back to the defaults for the other specs
     await page.locator('select[data-option="resolution"]').selectOption('');
