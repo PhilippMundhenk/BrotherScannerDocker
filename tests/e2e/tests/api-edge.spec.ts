@@ -70,9 +70,16 @@ test.describe('API edge cases', () => {
 
   test('stale status files are ignored and removed', async ({ request }) => {
     // written by the scanner user in real life; chown so the web server may remove it
-    inContainer(['bash', '-c', 'echo 1 > /tmp/STATUS_WAITING; touch -d "10 minutes ago" /tmp/STATUS_WAITING; chown www-data /tmp/STATUS_WAITING; echo 1 > /tmp/STATUS_REACHABLE; touch -d "20 minutes ago" /tmp/STATUS_REACHABLE']);
+    const backdate = () => inContainer(['bash', '-c', 'echo 1 > /tmp/STATUS_WAITING; touch -d "10 minutes ago" /tmp/STATUS_WAITING; chown www-data /tmp/STATUS_WAITING; echo 1 > /tmp/STATUS_REACHABLE; touch -d "20 minutes ago" /tmp/STATUS_REACHABLE']);
+    backdate();
     try {
-      const status = await scannerStatus(request);
+      let status = await scannerStatus(request);
+      // the container's reachability loop rewrites STATUS_REACHABLE every 60 s; if it
+      // struck between the backdating and the request, backdate again and retry
+      for (let attempt = 0; attempt < 3 && status.reachable !== null; attempt++) {
+        backdate();
+        status = await scannerStatus(request);
+      }
       expect(status.waiting).toBe(false);
       expect(status.reachable).toBeNull();
       expect(inContainer(['bash', '-c', 'test -e /tmp/STATUS_WAITING && echo present || echo gone']).trim()).toBe('gone');
