@@ -394,7 +394,7 @@ function toggle_file_error(parentId, message){
 
     $('#'+parentId).addClass('bg-danger text-white');
 
-    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 py-4">
+    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 px-3 py-3">
                     <strong class="fs-4 fw-bolder">`+message+`</strong>
                     <small><button type="button" class="btn btn-dark refresh-files m-0 me-2">OK</button></small>
                 </div>`;
@@ -407,7 +407,7 @@ function toggle_file_success(parentId, message){
 
     $('#'+parentId).addClass('bg-success text-white');
 
-    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 py-4">
+    var html =` <div class="m-0 d-flex w-100 align-items-center justify-content-between m-0 px-3 py-3">
                     <strong class="fs-4 fw-bolder">`+message+`</strong>
                     <small><button type="button" class="btn btn-dark refresh-files m-0 me-2">OK</button></small>
                 </div>`;
