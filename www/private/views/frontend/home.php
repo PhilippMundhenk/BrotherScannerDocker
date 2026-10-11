@@ -44,10 +44,13 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
     <nav class="navbar navbar-expand-sm fixed-top  navbar-dark bg-dark">
         <div class="container pe-0">
-            <a class="navbar-brand" href="/"><?php echo($MODEL); ?></a>
-            <?php if (settings_enabled()) { ?>
-            <a class="nav-link text-white me-3" id="openSettings" href="/settings" title="Settings"><i class="fas fa-cog fa-fw fa-2x"></i></a>
-            <?php } ?>
+            <!-- model name and, with the settings page enabled, its cogwheel right next to it (#157) -->
+            <div class="d-flex align-items-center">
+                <a class="navbar-brand me-2" href="/"><?php echo($MODEL); ?></a>
+                <?php if (settings_enabled()) { ?>
+                <a class="nav-link text-white p-0 d-flex align-items-center" id="openSettings" href="/settings" title="Settings"><i class="fas fa-cog fa-fw fa-lg"></i></a>
+                <?php } ?>
+            </div>
             <a class="nav-link text-white me-0" id="triggerFiles" href="#"><i
                     class="far fa-file-pdf  fa-fw fa-2x"></i></a>
 
