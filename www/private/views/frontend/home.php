@@ -63,6 +63,21 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
                     <p class="lead  text-light mb-2" id="status-text">Ready to scan</p>
                     <p class="small text-light mb-5 d-none" id="queue-text" title="Scans waiting for OCR (the queue is in /scans/.ocr_queue)"></p>
 
+                    <!-- Scan options for the next scan (#150): filled from /api/actions with the values the
+                         device listed at startup, remembered in the browser, sent with every trigger.
+                         A selector without options from the device stays hidden. -->
+                    <div class="row g-2 justify-content-center mb-4 d-none" id="scan-options">
+                        <div class="col-12 col-sm-4 d-none" id="scan-option-resolution">
+                            <select class="form-select scan-option" data-option="resolution" aria-label="Resolution" title="Resolution for the next scan"></select>
+                        </div>
+                        <div class="col-12 col-sm-4 d-none" id="scan-option-mode">
+                            <select class="form-select scan-option" data-option="mode" aria-label="Mode" title="Colour mode for the next scan"></select>
+                        </div>
+                        <div class="col-12 col-sm-4 d-none" id="scan-option-source">
+                            <select class="form-select scan-option" data-option="source" aria-label="Source" title="Paper source for the next scan"></select>
+                        </div>
+                    </div>
+
                     <?php 
                 if (!isset($DISABLE_GUI_SCANTOFILE) || $DISABLE_GUI_SCANTOFILE != true) {
                     echo('<p><a href="#" class="btn btn-outline-light btn-lg d-block trigger-scan" data-trigger="file">'.$button_file.'</a></p>');

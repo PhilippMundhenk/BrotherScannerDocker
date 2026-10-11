@@ -185,15 +185,67 @@ function load_more_files(generation) {
     }
 })();
 
+// Scan options (#150): resolution, mode and source for the next scan, from the
+// values the device listed at startup (/api/actions -> device.capabilities).
+// The first entry is the container default; the choice is kept in the browser.
+var SCAN_OPTIONS_KEY = 'scanOptions';
+
+function saved_scan_options() {
+    try { return JSON.parse(window.localStorage.getItem(SCAN_OPTIONS_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+
+function scan_options() {
+    var options = {};
+    $('#scan-options select.scan-option').each(function () {
+        var value = $(this).val();
+        if (value) { options[$(this).data('option')] = value; }
+    });
+    return options;
+}
+
+function fill_scan_options(actions) {
+    var capabilities = (actions && actions.device && actions.device.capabilities) || {};
+    var parameters = (actions && actions.parameters) || {};
+    var saved = saved_scan_options();
+    var labels = { resolution: 'Resolution', mode: 'Mode', source: 'Source' };
+    var shown = 0;
+    $('#scan-options select.scan-option').each(function () {
+        var name = $(this).data('option');
+        var capability = capabilities[name] || {};
+        var values = Array.isArray(capability.options) ? capability.options : [];
+        var box = $('#scan-option-' + name);
+        if (values.length === 0) { box.addClass('d-none'); return; }
+        var containerDefault = parameters[name] && parameters[name]['default'];
+        var fallback = containerDefault || capability['default'];
+        var unit = name === 'resolution' ? ' dpi' : '';
+        var select = $(this).empty();
+        select.append($('<option>').val('').text(labels[name] + ': default' + (fallback ? ' (' + fallback + unit + ')' : '')));
+        values.forEach(function (value) {
+            select.append($('<option>').val(String(value)).text(String(value) + unit));
+        });
+        var wanted = saved[name];
+        if (wanted && select.find('option[value="' + String(wanted).replace(/"/g, '\\"') + '"]').length) { select.val(String(wanted)); }
+        box.removeClass('d-none');
+        shown++;
+    });
+    $('#scan-options').toggleClass('d-none', shown === 0);
+}
+
 $(document).ready(function() {
 
+    if ($('#scan-options').length) {
+        $.getJSON('/api/actions', fill_scan_options);
+        $('#scan-options').on('change', 'select.scan-option', function () {
+            try { window.localStorage.setItem(SCAN_OPTIONS_KEY, JSON.stringify(scan_options())); } catch (e) { /* private mode */ }
+        });
+    }
 
     $('.trigger-scan').click(function() {
         var target = $(this).data('trigger');
-        console.log('Triggered click event on element with class "trigger-scan" and data-trigger "' + target + '"');
-        $.post('/api/scanner/scanto', {
-            target: target
-        }, function(data) {
+        var form = scan_options();
+        form.target = target;
+        console.log('Triggered click event on element with class "trigger-scan" and data-trigger "' + target + '"', form);
+        $.post('/api/scanner/scanto', form, function(data) {
             console.log(data);
             $(this).blur();
 
