@@ -114,10 +114,13 @@ function reset_thumbs() {
 }
 
 // The file drawer loads the newest FILES_BATCH entries first and shows them
-// right away, then keeps appending batches in the background until the whole
-// directory is listed. A generation counter cancels a running load when the
-// drawer is (re)opened or refreshed.
+// right away, then keeps appending batches of FILES_BATCH_MORE in the
+// background until the whole directory is listed (every batch lists the
+// directory again, so few large batches finish much sooner than many small
+// ones: 1200 scans take 7 requests instead of 60). A generation counter
+// cancels a running load when the drawer is (re)opened or refreshed.
 var FILES_BATCH = 20;
+var FILES_BATCH_MORE = 200;
 var files_load_generation = 0;
 
 function load_files_offcanvas(){
@@ -144,7 +147,7 @@ function load_more_files(generation) {
     if (list.length === 0 || generation !== files_load_generation) { return; }
     var loaded = parseInt(list.attr('data-loaded'), 10) || 0;
     var total = parseInt(list.attr('data-total'), 10) || 0;
-    var limit = parseInt(list.attr('data-limit'), 10) || FILES_BATCH;
+    var limit = FILES_BATCH_MORE;
     if (loaded >= total) {
         $('#fileslist-loading').addClass('d-none');
         return;

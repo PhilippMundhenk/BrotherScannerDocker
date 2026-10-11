@@ -13,6 +13,9 @@ test.describe('home page', () => {
     await expect(buttons.nth(1)).toHaveText('Scan to email');
     await expect(buttons.nth(2)).toHaveText('Scan to image');
     await expect(buttons.nth(3)).toHaveText('Scan to OCR');
+    // scripts and styles carry a version that changes with every image build (#144)
+    await expect(page.locator('script[src^="/assets/scripts.js?v="]')).toHaveAttribute('src', /\?v=\d+$/);
+    await expect(page.locator('link[href^="/assets/style.css?v="]')).toHaveAttribute('href', /\?v=\d+$/);
   });
 
   test('file drawer lists the scans in /scans with download and file operation buttons', async ({ page }) => {

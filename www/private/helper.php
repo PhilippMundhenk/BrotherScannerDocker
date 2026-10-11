@@ -7,3 +7,4 @@ require_once __DIR__ . '/lib/jobs.php';
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/device.php';
 require_once __DIR__ . '/lib/thumbnails.php';
+require_once __DIR__ . '/lib/assets.php';

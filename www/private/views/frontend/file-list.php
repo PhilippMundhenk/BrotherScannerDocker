@@ -10,8 +10,8 @@ if (isset($ALLOW_GUI_FILEOPERATIONS) && $ALLOW_GUI_FILEOPERATIONS) {
 
 // GET /list-files[?offset=N&limit=M][&fragment=1]
 // The drawer asks for the newest 20 first and then keeps appending batches
-// (fragment=1 returns only the list items), so the first entries are on
-// screen before the whole directory has been rendered.
+// of 200 (fragment=1 returns only the list items), so the first entries are
+// on screen before the whole directory has been rendered.
 list($offset, $limit) = paging_from_query();
 if ($limit === null) {
   $limit = 20;
@@ -30,7 +30,7 @@ $loaded = $offset + count($files);
 
 if (!$fragment) {
 ?>
-<div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-white" id="fileslist" data-total="<?php echo $total; ?>" data-loaded="<?php echo $loaded; ?>" data-limit="<?php echo $limit; ?>">
+<div class="d-flex flex-column align-items-stretch flex-shrink-0 bg-white" id="fileslist" data-total="<?php echo $total; ?>" data-loaded="<?php echo $loaded; ?>">
 
   <div class="list-group list-group-flush border-bottom scrollarea" id="fileslist-items">
 <?php
