@@ -15,7 +15,7 @@ async function main() {
   const base = process.argv[2] || 'http://localhost:18080';
   const out = process.argv[3] || path.join(__dirname, '..', '..', 'doc');
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1000, height: 720 }, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ viewport: { width: 1000, height: 800 }, deviceScaleFactor: 1 });
   await page.goto(base + '/');
   await page.waitForSelector('.trigger-scan');
   await page.waitForTimeout(1500); // status poll, icons

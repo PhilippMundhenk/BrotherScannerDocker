@@ -56,8 +56,11 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
         </div>
     </nav>
-    <section class="pt-5 pb-5 mt-0 align-items-center d-flex bg-dark" style="min-height: 100vh; ">
-        <div class="container">
+    <!-- Vertically centred while there is room; auto margins collapse to zero when the
+         content is taller than the screen, so the page then starts below the navbar and
+         scrolls instead of sliding under it (#167). -->
+    <section class="pb-5 mt-0 d-flex flex-column bg-dark" style="min-height: 100vh; padding-top: 5rem;">
+        <div class="container my-auto">
             <div class="row  justify-content-center align-items-center d-flex-row text-center h-100">
                 <div class="col-12 col-md-8  h-50 ">
                     <span id="status-image" class="d-block mx-auto rounded-circle img-fluid text-white"> <i

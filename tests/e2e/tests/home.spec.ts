@@ -102,3 +102,22 @@ test.describe('scan options', () => {
     await page.locator('select[data-option="mode"]').selectOption('');
   });
 });
+
+test.describe('phone layout', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test('with the options open the status icon stays below the navbar instead of sliding under it', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#scan-options-toggle').click();
+    await expect(page.locator('#scan-options')).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const nav = await page.locator('nav.navbar').boundingBox();
+    const icon = await page.locator('#status-image').boundingBox();
+    expect(nav && icon).toBeTruthy();
+    expect(icon!.y).toBeGreaterThanOrEqual(nav!.y + nav!.height);  // #167
+    // the page is taller than the screen here and scrolls down to the buttons
+    const lastButton = page.locator('a.trigger-scan').last();
+    await lastButton.scrollIntoViewIfNeeded();
+    await expect(lastButton).toBeInViewport();
+  });
+});
