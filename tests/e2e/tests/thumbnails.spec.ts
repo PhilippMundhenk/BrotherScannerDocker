@@ -114,13 +114,41 @@ test.describe('thumbnails', () => {
         await body.evaluate((el, s) => { el.scrollTop = Math.round((el.scrollHeight - el.clientHeight) * (s / 11)); }, step);
         await page.waitForTimeout(250);
       }
-      const live = await page.locator('img.thumb').evaluateAll((imgs) => imgs.filter((i) => i.getAttribute('src')).length);
+      const live = await page.locator('img.thumb').evaluateAll((imgs) => imgs.filter((i) => (i.getAttribute('src') || '').startsWith('/api/')).length);
+      const broken = await page.locator('img.thumb').evaluateAll((imgs) => imgs.filter((i) => i.hasAttribute('src') && i.complete && i.naturalWidth === 0).length);
+      expect(broken).toBe(0);  // released images carry a transparent image, never an empty or failed state (#155)
       console.log(`thumbnail requests after scrolling: ${requests.length}, images kept alive: ${live}`);
       test.info().annotations.push({ type: 'timing', description: `thumbnail requests: ${requests.length}, live images: ${live}` });
       expect(live).toBeLessThanOrEqual(THUMB_KEEP + 20);
       expect(requests.length).toBeLessThan(SEED);
     } finally {
       inContainer(['bash', '-c', 'rm -f /scans/thumbseed-*.pdf /scans/.thumbnails/thumbseed-*']);
+    }
+  });
+
+  test('a thumbnail whose load failed is retried while it stays in view', async ({ page }) => {
+    inContainer(['bash', '-c', `for i in $(seq 1 30); do cp /scans/${SAMPLE_FILE} "/scans/retryseed-$i.pdf"; done`]);
+    try {
+      let aborted = 0;
+      await page.route(`**/api/file/${SAMPLE_FILE}/thumbnail*`, (route) => {
+        if (aborted === 0) { aborted++; return route.abort('failed'); }
+        return route.continue();
+      });
+      await page.goto('/');
+      await page.locator('#triggerFiles').click();
+      const entry = page.locator('#offcanvasFiles .list-group-item', { hasText: SAMPLE_FILE.replace('.pdf', '') });
+      await entry.scrollIntoViewIfNeeded();
+      const img = entry.locator('img.thumb');
+      await expect.poll(() => aborted).toBe(1);
+      await expect(img).toHaveAttribute('data-failed', '1');
+      await expect(img).toHaveAttribute('src', /^data:image\/gif/);
+      // the entry stays in view: the load is retried by itself; the 1x1 placeholder
+      // also has a natural width, so require the real thumbnail (640 px)
+      await expect.poll(async () => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 1 && (el.getAttribute('src') || '').startsWith('/api/')), { timeout: 15_000 }).toBe(true);
+      await expect(img).not.toHaveAttribute('data-failed', '1');
+    } finally {
+      await page.unroute(`**/api/file/${SAMPLE_FILE}/thumbnail*`);
+      inContainer(['bash', '-c', 'rm -f /scans/retryseed-*.pdf /scans/.thumbnails/retryseed-*']);
     }
   });
 

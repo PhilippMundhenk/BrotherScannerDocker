@@ -41,7 +41,7 @@ if (!$fragment) {
     ?>
     <div class="list-group-item list-group-item-action p-0" aria-current="true" id="file_<?php echo $i; ?>">
       <?php if (thumbnails_enabled()) { ?>
-      <img class="thumb" alt="" width="640" height="302" loading="lazy" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
+      <img class="thumb" alt="" width="640" height="302" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
       <?php } ?>
       <div class="px-3 py-3">
       <div class="d-flex w-100 align-items-center justify-content-between">
