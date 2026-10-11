@@ -18,7 +18,8 @@ test.describe('restricted configuration', () => {
       '-e', 'WEBSERVER=true', '-e', 'PORT=8080', '-e', 'IPADDRESS=192.0.2.10', '-e', 'KEEPALIVE=false',
       '-e', 'SCANNER_PING_INTERVAL=0', '-e', 'RESOLUTION=100',
       '-e', 'GUI_THUMBNAILS=false', '-e', 'DISABLE_GUI_SCANTOIMAGE=true', '-e', 'RENAME_GUI_SCANTOFILE=Archive',
-      '-e', 'RENAME_GUI_SCANTOEMAIL="Backside"', '-e', "RENAME_GUI_SCANTOIMAGE='Picture'",  // quotes as in a compose list entry (#142) '-e', 'RENAME_GUI_SCANTOOCR=Text',
+      // two labels arrive quoted, as a compose list entry `- KEY="value"` delivers them (#142)
+      '-e', 'RENAME_GUI_SCANTOEMAIL="Backside"', '-e', "RENAME_GUI_SCANTOIMAGE='Picture'", '-e', 'RENAME_GUI_SCANTOOCR=Text',
       // explicit false values used to be truthy strings in config.php (#126)
       '-e', 'DISABLE_GUI_SCANTOOCR=false', '-e', 'ALLOW_GUI_FILEOPERATIONS=false', '-e', 'ALLOW_GUI_SETTINGS=false',
       IMAGE,
