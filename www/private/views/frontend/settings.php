@@ -35,10 +35,16 @@ foreach (settings_all() as $item) {
     <section class="pt-5 pb-5 mt-4">
         <div class="container" style="max-width: 900px;">
             <h1 class="h3 mb-1">Settings</h1>
-            <p class="small text-white-50 mb-4" id="settings-file">
-                Stored in <code><?php echo htmlspecialchars(settings_config_path()); ?></code>.
-                Values set in the container environment are shown read-only and win over this file.
+            <p class="small text-white-50 mb-2" id="settings-file">
+                This page writes <code><?php echo htmlspecialchars(settings_config_path()); ?></code> on the scans volume.
                 Settings marked <span class="badge bg-warning text-dark">restart</span> take effect after a container restart.
+            </p>
+            <p class="small text-white-50 mb-4" id="settings-sources">
+                Every value comes from one of three places, in this order of precedence:
+                <span class="badge bg-info text-dark">environment</span> the container environment, i.e. the <code>environment:</code> block of your docker-compose file or <code>docker run -e</code>;
+                it always wins, so such values are read-only here &ndash; change them in the compose file, or remove them there (and restart) to manage them on this page.
+                <span class="badge bg-success">file</span> the configuration file above, written by this page.
+                No badge: the built-in default, shown as placeholder.
             </p>
 
             <form id="settings-form" autocomplete="off">
