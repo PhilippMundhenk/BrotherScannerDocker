@@ -43,60 +43,58 @@ if (!$fragment) {
       <?php if (thumbnails_enabled()) { ?>
       <img class="thumb" alt="" width="640" height="302" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
       <?php } ?>
-      <div class="px-3 py-3">
-      <div class="d-flex w-100 align-items-center justify-content-between">
-        <strong class="mb-2 file-name flex-grow-1"><?php echo htmlspecialchars($file['name']); ?></strong>
-        <input class="form-control form-control-sm file-name-new d-none m-0 me-2 " type="text" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
-        <input class="form-control form-control-sm file-name-original d-none m-0 me-2 " type="hidden" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
-        <small><?php echo date('D', $file['fileModificationTime']); ?></small>
-      </div>
-      <div class="d-flex w-100 align-items-center justify-content-between pt-3">
-        <div class="mb-1 small info-label file-info-label-default"><?php echo number_format($file['size']/1024); ?> KB</div>
-        <div class="mb-1 small info-label file-info-label-delete d-none">Are you sure you want to delete this file?</div>
-        <div class="mb-1 small info-label file-info-label-rename d-none">
-
-              <div class="form-check  form-switch">
-                <input class="form-check-input file-rename-prefix-none" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixnone<?php echo $i; ?>">
-                <label class="form-check-label" for="prefixnone<?php echo $i; ?>">No prefix</label>
-              </div>
-
-              <div class="form-check  form-switch">
-                <input class="form-check-input file-rename-prefix-date" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixdate<?php echo $i; ?>" checked>
-                <label class="form-check-label" for="prefixdate<?php echo $i; ?>">Date prefix</label>
-              </div>
-
-              <div class="form-check form-switch">
-                <input class="form-check-input file-rename-prefix-datetime" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixdatetime<?php echo $i; ?>">
-                <label class="form-check-label" for="prefixdatetime<?php echo $i; ?>">Date & time prefix</label>
-              </div>
-
-
-        </div>
-        <div class="list-group list-group-flush border-bottom scrollarea file-buttons-default">
-          <div class="btn-group" role="group" aria-label="Basic outlined">
-            <a type="button" class="btn btn-outline-dark" href="/api/file/<?php echo rawurlencode($file['file']); ?>/download" target="_blank">
-              <i class="far fa-save fa-fw"></i>
-            </a>
-            <?php if ($file_op) { ?>
-            <button type="button" class="btn btn-outline-dark file-rename">
-              <i class="far fa-keyboard fa-fw"></i>
-            </button>
-            <button type="button" class="btn btn-outline-dark file-delete">
-              <i class="far fa-trash-alt fa-fw"></i>
-            </button>
-            <?php } ?>
+      <!-- one compact row (#165): name and meta on the left, buttons on the right; the
+           rename and delete confirmations swap the meta line and the buttons in place -->
+      <div class="px-3 py-2">
+      <div class="d-flex w-100 align-items-center justify-content-between gap-2">
+        <div class="flex-grow-1 min-w-0">
+          <strong class="file-name d-block text-truncate"><?php echo htmlspecialchars($file['name']); ?></strong>
+          <input class="form-control form-control-sm file-name-new d-none" type="text" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
+          <input class="file-name-original" type="hidden" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
+          <div class="small text-muted info-label file-info-label-default"><?php echo number_format($file['size']/1024); ?> KB &middot; <?php echo date('D', $file['fileModificationTime']); ?></div>
+          <div class="small info-label file-info-label-delete d-none">Are you sure you want to delete this file?</div>
+          <div class="small info-label file-info-label-rename d-none">
+            <div class="form-check form-check-inline form-switch">
+              <input class="form-check-input file-rename-prefix-none" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixnone<?php echo $i; ?>">
+              <label class="form-check-label" for="prefixnone<?php echo $i; ?>">No prefix</label>
+            </div>
+            <div class="form-check form-check-inline form-switch">
+              <input class="form-check-input file-rename-prefix-date" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixdate<?php echo $i; ?>" checked>
+              <label class="form-check-label" for="prefixdate<?php echo $i; ?>">Date prefix</label>
+            </div>
+            <div class="form-check form-check-inline form-switch">
+              <input class="form-check-input file-rename-prefix-datetime" type="radio" name="file-rename-prefix<?php echo $i; ?>" id="prefixdatetime<?php echo $i; ?>">
+              <label class="form-check-label" for="prefixdatetime<?php echo $i; ?>">Date &amp; time prefix</label>
+            </div>
           </div>
         </div>
-        <div class="list-group list-group-flush border-bottom scrollarea file-buttons-delete d-none">
-          <div class="btn-group" role="group" aria-label="Basic outlined">
-            <button type="button" class="btn btn-outline-dark file-delete-cancel"> CANCEL </button>
-            <a type="button" class="btn btn-danger file-delete-confirm" href="/api/file/<?php echo rawurlencode($file['file']); ?>/delete"> DELETE </a>
+        <div class="flex-shrink-0">
+          <div class="file-buttons-default">
+            <div class="btn-group btn-group-sm" role="group" aria-label="File actions">
+              <a type="button" class="btn btn-outline-dark" href="/api/file/<?php echo rawurlencode($file['file']); ?>/download" target="_blank" title="Download">
+                <i class="far fa-save fa-fw"></i>
+              </a>
+              <?php if ($file_op) { ?>
+              <button type="button" class="btn btn-outline-dark file-rename" title="Rename">
+                <i class="far fa-keyboard fa-fw"></i>
+              </button>
+              <button type="button" class="btn btn-outline-dark file-delete" title="Delete">
+                <i class="far fa-trash-alt fa-fw"></i>
+              </button>
+              <?php } ?>
+            </div>
           </div>
-        </div>
-        <div class="list-group list-group-flush border-bottom scrollarea file-buttons-rename d-none">
-          <div class="btn-group" role="group" aria-label="Basic outlined">
-            <button type="button" class="btn btn-outline-dark file-rename-cancel"> CANCEL </button>
-            <a type="button" class="btn btn-danger file-rename-confirm" href="/api/file/<?php echo rawurlencode($file['file']); ?>/rename"> SAVE </a>
+          <div class="file-buttons-delete d-none">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Confirm delete">
+              <button type="button" class="btn btn-outline-dark file-delete-cancel"> CANCEL </button>
+              <a type="button" class="btn btn-danger file-delete-confirm" href="/api/file/<?php echo rawurlencode($file['file']); ?>/delete"> DELETE </a>
+            </div>
+          </div>
+          <div class="file-buttons-rename d-none">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Confirm rename">
+              <button type="button" class="btn btn-outline-dark file-rename-cancel"> CANCEL </button>
+              <a type="button" class="btn btn-danger file-rename-confirm" href="/api/file/<?php echo rawurlencode($file['file']); ?>/rename"> SAVE </a>
+            </div>
           </div>
         </div>
       </div>

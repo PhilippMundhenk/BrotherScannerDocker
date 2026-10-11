@@ -8,6 +8,10 @@
   font-size: 1rem;
 }
 
+/* file list entries: the name may shrink and truncate instead of pushing the buttons out */
+#fileslist .min-w-0{min-width:0}
+#fileslist .file-name{font-size:.95rem}
+
 #fileslist :focus,
 #fileslist :active {
     box-shadow: none;
