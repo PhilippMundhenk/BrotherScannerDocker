@@ -184,6 +184,8 @@ Changes to scan, post-processing, OCR, notification and web UI settings take eff
 
 With `ALLOW_GUI_SETTINGS=true` the web UI gets a settings page (cog icon, `/settings`) that shows every setting with its current value and where it comes from, and writes the file. Values set in the environment are shown read-only. The same is available as `GET`/`PUT /api/settings` (see [doc/swagger.yaml](doc/swagger.yaml)); `PUT` needs the API token when one is configured.
 
+To move from environment variables to the file, the settings page has a button that copies every environment-set value (secrets included) into the file (`POST /api/settings/import-environment`). The environment still wins afterwards: remove the entries from the compose file and restart the container, and the file carries on with the same values.
+
 ### Secrets
 
 Passwords and tokens do not have to be written into the compose file. Every one of `FTP_USER`, `FTP_PASSWORD`, `SSH_USER`, `SSH_PASSWORD`, `TELEGRAM_TOKEN` and `TELEGRAM_CHATID` can instead be given as `<VARIABLE>_FILE`, pointing to a file inside the container whose content is used as the value (trailing newlines are stripped). This is how Docker secrets are delivered:

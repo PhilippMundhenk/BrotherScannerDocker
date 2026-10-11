@@ -527,6 +527,41 @@ paths:
         '404':
           description: File does not exist
 
+  /settings/import-environment:
+    post:
+      summary: Copy every setting the environment sets into the configuration file (migration)
+      description: The environment keeps winning until its entries are removed from the compose file and the container restarted; the file then carries on with the same values. Secrets are copied too. Requires ALLOW_GUI_SETTINGS=true and the API token when configured.
+      responses:
+        '200':
+          description: Keys written, keys already in the file with the same value, all environment keys, a message, and the settings list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  written:
+                    type: array
+                    items:
+                      type: string
+                  unchanged:
+                    type: array
+                    items:
+                      type: string
+                  environment:
+                    type: array
+                    items:
+                      type: string
+                  message:
+                    type: string
+                  config_file:
+                    type: string
+        '401':
+          description: API token missing or wrong
+        '403':
+          description: Settings disabled
+        '500':
+          description: The file could not be written
+
   /settings:
     get:
       summary: All settings with value, source (environment, file, default), lock state and whether a change needs a restart
