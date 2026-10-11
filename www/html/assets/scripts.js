@@ -227,7 +227,19 @@ function fill_scan_options(actions) {
         box.removeClass('d-none');
         shown++;
     });
-    $('#scan-options').toggleClass('d-none', shown === 0);
+    $('#scan-options-toggle-wrap').toggleClass('d-none', shown === 0);
+    update_scan_options_summary();
+}
+
+// The collapsed toggle names the values chosen away from the defaults, so a
+// remembered choice is never hidden: "Options: 200 dpi, True Gray".
+function update_scan_options_summary() {
+    var chosen = [];
+    $('#scan-options select.scan-option').each(function () {
+        var value = $(this).val();
+        if (value) { chosen.push($(this).data('option') === 'resolution' ? value + ' dpi' : value); }
+    });
+    $('#scan-options-summary').text(chosen.length ? 'Options: ' + chosen.join(', ') : 'Options');
 }
 
 $(document).ready(function() {
@@ -236,6 +248,7 @@ $(document).ready(function() {
         $.getJSON('/api/actions', fill_scan_options);
         $('#scan-options').on('change', 'select.scan-option', function () {
             try { window.localStorage.setItem(SCAN_OPTIONS_KEY, JSON.stringify(scan_options())); } catch (e) { /* private mode */ }
+            update_scan_options_summary();
         });
     }
 

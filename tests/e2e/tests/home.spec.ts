@@ -56,7 +56,13 @@ test.describe('home page', () => {
 test.describe('scan options', () => {
   test('resolution, mode and source come from the device, are remembered and sent with the scan', async ({ page, request }) => {
     await page.goto('/');
+    // collapsed by default so the page fits a phone screen (#153); the toggle opens it
     const options = page.locator('#scan-options');
+    const toggle = page.locator('#scan-options-toggle');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveText(/^Options\s*$/);
+    await expect(options).toBeHidden();
+    await toggle.click();
     await expect(options).toBeVisible();
     const resolution = page.locator('select[data-option="resolution"]');
     const mode = page.locator('select[data-option="mode"]');
@@ -70,7 +76,11 @@ test.describe('scan options', () => {
 
     await resolution.selectOption('200');
     await mode.selectOption('True Gray');
+    await expect(toggle).toHaveText(/^Options: 200 dpi, True Gray\s*$/);
     await page.reload();
+    await expect(page.locator('#scan-options')).toBeHidden();
+    await expect(page.locator('#scan-options-toggle')).toHaveText(/^Options: 200 dpi, True Gray\s*$/);
+    await page.locator('#scan-options-toggle').click();
     await expect(page.locator('select[data-option="resolution"]')).toHaveValue('200');
     await expect(page.locator('select[data-option="mode"]')).toHaveValue('True Gray');
     await expect(page.locator('select[data-option="source"]')).toHaveValue('');
