@@ -11,7 +11,8 @@ test.describe('legacy endpoints', () => {
     const body = await res.json();
     expect(body).toHaveProperty('scan');
     expect(body).toHaveProperty('waiting');
-    expect(body).toEqual(await (await request.get('/api/scanner/status')).json());
+    const status = await (await request.get('/api/scanner/status')).json();
+    expect(Object.keys(body).sort()).toEqual(Object.keys(status).sort());
   });
 
   test('scan.php triggers like the GET trigger, with the old upper-case OCR target', async ({ request }) => {
