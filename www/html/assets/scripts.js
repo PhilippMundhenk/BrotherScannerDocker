@@ -58,21 +58,34 @@ function set_state(state) {
     }
 }
 
-// Thumbnails: the browser only fetches the ones near the viewport, and at most
-// THUMB_KEEP decoded images stay alive; the others fall back to the CSS
-// placeholder until they scroll near again. Keeps a drawer with a thousand
-// scans light on memory.
+// Thumbnails: the browser only fetches the ones near the viewport, at most
+// THUMB_MAX_INFLIGHT at a time, and at most THUMB_KEEP decoded images stay
+// alive; the others get a transparent 1x1 image until they scroll near again,
+// so the CSS placeholder shows through. An image is never left without a src
+// or in a failed state (Firefox for Android paints both as a broken image,
+// #155): a failed load goes back to the transparent image and is retried the
+// next time the entry comes near. Keeps a drawer with a thousand scans light
+// on memory and robust on a slow link.
 var THUMB_KEEP = 40;
+var THUMB_MAX_INFLIGHT = 4;
+var THUMB_BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 var thumbObserver = null;
+var thumbInflight = 0;
+var thumbQueue = [];
 
 function thumb_root() {
     return document.querySelector('#offcanvasFiles .offcanvas-body');
 }
 
+function thumb_is_loaded(img) {
+    var src = img.getAttribute('src');
+    return !!src && src !== THUMB_BLANK;
+}
+
 function release_far_thumbs() {
     var root = thumb_root();
     if (!root) { return; }
-    var loaded = $('img.thumb').filter(function () { return this.getAttribute('src'); }).get();
+    var loaded = $('img.thumb').filter(function () { return thumb_is_loaded(this) && this.dataset.loading !== '1'; }).get();
     if (loaded.length <= THUMB_KEEP) { return; }
     var rootRect = root.getBoundingClientRect();
     var middle = (rootRect.top + rootRect.bottom) / 2;
@@ -82,8 +95,38 @@ function release_far_thumbs() {
         return db - da;  // farthest first
     });
     loaded.slice(0, loaded.length - THUMB_KEEP).forEach(function (img) {
-        if (img.dataset.visible !== '1') { img.removeAttribute('src'); }
+        if (img.dataset.visible !== '1') { img.src = THUMB_BLANK; }
     });
+}
+
+function load_thumb(img) {
+    if (thumb_is_loaded(img) || img.dataset.loading === '1') { return; }
+    if (thumbInflight >= THUMB_MAX_INFLIGHT) {
+        if (thumbQueue.indexOf(img) < 0) { thumbQueue.push(img); }
+        return;
+    }
+    img.dataset.loading = '1';
+    thumbInflight++;
+    img.onload = img.onerror = function (event) {
+        img.onload = img.onerror = null;
+        delete img.dataset.loading;
+        thumbInflight = Math.max(0, thumbInflight - 1);
+        if (event.type === 'error') {
+            img.src = THUMB_BLANK;
+            img.dataset.failed = '1';  // retried when it comes near again
+        } else {
+            delete img.dataset.failed;
+        }
+        pump_thumbs();
+    };
+    img.src = img.dataset.src;
+}
+
+function pump_thumbs() {
+    while (thumbInflight < THUMB_MAX_INFLIGHT && thumbQueue.length) {
+        var img = thumbQueue.shift();
+        if (img.dataset.visible === '1') { load_thumb(img); }
+    }
 }
 
 function observe_thumbs(container) {
@@ -98,9 +141,11 @@ function observe_thumbs(container) {
                 var img = entry.target;
                 if (entry.isIntersecting) {
                     img.dataset.visible = '1';
-                    if (!img.getAttribute('src')) { img.src = img.dataset.src; }
+                    load_thumb(img);
                 } else {
                     img.dataset.visible = '';
+                    var queued = thumbQueue.indexOf(img);
+                    if (queued >= 0) { thumbQueue.splice(queued, 1); }
                 }
             });
             release_far_thumbs();
@@ -111,6 +156,8 @@ function observe_thumbs(container) {
 
 function reset_thumbs() {
     if (thumbObserver) { thumbObserver.disconnect(); thumbObserver = null; }
+    thumbQueue = [];
+    thumbInflight = 0;
 }
 
 // The file drawer loads the newest FILES_BATCH entries first and shows them
