@@ -65,8 +65,13 @@ if (isset($RENAME_GUI_SCANTOOCR) && $RENAME_GUI_SCANTOOCR) {
 
                     <!-- Scan options for the next scan (#150): filled from /api/actions with the values the
                          device listed at startup, remembered in the browser, sent with every trigger.
-                         A selector without options from the device stays hidden. -->
-                    <div class="row g-2 justify-content-center mb-4 d-none" id="scan-options">
+                         A selector without options from the device stays hidden. Collapsed behind an
+                         "Options" toggle so the page fits a phone screen (#153); the toggle names the
+                         values chosen away from the defaults. -->
+                    <p class="mb-3 d-none" id="scan-options-toggle-wrap">
+                        <a class="btn btn-sm btn-outline-light collapsed" data-bs-toggle="collapse" href="#scan-options" role="button" aria-expanded="false" aria-controls="scan-options" id="scan-options-toggle"><span id="scan-options-summary">Options</span> <i class="fas fa-chevron-down fa-xs"></i></a>
+                    </p>
+                    <div class="row g-2 justify-content-center mb-4 collapse" id="scan-options">
                         <div class="col-12 col-sm-4 d-none text-start" id="scan-option-resolution">
                             <label class="form-label small text-light mb-1" for="scan-resolution">Resolution</label>
                             <select class="form-select scan-option" id="scan-resolution" data-option="resolution" title="Resolution for the next scan"></select>
