@@ -90,4 +90,8 @@ test.describe('restricted configuration', () => {
     await expect(entry.locator('img.thumb')).toHaveCount(0);
     await expect(entry.locator('button.file-delete')).toHaveCount(0);
   });
+
+  test('a missing configuration file is not logged as a warning on every request', async () => {
+    expect(docker(['exec', NAME, 'bash', '-c', 'grep -c "Failed to open stream" /var/log/scanner.log || true']).trim()).toBe('0');
+  });
 });

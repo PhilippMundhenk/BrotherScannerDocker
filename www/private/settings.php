@@ -53,6 +53,9 @@ function settings_locked_keys() {
 function settings_file_values($path = null) {
     $path = $path ?? settings_config_path();
     $values = array();
+    if (!is_file($path)) {
+        return $values;  // no configuration file yet: nothing to overlay, nothing to log
+    }
     $lines = @file($path, FILE_IGNORE_NEW_LINES);
     if (!is_array($lines)) {
         return $values;

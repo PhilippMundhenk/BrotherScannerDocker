@@ -8,6 +8,7 @@ import { inContainer, listFiles, SAMPLE_FILE } from '../helpers';
 
 const SEED = 1200;
 const BATCH = 20;
+const BATCH_MORE = 200; // follow-up batches of the drawer (#144)
 const BUDGET_FIRST_BATCH_MS = 2_000; // drawer shows the first entries
 const BUDGET_PAGE_API_MS = 1_000; // one API page
 const BUDGET_FULL_API_MS = 5_000; // unpaginated API list (compatibility)
@@ -96,9 +97,9 @@ test.describe('file list with many files', () => {
     const completeMs = performance.now() - t0;
     record(test.info(), `drawer complete with ${total} entries`, completeMs, BUDGET_COMPLETE_MS);
     await expect(page.locator('#fileslist-loading')).toBeHidden();
-    expect(batchRequests.length).toBe(Math.ceil(total / BATCH));
+    expect(batchRequests.length).toBe(1 + Math.ceil((total - BATCH) / BATCH_MORE));
     expect(batchRequests[0]).toContain(`offset=0&limit=${BATCH}`);
-    expect(batchRequests[1]).toContain(`offset=${BATCH}&limit=${BATCH}&fragment=1`);
+    expect(batchRequests[1]).toContain(`offset=${BATCH}&limit=${BATCH_MORE}&fragment=1`);
 
     // Reopening restarts the load cleanly (no duplicates from a cancelled run).
     await page.locator('#offcanvasFiles .btn-close').click();
