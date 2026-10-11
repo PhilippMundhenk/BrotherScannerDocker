@@ -126,7 +126,7 @@ test.describe('thumbnails', () => {
     }
   });
 
-  test('a thumbnail whose load failed is retried when it scrolls near again', async ({ page }) => {
+  test('a thumbnail whose load failed is retried while it stays in view', async ({ page }) => {
     inContainer(['bash', '-c', `for i in $(seq 1 30); do cp /scans/${SAMPLE_FILE} "/scans/retryseed-$i.pdf"; done`]);
     try {
       let aborted = 0;
@@ -142,12 +142,9 @@ test.describe('thumbnails', () => {
       await expect.poll(() => aborted).toBe(1);
       await expect(img).toHaveAttribute('data-failed', '1');
       await expect(img).toHaveAttribute('src', /^data:image\/gif/);
-      // scroll far away and back: the entry comes near again and the load is retried
-      const body = page.locator('#offcanvasFiles .offcanvas-body');
-      await body.evaluate((el) => { el.scrollTop = el.scrollHeight; });
-      await page.waitForTimeout(300);
-      await entry.scrollIntoViewIfNeeded();
-      await expect.poll(async () => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0), { timeout: 15_000 }).toBe(true);
+      // the entry stays in view: the load is retried by itself; the 1x1 placeholder
+      // also has a natural width, so require the real thumbnail (640 px)
+      await expect.poll(async () => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 1 && (el.getAttribute('src') || '').startsWith('/api/')), { timeout: 15_000 }).toBe(true);
       await expect(img).not.toHaveAttribute('data-failed', '1');
     } finally {
       await page.unroute(`**/api/file/${SAMPLE_FILE}/thumbnail*`);

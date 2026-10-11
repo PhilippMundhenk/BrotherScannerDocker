@@ -113,9 +113,17 @@ function load_thumb(img) {
         thumbInflight = Math.max(0, thumbInflight - 1);
         if (event.type === 'error') {
             img.src = THUMB_BLANK;
-            img.dataset.failed = '1';  // retried when it comes near again
+            img.dataset.failed = '1';
+            // retried a few times while it stays in view (a slow or flaky link), and
+            // in any case the next time it comes near again
+            var tries = parseInt(img.dataset.retries || '0', 10) + 1;
+            img.dataset.retries = String(tries);
+            if (tries <= 3) {
+                setTimeout(function () { if (img.dataset.visible === '1') { load_thumb(img); } }, 1500 * tries);
+            }
         } else {
             delete img.dataset.failed;
+            delete img.dataset.retries;
         }
         pump_thumbs();
     };
