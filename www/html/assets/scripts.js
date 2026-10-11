@@ -207,7 +207,6 @@ function fill_scan_options(actions) {
     var capabilities = (actions && actions.device && actions.device.capabilities) || {};
     var parameters = (actions && actions.parameters) || {};
     var saved = saved_scan_options();
-    var labels = { resolution: 'Resolution', mode: 'Mode', source: 'Source' };
     var shown = 0;
     $('#scan-options select.scan-option').each(function () {
         var name = $(this).data('option');
@@ -219,7 +218,7 @@ function fill_scan_options(actions) {
         var fallback = containerDefault || capability['default'];
         var unit = name === 'resolution' ? ' dpi' : '';
         var select = $(this).empty();
-        select.append($('<option>').val('').text(labels[name] + ': default' + (fallback ? ' (' + fallback + unit + ')' : '')));
+        select.append($('<option>').val('').text('Default' + (fallback ? ' (' + fallback + unit + ')' : '')));
         values.forEach(function (value) {
             select.append($('<option>').val(String(value)).text(String(value) + unit));
         });

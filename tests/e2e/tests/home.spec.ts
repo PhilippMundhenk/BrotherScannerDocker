@@ -62,9 +62,10 @@ test.describe('scan options', () => {
     const mode = page.locator('select[data-option="mode"]');
     const source = page.locator('select[data-option="source"]');
     // the simulator lists 100..600 dpi with 300 as device default; the container runs with RESOLUTION=100
-    await expect(resolution.locator('option').first()).toHaveText('Resolution: default (100 dpi)');
+    await expect(resolution.locator('option').first()).toHaveText('Default (100 dpi)');
+    await expect(page.locator('label[for="scan-resolution"]')).toHaveText('Resolution');
     await expect(resolution.locator('option')).toHaveCount(7);
-    await expect(mode.locator('option')).toHaveText(['Mode: default (24bit Color[Fast])', 'Black & White', 'Gray[Error Diffusion]', 'True Gray', '24bit Color[Fast]']);
+    await expect(mode.locator('option')).toHaveText(['Default (24bit Color[Fast])', 'Black & White', 'Gray[Error Diffusion]', 'True Gray', '24bit Color[Fast]']);
     await expect(source.locator('option')).toHaveCount(4);
 
     await resolution.selectOption('200');
