@@ -192,6 +192,11 @@ if [ "$WEBSERVER" == "true" ]; then
     # everything else is an escaped string.
     php_literal() {
       local value="$1"
+      # Compose list entries like `- KEY="Scan front pages"` keep their quotes;
+      # drop one pair of matching surrounding quotes so they never reach the UI.
+      if [[ ${#value} -ge 2 && ( ( ${value:0:1} == '"' && ${value: -1} == '"' ) || ( ${value:0:1} == "'" && ${value: -1} == "'" ) ) ]]; then
+        value="${value:1:${#value}-2}"
+      fi
       case "${value,,}" in
         true) echo "true" ;;
         false) echo "false" ;;

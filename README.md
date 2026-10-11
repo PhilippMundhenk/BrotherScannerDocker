@@ -149,6 +149,8 @@ You can configure the tool via environment variables:
 | SCANNER_PING_INTERVAL | optional | Seconds between checks whether the scanner answers on its scan port, reported as `reachable` by the status endpoint; 0 disables (default: 60) |
 | FTP_PASSWORD_FILE, SSH_PASSWORD_FILE, TELEGRAM_TOKEN_FILE, FTP_USER_FILE, SSH_USER_FILE, TELEGRAM_CHATID_FILE | optional | Path of a file inside the container to read the value from, for Docker secrets (see below) |
 
+Quotes around a value, as in the examples above, are optional; one pair of surrounding quotes is dropped.
+
 ### FTPS upload
 
 In addition to the storage in the mounted volume, you can use FTPS (Secure FTP) Upload.
