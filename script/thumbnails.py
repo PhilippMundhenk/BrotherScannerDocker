@@ -59,13 +59,11 @@ def thumbnail_path(pdf_path: str, thumb_dir: str = THUMB_DIR) -> str:
     return os.path.join(thumb_dir, f"{os.path.basename(pdf_path)}.{mtime}.jpg")
 
 
-def forget(pdf_path: str, thumb_dir: str = THUMB_DIR, keep: Optional[str] = None) -> int:
-    """Remove the cached thumbnails of a file (all versions but `keep`). Returns how many went."""
+def forget(pdf_path: str, thumb_dir: str = THUMB_DIR) -> int:
+    """Remove the cached thumbnails of a file (every version). Returns how many went."""
     removed = 0
     pattern = os.path.join(thumb_dir, glob.escape(os.path.basename(pdf_path)) + ".*.jpg")
     for old in glob.glob(pattern):
-        if keep is not None and os.path.abspath(old) == os.path.abspath(keep):
-            continue
         try:
             os.remove(old)
             removed += 1
@@ -87,7 +85,7 @@ def render(
         if os.path.isfile(target) and os.path.getsize(target) > 0:
             return target
         os.makedirs(thumb_dir, exist_ok=True)
-        forget(pdf_path, thumb_dir, keep=target)
+        forget(pdf_path, thumb_dir)  # a miss: only outdated versions can exist
         tmp_base = os.path.join(thumb_dir, f".{os.path.basename(pdf_path)}.{os.getpid()}")
         tmp = tmp_base + ".jpg"
         result = run([*PDFTOPPM, pdf_path, tmp_base], capture_output=True, text=True, timeout=RENDER_TIMEOUT)
