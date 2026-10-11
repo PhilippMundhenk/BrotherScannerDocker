@@ -52,5 +52,6 @@ Details and the rest of the changes: [Migration guide](doc/migration.md).
 - [Customizing the scan scripts](doc/customizing.md)
 - [Development and testing](doc/development.md)
 - [Migration guide](doc/migration.md)
+- [Changelog](CHANGELOG.md)
 
 This is an independent project, not affiliated with Brother Industries, Ltd.; the Brother driver packages are downloaded from Brother at image build time.
