@@ -24,7 +24,7 @@ version: "3"
 
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
     volumes:
       - /path/on/host:/scans
     ports:
@@ -56,7 +56,7 @@ version: "3"
 
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
     volumes:
       - /path/on/host:/scans
     environment:
@@ -176,6 +176,8 @@ RENAME_GUI_SCANTOFILE=Scan front pages
 
 Changes to scan, post-processing, OCR, notification and web UI settings take effect with the next scan or request. Settings that only the entrypoint reads (NAME, UID/GID, MODEL, IPADDRESS, HOST_IPADDRESS, PORT, TZ, KEEPALIVE*, SCANNER_PING_INTERVAL, API_TOKEN, ALLOW_GUI_SETTINGS) need a container restart; the settings page marks them.
 
+![Screenshot of the settings page](doc/gui-settings.png)
+
 With `ALLOW_GUI_SETTINGS=true` the web UI gets a settings page (cog icon, `/settings`) that shows every setting with its current value and where it comes from, and writes the file. Values set in the environment are shown read-only. The same is available as `GET`/`PUT /api/settings` (see [doc/swagger.yaml](doc/swagger.yaml)); `PUT` needs the API token when one is configured.
 
 ### Secrets
@@ -262,8 +264,11 @@ here is an example of the environment:
 
 You can access the GUI under the IP of your container and the set port (or 80 in default case).
 With the full config example below, the result will look something like this:
-![Screenshot of main web interface](doc/gui-main.jpg)
-![Screenshot of file list web interface](doc/gui-filelist.jpg)
+![Screenshot of the main web interface](doc/gui-main.png)
+
+The file list (PDF icon, top right) shows the scans newest first, with a thumbnail, size and date, a download button and, with `ALLOW_GUI_FILEOPERATIONS=true`, rename and delete:
+
+![Screenshot of the file list](doc/gui-filelist.png)
 
 The file list shows a thumbnail of the first page of every scan. Thumbnails are rendered once per file on first view, cached in `/scans/.thumbnails`, and loaded lazily, so a folder with a thousand scans stays fast; `GUI_THUMBNAILS=false` turns them off.
 
@@ -300,7 +305,7 @@ Set `API_TOKEN` to require a token for everything that starts a scan or changes 
 
 There is a Home Assistant integration for this container, [ha-brother-scanner](https://github.com/PhilippMundhenk/ha-brother-scanner), and a dashboard card, [brother-scanner-card](https://github.com/PhilippMundhenk/brother-scanner-card). Both install through HACS (as custom repositories until they are in the default store). The integration creates one device per container with the scanner state, the last scan (downloadable through Home Assistant), the OCR queue, one button per scan action named like the buttons here, selects for resolution/mode/source from the device capabilities, services (`brother_scanner.scan`, `scan_rear`, `download_last_scan`) and events when a scan starts, finishes or fails.
 
-<!-- screenshot of the Home Assistant card: doc/ha-card.png -->
+![The dashboard card in Home Assistant](doc/ha-card.png)
 
 Without the integration, Home Assistant's built-in `rest` platform covers the basics:
 
@@ -334,7 +339,7 @@ version: "3"
 
 services:
   brother-scanner:
-    image: ghcr.io/philippmundhenk/brotherscannerdocker:v1.1.0
+    image: ghcr.io/philippmundhenk/brotherscannerdocker:v2.0.0
     volumes:
       - /path/on/host:/scans
     ports:
@@ -391,4 +396,5 @@ All scripts log to `/var/log/scanner.log`, which the container prints to its out
 
 Four test layers run in GitHub Actions for every pull request and before every image is published (`.github/workflows/test.yml`): shellcheck and bats for the remaining shell scripts, pytest for the Python pipeline and the OCR queue, and Playwright end-to-end tests that run the built image with a simulated scanner and a fake OCR service and drive the web UI and the API.
 See [tests/README.md](tests/README.md) for how to run them locally and what they cover.
+The screenshots in `doc/` come from `tests/e2e/screenshots.ts` run against a container started from the e2e image (`npx tsx screenshots.ts http://localhost:<port> ../../doc`).
 The Brother driver itself (registration with the device, button events, the SNMP keepalive) cannot be simulated and needs real hardware.
