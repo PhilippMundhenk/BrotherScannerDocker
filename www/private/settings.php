@@ -235,27 +235,73 @@ function settings_save($changes) {
     }
 
     if (!empty($saved) || !empty($removed)) {
-        $dir = dirname($path);
-        if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
+        $error = settings_write_file($path, $current);
+        if ($error !== null) {
             return array('saved' => array(), 'removed' => array(), 'restart_required' => array(),
-                         'errors' => array('_file' => "cannot create $dir"));
+                         'errors' => array('_file' => $error));
         }
-        $lines = array("# BrotherScannerDocker configuration, written by the settings page on " . date('Y-m-d H:i:s'),
-                       "# Environment variables of the container take precedence over this file.");
-        ksort($current);
-        foreach ($current as $key => $value) {
-            $lines[] = $key . '=' . $value;
-        }
-        $tmp = $path . '.' . getmypid() . '.tmp';
-        if (@file_put_contents($tmp, implode("\n", $lines) . "\n") === false || !@rename($tmp, $path)) {
-            @unlink($tmp);
-            return array('saved' => array(), 'removed' => array(), 'restart_required' => array(),
-                         'errors' => array('_file' => "cannot write $path"));
-        }
-        @chmod($path, 0664);
         trigger_error("settings saved to $path: " . implode(', ', array_merge($saved, array_map(function ($k) { return "-$k"; }, $removed))), E_API);
     }
     return array('saved' => $saved, 'removed' => $removed, 'restart_required' => array_values(array_unique($restart)), 'errors' => array());
+}
+
+/** Write KEY=VALUE lines atomically. Returns null, or the reason it could not. */
+function settings_write_file($path, $values) {
+    $dir = dirname($path);
+    if (!is_dir($dir) && !@mkdir($dir, 0777, true)) {
+        return "cannot create $dir";
+    }
+    $lines = array("# BrotherScannerDocker configuration, written by the settings page on " . date('Y-m-d H:i:s'),
+                   "# Environment variables of the container take precedence over this file.");
+    ksort($values);
+    foreach ($values as $key => $value) {
+        $lines[] = $key . '=' . $value;
+    }
+    $tmp = $path . '.' . getmypid() . '.tmp';
+    if (@file_put_contents($tmp, implode("\n", $lines) . "\n") === false || !@rename($tmp, $path)) {
+        @unlink($tmp);
+        return "cannot write $path";
+    }
+    @chmod($path, 0664);
+    return null;
+}
+
+/**
+ * Migration: copy every setting the environment sets into the configuration
+ * file with its current value, secrets included (#161). The environment keeps
+ * winning until its entries are removed from the compose file and the
+ * container restarted; then the file carries on with the same values.
+ * Returns array(written => [...], unchanged => [...], environment => [...], error => string|null).
+ */
+function settings_import_environment() {
+    $locked = settings_locked_keys();
+    $path = settings_config_path();
+    $current = settings_file_values($path);
+    $written = array();
+    $unchanged = array();
+    foreach (settings_catalogue() as $entry) {
+        $key = $entry['key'];
+        if (!isset($locked[$key]) || !isset($GLOBALS[$key])) {
+            continue;
+        }
+        $value = $GLOBALS[$key];
+        $value = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
+        if (array_key_exists($key, $current) && $current[$key] === $value) {
+            $unchanged[] = $key;
+            continue;
+        }
+        $current[$key] = $value;
+        $written[] = $key;
+    }
+    $error = null;
+    if (!empty($written)) {
+        $error = settings_write_file($path, $current);
+        if ($error === null) {
+            trigger_error("environment values copied to $path: " . implode(', ', $written), E_API);
+        }
+    }
+    return array('written' => $error === null ? $written : array(), 'unchanged' => $unchanged,
+                 'environment' => array_merge($written, $unchanged), 'error' => $error);
 }
 
 function settings_enabled() {

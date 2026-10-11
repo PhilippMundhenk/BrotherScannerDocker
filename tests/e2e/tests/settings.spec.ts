@@ -123,4 +123,37 @@ test.describe('settings page and API', () => {
     expect(secret.value).toBe('');
     expect(JSON.stringify(body)).not.toContain('e2e-secret-password');
   });
+
+  test('the environment values can be copied into the file; the environment still wins', async ({ page, request }) => {
+    // the e2e container sets RESOLUTION=100 and ALLOW_GUI_FILEOPERATIONS=true in its environment
+    inContainer(['bash', '-c', `cp ${CONFIG} ${CONFIG}.bak 2>/dev/null || true`]);
+    try {
+      const res = await request.post('/api/settings/import-environment');
+      expect(res.status()).toBe(200);
+      const body = await res.json();
+      expect(body.written).toContain('RESOLUTION');
+      expect(body.environment).toContain('ALLOW_GUI_FILEOPERATIONS');
+      expect(body.message).toContain('still wins');
+      const file = inContainer(['cat', CONFIG]);
+      expect(file).toContain('RESOLUTION=100');
+      expect(file).toContain('ALLOW_GUI_FILEOPERATIONS=true');
+      // the environment keeps precedence: still locked, still reported as environment
+      const resolution = (await (await request.get('/api/settings')).json()).settings.find((s: any) => s.key === 'RESOLUTION');
+      expect(resolution.source).toBe('environment');
+      expect(resolution.locked).toBe(true);
+      // a second copy writes nothing new
+      const again = await (await request.post('/api/settings/import-environment')).json();
+      expect(again.written).toEqual([]);
+      expect(again.unchanged).toContain('RESOLUTION');
+
+      // the page: confirmation dialog, then the result names the keys to remove from compose
+      page.on('dialog', (dialog) => dialog.accept());
+      await page.goto('/settings');
+      await page.locator('#import-environment').click();
+      await expect(page.locator('#import-result')).toContainText('remove from the compose file and restart');
+      await expect(page.locator('#import-result')).toContainText('RESOLUTION');
+    } finally {
+      inContainer(['bash', '-c', `if [ -f ${CONFIG}.bak ]; then mv ${CONFIG}.bak ${CONFIG}; else rm -f ${CONFIG}; fi`]);
+    }
+  });
 });

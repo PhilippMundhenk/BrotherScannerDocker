@@ -119,6 +119,12 @@ $router->map( 'GET', '/api/settings', function() {
 });
 
 
+$router->map( 'POST', '/api/settings/import-environment', function() {
+    api_token_required();
+	require_once 'views/api/settings-import.php';
+});
+
+
 $router->map( 'PUT', '/api/settings', function() {
     api_token_required();
 	require_once 'views/api/settings.php';

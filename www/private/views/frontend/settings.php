@@ -87,6 +87,21 @@ foreach (settings_all() as $item) {
                     <span id="settings-result" class="small"></span>
                 </div>
             </form>
+
+            <!-- Migration from environment variables to the file (#161) -->
+            <div class="card bg-secondary text-light mb-5" id="import-environment-card">
+                <div class="card-header fw-bold">Move settings from the environment into the file</div>
+                <div class="card-body">
+                    <p class="small mb-3">
+                        Copies every value marked <span class="badge bg-info text-dark">environment</span>, passwords and tokens included, into the configuration file.
+                        The environment still wins afterwards: remove the entries from your compose file and restart the container, and the file carries on with the same values, editable here.
+                    </p>
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-outline-light" id="import-environment">Copy environment values into the file</button>
+                        <span id="import-result" class="small"></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -102,6 +117,29 @@ foreach (settings_all() as $item) {
     // sent only when something was typed.
     var original = {};
     $('.setting-input').each(function () { original[this.name] = $(this).val(); });
+
+    $('#import-environment').on('click', function () {
+        var result = $('#import-result');
+        if (!window.confirm('Copy every value set by the environment, passwords and tokens included, into the configuration file?')) { return; }
+        $.ajax({
+            url: '/api/settings/import-environment', type: 'POST',
+            success: function (data) {
+                var text;
+                if (data.environment.length === 0) {
+                    text = data.message + '.';
+                } else {
+                    text = 'Copied: ' + (data.written.join(', ') || 'nothing new') +
+                        (data.unchanged.length ? ' (already in the file: ' + data.unchanged.join(', ') + ')' : '') +
+                        '. Now remove from the compose file and restart: ' + data.environment.join(', ') + '.';
+                }
+                result.text(text).removeClass('text-danger').addClass('text-success');
+            },
+            error: function (xhr) {
+                var body = xhr.responseJSON || {};
+                result.text(body.message || 'Copying failed (' + xhr.status + ')').removeClass('text-success').addClass('text-danger');
+            }
+        });
+    });
 
     $('#settings-form').on('submit', function (e) {
         e.preventDefault();
