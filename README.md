@@ -100,6 +100,8 @@ You can configure the tool via environment variables:
 | NAME                                     | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running.                                       |
 | MODEL                                    | mandatory | Model of your scanner (e.g., MFC-L2700DW)                                                                                                        |
 | IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
+| HOST_IPADDRESS | optional | IP address under which the scanner reaches this container (bridged networking, see "Preferred" setup); empty for host networking |
+| TZ | optional | Time zone for file names, logs and the web UI, e.g. `Europe/Berlin` (default: UTC) |
 | RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
 | SCAN_MODE | optional | Scan mode as listed by the device in the capabilities at startup, e.g. `True Gray` or `Black & White` (default: device default, usually 24-bit colour). Scan to OCR uses `True Gray` unless this is set |
 | SCAN_SOURCE | optional | Paper source as listed by the device at startup, e.g. `Automatic Document Feeder(left aligned,Duplex)` on duplex models or `FlatBed` (default: device default) |

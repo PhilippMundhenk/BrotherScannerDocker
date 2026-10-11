@@ -57,6 +57,8 @@ return array(
           'description' => 'Port of the OCR service.'),
     array('key' => 'OCR_PATH', 'group' => 'OCR', 'type' => 'string', 'default' => '', 'restart' => false,
           'description' => 'Path of the OCR service, e.g. ocr.php.'),
+    array('key' => 'OCR_QUEUE_DIR', 'group' => 'OCR', 'type' => 'string', 'default' => '/scans/.ocr_queue', 'restart' => true,
+          'description' => 'Directory of the OCR upload queue, on the persistent volume.'),
     array('key' => 'REMOVE_ORIGINAL_AFTER_OCR', 'group' => 'OCR', 'type' => 'bool', 'default' => 'false', 'restart' => false,
           'description' => 'Delete the original scan once a validated OCR copy is in place.'),
     array('key' => 'OCR_MAX_ATTEMPTS', 'group' => 'OCR', 'type' => 'int', 'default' => '5', 'restart' => false, 'min' => 1, 'max' => 100,
