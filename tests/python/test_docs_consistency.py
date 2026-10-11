@@ -1,7 +1,7 @@
-"""The README documents every setting the catalogue offers, and the catalogue knows every setting the README lists.
+"""The options page documents every setting the catalogue offers, and the catalogue knows every setting the page lists.
 
 The settings catalogue (www/private/settings-catalogue.php) drives the settings page and the
-configuration file; the README options table is what users read. The two drift apart easily,
+configuration file; the options table in doc/configuration.md is what users read. The two drift apart easily,
 so this test keeps them in step (#128).
 """
 import re
@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# settings the README documents outside the options table or that are not user settings
+# settings documented outside the options table or that are not user settings
 # WEBSERVER and SCANNER_CONFIG_FILE are read by the entrypoint only and cannot come from the file
 README_ONLY = {"UID", "GID", "WEBSERVER", "SCANNER_CONFIG_FILE", "FTP_PASSWORD_FILE", "SSH_PASSWORD_FILE", "TELEGRAM_TOKEN_FILE",
                "FTP_USER_FILE", "SSH_USER_FILE", "TELEGRAM_CHATID_FILE"}
@@ -21,7 +21,7 @@ def catalogue_keys():
 
 
 def readme_table_keys():
-    text = (ROOT / "README.md").read_text(encoding="utf-8")
+    text = (ROOT / "doc" / "configuration.md").read_text(encoding="utf-8")
     keys = set()
     for line in text.splitlines():
         if not line.startswith("| ") or line.startswith("| Variable") or line.startswith("| ---"):
@@ -33,12 +33,12 @@ def readme_table_keys():
 
 def test_every_catalogue_setting_is_in_the_readme_table():
     missing = catalogue_keys() - readme_table_keys()
-    assert not missing, f"settings in the catalogue but not in the README options table: {sorted(missing)}"
+    assert not missing, f"settings in the catalogue but not in the options table of doc/configuration.md: {sorted(missing)}"
 
 
 def test_every_readme_setting_is_in_the_catalogue():
     unknown = readme_table_keys() - catalogue_keys() - README_ONLY
-    assert not unknown, f"settings in the README options table but not in the catalogue: {sorted(unknown)}"
+    assert not unknown, f"settings in the options table of doc/configuration.md but not in the catalogue: {sorted(unknown)}"
 
 
 def test_swagger_lists_every_api_route():
