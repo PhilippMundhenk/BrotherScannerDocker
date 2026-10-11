@@ -142,7 +142,7 @@ You can configure the tool via environment variables:
 | TELEGRAM_TOKEN                           | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | TELEGRAM_CHATID                          | optional  | If TELEGRAM_TOKEN and TELEGRAM_CHATID are set, then this sends notification                                                                      |
 | ALLOW_GUI_FILEOPERATIONS                 | optional  | true/false. Let you delete and rename files in files list                                                                                        |
-| GUI_THUMBNAILS | optional | true/false. Thumbnails of the first page in the file list, rendered once per file and cached in `/scans/.thumbnails` (default: true) |
+| GUI_THUMBNAILS | optional | true/false. Thumbnails of the top of the first page in the file list, rendered once per file after the scan and cached in `/scans/.thumbnails` (default: true) |
 | ALLOW_GUI_SETTINGS | optional | true/false. Enables the settings page (`/settings`) and the settings API, which write the configuration file (default: false) |
 | SCANNER_CONFIG_FILE | optional | Path of the configuration file inside the container (default: /scans/.config/scanner.conf) |
 | API_TOKEN | optional | When set, every request that starts a scan or changes a file must carry it (`Authorization: Bearer <token>`, `X-API-Token` header, or a `token` field). The web UI sends it itself (default: no token) |
@@ -272,7 +272,7 @@ The file list (PDF icon, top right) shows the scans newest first, with a thumbna
 
 ![Screenshot of the file list](doc/gui-filelist.png)
 
-The file list shows a thumbnail of the first page of every scan. Thumbnails are rendered once per file on first view, cached in `/scans/.thumbnails`, and loaded lazily, so a folder with a thousand scans stays fast; `GUI_THUMBNAILS=false` turns them off.
+Every entry shows the top of the first page as a thumbnail across the width of the list. Thumbnails are rendered once per file by the scan pipeline right after a scan (and, for existing scans, by a low-priority sweep at container start), cached in `/scans/.thumbnails` and loaded lazily, so a folder with a thousand scans stays fast; `GUI_THUMBNAILS=false` turns them off. A thumbnail that is still missing is rendered on request, as the scan user; when that fails the entry keeps a document icon and the log says why (`thumbnail failed for ...`).
 
 Note that the interface does not block when pressing a button.
 Thus, make sure to wait for your scan to complete, before pressing another button.

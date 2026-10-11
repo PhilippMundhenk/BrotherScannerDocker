@@ -67,6 +67,11 @@ export default async function globalSetup() {
   // Seed /scans with one known PDF for the file listing / download / rename / delete tests.
   docker(['cp', path.join(FIXTURES, 'sample.pdf'), `${name}:/scans/${SAMPLE_FILE}`]);
   docker(['exec', name, 'chmod', '666', `/scans/${SAMPLE_FILE}`]);
+  // The thumbnail sweep of the entrypoint must be over before the tests touch the cache.
+  const sweepDeadline = Date.now() + 30_000;
+  while (Date.now() < sweepDeadline && !docker(['logs', name]).includes('thumbnail sweep finished')) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
 
   await waitForUrl(`http://localhost:${HOST_PORT}/api/scanner/status`, 90_000, name);
   console.log(`container ${container.slice(0, 12)} ready on port ${HOST_PORT}, fake OCR on ${ocrPort}`);

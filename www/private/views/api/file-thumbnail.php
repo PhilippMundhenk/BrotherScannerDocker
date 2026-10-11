@@ -2,20 +2,23 @@
 include('config.php');
 require_once('helper.php');
 
-// GET /api/file/<name>/thumbnail: a small JPEG of the first page.
+// GET /api/file/<name>/thumbnail: a landscape JPEG of the top third of the
+// first page (640 x 302) for the file list.
 //
-// Rendered once per file (pdftoppm, first page, 20 dpi) and cached on the
-// volume under /scans/.thumbnails/<name>.<mtime>.jpg, so a listing request
-// never renders anything and a changed file gets a new thumbnail. Served with
-// an ETag and a long cache lifetime; a PDF that cannot be rendered answers a
-// placeholder image instead of an error so the list keeps working.
+// Normally the pipeline has rendered it already (script/thumbnails.py, right
+// after a scan and in a sweep at start); otherwise it is rendered here, as the
+// scan user, and cached under /scans/.thumbnails/<name>.<mtime>.jpg (fallback
+// /tmp/thumbnails when the volume cache cannot be written), so a listing
+// request never renders anything twice and a changed file gets a new
+// thumbnail. Served with an ETag and a long cache lifetime; a PDF that cannot
+// be rendered answers a placeholder image instead of an error, with the reason
+// in X-Thumbnail-Error, so the list keeps working.
 
-$THUMB_DIR = '/scans/.thumbnails';
-$PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="128" viewBox="0 0 96 128">'
-    . '<rect width="96" height="128" fill="#e9ecef"/>'
-    . '<path d="M28 20h28l16 16v72H28z" fill="#fff" stroke="#adb5bd" stroke-width="2"/>'
-    . '<path d="M56 20v16h16" fill="none" stroke="#adb5bd" stroke-width="2"/>'
-    . '<path d="M36 56h28M36 68h28M36 80h18" stroke="#ced4da" stroke-width="3"/>'
+$PLACEHOLDER = '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="302" viewBox="0 0 640 302">'
+    . '<rect width="640" height="302" fill="#e9ecef"/>'
+    . '<path d="M284 95h56l32 32v80h-88z" fill="#fff" stroke="#adb5bd" stroke-width="4"/>'
+    . '<path d="M340 95v32h32" fill="none" stroke="#adb5bd" stroke-width="4"/>'
+    . '<path d="M300 150h56M300 168h56M300 186h36" stroke="#ced4da" stroke-width="5"/>'
     . '</svg>';
 
 if (!isset($file)) {
@@ -26,8 +29,7 @@ if (!thumbnails_enabled()) {
 }
 
 $info = file_get_verified_fileinfo('/scans/', urldecode($file));
-$stem = $info['file'] . '.' . $info['fileModificationTime'];
-$thumb = $THUMB_DIR . '/' . $stem . '.jpg';
+$stem = thumbnail_stem($info);
 $etag = '"' . md5($stem) . '"';
 
 if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === $etag) {
@@ -37,28 +39,16 @@ if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']
 }
 
 $cache = 'hit';
-if (!is_file($thumb)) {
+$thumb = thumbnail_find($stem);
+if ($thumb === null) {
     $cache = 'miss';
-    if (!is_dir($THUMB_DIR)) {
-        @mkdir($THUMB_DIR, 0777, true);
-    }
-    // Stale thumbnails of an earlier version of this file
-    foreach (glob($THUMB_DIR . '/' . $info['file'] . '.*.jpg') ?: array() as $old) {
-        @unlink($old);
-    }
-    $tmpbase = $THUMB_DIR . '/.' . $stem . '.' . getmypid();
-    $command = 'timeout 20 pdftoppm -f 1 -l 1 -r 20 -jpeg -jpegopt quality=70 -singlefile '
-        . escapeshellarg($info['full_path']) . ' ' . escapeshellarg($tmpbase) . ' 2>&1';
-    exec($command, $output, $status);
-    if ($status === 0 && is_file($tmpbase . '.jpg') && filesize($tmpbase . '.jpg') > 0) {
-        @rename($tmpbase . '.jpg', $thumb);
-        @chmod($thumb, 0664);
-    } else {
-        @unlink($tmpbase . '.jpg');
-        trigger_error('thumbnail failed for ' . $info['file'] . ': ' . implode(' ', array_slice($output, -3)), E_API);
+    $thumb = thumbnail_render($info['full_path'], $info, $error);
+    if ($thumb === null) {
+        trigger_error('thumbnail failed for ' . $info['file'] . ': ' . $error, E_API);
         header('Content-Type: image/svg+xml');
         header('Cache-Control: public, max-age=3600');
         header('X-Thumbnail-Cache: placeholder');
+        header('X-Thumbnail-Error: ' . substr(preg_replace('/[^\x20-\x7e]+/', ' ', $error), 0, 200));
         echo $PLACEHOLDER;
         exit;
     }

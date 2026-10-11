@@ -9,6 +9,12 @@ if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
 
+@pytest.fixture(autouse=True)
+def no_thumbnails(monkeypatch):
+    """The pipeline hooks of script/thumbnails.py stay off unless a test switches them on."""
+    monkeypatch.setenv("GUI_THUMBNAILS", "false")
+
+
 @pytest.fixture
 def clean_env(monkeypatch):
     """Unset every variable the pipeline reads so tests start from nothing."""
