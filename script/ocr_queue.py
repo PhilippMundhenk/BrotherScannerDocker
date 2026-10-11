@@ -47,6 +47,7 @@ from typing import Callable, Dict, Optional, TextIO, Tuple
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
 from trigger_telegram import trigger_telegram
+import thumbnails
 
 DEFAULT_QUEUE_DIR = "/scans/.ocr_queue"
 DEFAULT_OUTPUT_DIR = "/scans"
@@ -301,6 +302,8 @@ def process_job(
 
     os.replace(part_path, output_path)
     log(f"OCR finished -> {output_path} ({detail})")
+    if thumbnails.enabled() and thumbnails.in_scan_dir(output_path):
+        thumbnails.render(output_path, log=log)
 
     # Best effort side effects; none of them fails the job.
     out: TextIO = sys.stdout
@@ -315,6 +318,8 @@ def process_job(
             try:
                 os.remove(pdf)
                 log(f"removed original {pdf} (REMOVE_ORIGINAL_AFTER_OCR)")
+                if thumbnails.in_scan_dir(pdf):
+                    thumbnails.forget(pdf)
             except OSError as error:
                 log(f"could not remove original {pdf}: {error}")
         else:

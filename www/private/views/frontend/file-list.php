@@ -39,11 +39,12 @@ if (!$fragment) {
     $i = $offset + 1;
     foreach ($files as $file) {
     ?>
-    <div class="list-group-item list-group-item-action py-3" aria-current="true" id="file_<?php echo $i; ?>">
+    <div class="list-group-item list-group-item-action p-0" aria-current="true" id="file_<?php echo $i; ?>">
+      <?php if (thumbnails_enabled()) { ?>
+      <img class="thumb" alt="" width="640" height="302" loading="lazy" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
+      <?php } ?>
+      <div class="px-3 py-3">
       <div class="d-flex w-100 align-items-center justify-content-between">
-        <?php if (thumbnails_enabled()) { ?>
-        <img class="thumb me-3 flex-shrink-0" alt="" width="48" height="64" loading="lazy" data-src="/api/file/<?php echo rawurlencode($file['file']); ?>/thumbnail?v=<?php echo $file['fileModificationTime']; ?>">
-        <?php } ?>
         <strong class="mb-2 file-name flex-grow-1"><?php echo htmlspecialchars($file['name']); ?></strong>
         <input class="form-control form-control-sm file-name-new d-none m-0 me-2 " type="text" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
         <input class="form-control form-control-sm file-name-original d-none m-0 me-2 " type="hidden" value="<?php echo htmlspecialchars($file['name_clean']); ?>">
@@ -98,6 +99,7 @@ if (!$fragment) {
             <a type="button" class="btn btn-danger file-rename-confirm" href="/api/file/<?php echo rawurlencode($file['file']); ?>/rename"> SAVE </a>
           </div>
         </div>
+      </div>
       </div>
     </div>
     <?php

@@ -20,6 +20,7 @@ from trigger_inotify import trigger_inotify
 from trigger_telegram import trigger_telegram
 from ocr_queue import enqueue as enqueue_ocr
 import jobstate
+import thumbnails
 
 ENVIRONMENT_FILE_PATH = "/opt/brother/scanner/env.txt"
 LOCKED_KEYS_PATH = "/opt/brother/scanner/locked.txt"
@@ -470,6 +471,10 @@ def convert_and_post_process(
         remove_blank_pages(log, tmp_output_pdf_file, remove_blank_threshold)
 
     move_across_mounts(tmp_output_pdf_file, output_pdf_file)
+
+    # thumbnail for the file list, so the web UI never has to render it on request
+    if thumbnails.enabled():
+        thumbnails.render(output_pdf_file, log=lambda message: print(f"  {message}"))
 
     notify(log, output_pdf_file, f"{job_name}.pdf ({side}) scanned")
     sendtoftps(

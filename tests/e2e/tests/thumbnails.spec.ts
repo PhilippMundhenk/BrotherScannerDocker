@@ -3,6 +3,8 @@ import { inContainer, SAMPLE_FILE } from '../helpers';
 
 // #130: thumbnails of the first page in the file list, rendered once and
 // cached, lazily loaded with a bounded number of live images.
+// #143: landscape crop of the top third (640 x 302), rendered as the scan
+// user, pre-rendered by the pipeline and a sweep at start.
 
 const SEED = 300;
 const THUMB_KEEP = 40;
@@ -18,6 +20,9 @@ test.describe('thumbnails', () => {
     const etag = first.headers()['etag'];
     expect(etag).toMatch(/^"[0-9a-f]{32}"$/);
     expect((await first.body()).subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
+    const cachedFile = inContainer(['bash', '-c', 'ls /scans/.thumbnails/*.jpg']).trim();
+    expect(inContainer(['gm', 'identify', cachedFile])).toContain('640x302');
+    expect(inContainer(['stat', '-c', '%U', cachedFile]).trim()).toBe('Scanner');  // rendered as the scan user, not www-data
 
     const second = await request.get(`/api/file/${SAMPLE_FILE}/thumbnail`);
     expect(second.headers()['x-thumbnail-cache']).toBe('hit');
@@ -34,9 +39,34 @@ test.describe('thumbnails', () => {
       expect(res.status()).toBe(200);
       expect(res.headers()['content-type']).toContain('image/svg+xml');
       expect(res.headers()['x-thumbnail-cache']).toBe('placeholder');
+      expect(res.headers()['x-thumbnail-error']).toMatch(/\S/);
     } finally {
       inContainer(['rm', '-f', '/scans/2026-03-03-03-03-03.pdf']);
     }
+  });
+
+  test('falls back to a cache in /tmp when the volume cache cannot be written', async ({ request }) => {
+    inContainer(['bash', '-c', 'rm -rf /tmp/thumbnails; rm -f /scans/.thumbnails/*; chown root /scans/.thumbnails; chmod 555 /scans/.thumbnails']);
+    try {
+      const first = await request.get(`/api/file/${SAMPLE_FILE}/thumbnail`);
+      expect(first.status()).toBe(200);
+      expect(first.headers()['content-type']).toBe('image/jpeg');
+      expect(first.headers()['x-thumbnail-cache']).toBe('miss');
+      expect(inContainer(['bash', '-c', 'ls /tmp/thumbnails | wc -l']).trim()).toBe('1');
+      expect(inContainer(['bash', '-c', 'ls /scans/.thumbnails | wc -l']).trim()).toBe('0');
+      expect((await request.get(`/api/file/${SAMPLE_FILE}/thumbnail`)).headers()['x-thumbnail-cache']).toBe('hit');
+    } finally {
+      inContainer(['bash', '-c', 'chmod 777 /scans/.thumbnails; chown Scanner /scans/.thumbnails; rm -rf /tmp/thumbnails']);
+    }
+  });
+
+  test('the sweep renders every scan without a thumbnail and drops orphans', async ({ request }) => {
+    inContainer(['bash', '-c', 'rm -f /scans/.thumbnails/*; touch /scans/.thumbnails/gone.pdf.1.jpg']);
+    const output = inContainer(['su', '-', 'Scanner', '-s', '/bin/bash', '-c', 'python3 /opt/brother/scanner/brscan-skey/script/thumbnails.py sweep']);
+    expect(output).toMatch(/thumbnail sweep finished: \d+ rendered, 0 failed, 1 orphans removed/);
+    const pdfs = Number(inContainer(['bash', '-c', 'ls /scans/*.pdf | wc -l']).trim());
+    expect(Number(inContainer(['bash', '-c', 'ls /scans/.thumbnails/*.jpg | wc -l']).trim())).toBe(pdfs);
+    expect((await request.get(`/api/file/${SAMPLE_FILE}/thumbnail`)).headers()['x-thumbnail-cache']).toBe('hit');
   });
 
   test('rename and delete drop the cached thumbnail', async ({ request }) => {

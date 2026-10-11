@@ -112,7 +112,7 @@ return array(
     array('key' => 'DISABLE_GUI_SCANTOOCR', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
           'description' => 'Hide the "Scan to OCR" button.'),
     array('key' => 'GUI_THUMBNAILS', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'true', 'restart' => false,
-          'description' => 'Show a thumbnail of the first page in the file list (rendered once per file, cached in /scans/.thumbnails).'),
+          'description' => 'Show a thumbnail of the top of the first page in the file list (rendered once per file after the scan, cached in /scans/.thumbnails).'),
     array('key' => 'ALLOW_GUI_FILEOPERATIONS', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => false,
           'description' => 'Allow renaming and deleting files in the file list.'),
     array('key' => 'ALLOW_GUI_SETTINGS', 'group' => 'Web UI', 'type' => 'bool', 'default' => 'false', 'restart' => true,

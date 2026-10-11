@@ -172,8 +172,9 @@ fi
 echo "-----"
 
 echo "setting up webserver:"
-# thumbnail cache for the file list (rendered on first request by the web server user)
-mkdir -p /scans/.thumbnails && chmod 777 /scans/.thumbnails
+# thumbnail cache for the file list; written by the scan user (pipeline, sweep below,
+# and the web server through sudo), so it belongs to that user
+mkdir -p /scans/.thumbnails && chown "$NAME" /scans/.thumbnails 2>/dev/null; chmod 777 /scans/.thumbnails 2>/dev/null || true
 if [ "$WEBSERVER" == "true" ]; then
   echo "www-data ALL=($NAME) NOPASSWD:ALL" >>/etc/sudoers
 
@@ -234,6 +235,13 @@ if [ "$WEBSERVER" == "true" ]; then
   sed -i "s/server.port\W*= 80/server.port = $PORT/" /etc/lighttpd/lighttpd.conf
   /usr/sbin/lighttpd -f /etc/lighttpd/lighttpd.conf
   echo "webserver started"
+
+  # Thumbnails of the existing scans, newest first, at low priority and only
+  # while no scan runs; the drawer then never has to render on request.
+  if [[ "${GUI_THUMBNAILS,,}" != "false" && "${GUI_THUMBNAILS}" != "0" ]]; then
+    su - "$NAME" -s /bin/bash -c 'nice -n 19 python3 /opt/brother/scanner/brscan-skey/script/thumbnails.py sweep --pause 0.2' >>/var/log/scanner.log 2>&1 &
+    echo "thumbnail sweep started as $NAME (pid: $!)"
+  fi
 
 else
   echo "webserver not configured"

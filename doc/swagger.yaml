@@ -431,7 +431,7 @@ paths:
 
   /file/{file}/thumbnail:
     get:
-      summary: Thumbnail of the first page (JPEG, cached; placeholder SVG when the PDF cannot be rendered)
+      summary: Thumbnail of the top third of the first page (640 x 302 JPEG, cached; placeholder SVG when the PDF cannot be rendered)
       parameters:
         - in: path
           name: file
@@ -440,7 +440,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Image; ETag and long-lived Cache-Control headers; X-Thumbnail-Cache is hit, miss or placeholder
+          description: Image; ETag and long-lived Cache-Control headers; X-Thumbnail-Cache is hit, miss or placeholder (then X-Thumbnail-Error carries the reason)
           content:
             image/jpeg:
               schema:
