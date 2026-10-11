@@ -292,6 +292,8 @@ curl -X POST -d target=file http://<ContainerIP>:<Port>/api/scanner/scanto
 
 Optional form fields override the container settings for this job only: `resolution` (dpi), `mode` and `source` (the values the device lists at startup), and `wait=true` to answer only when the scan script has finished. `GET /api/scanner/scanto/<target>` does the same and always waits.
 
+The endpoints of the web UI before the rewrite still answer so that existing automations keep working, but they are deprecated: `GET /active.php` returns the JSON of `/api/scanner/status`, `GET /scan.php?target=<file|email|image|OCR>` behaves like `GET /api/scanner/scanto/<target>`. `list.php` and `download.php` are gone; use `/api/file-list` and `/api/file/<name>/download`.
+
 Follow the job:
 
 ```

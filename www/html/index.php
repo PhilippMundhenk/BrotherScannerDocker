@@ -90,6 +90,30 @@ $router->map( 'GET', '/api/scanner/scanto/[char:parameter]', function( $paramete
 });
 
 
+// Endpoints of the web UI before the rewrite, kept so existing automations
+// (Home Assistant rest sensors, control panels) survive the upgrade (#148):
+// active.php answers like /api/scanner/status, scan.php?target=<file|email|image|OCR>
+// like GET /api/scanner/scanto/<target>. New setups use the /api routes.
+$router->map( 'GET', '/active.php', function() {
+    require_once 'views/api/scanner-status.php';
+});
+
+
+$router->map( 'GET', '/scan.php', function() {
+    api_token_required();
+    $query = $_GET;
+    if (empty($query) && isset($_SERVER['REQUEST_URI'])) {
+        $raw = parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+        if (is_string($raw)) {
+            parse_str($raw, $query);
+        }
+    }
+    $scanto = strtolower(trim((string)($query['target'] ?? '')));
+    $method = 'wait';
+    require_once 'views/api/scanner-scanto.php';
+});
+
+
 $router->map( 'GET', '/api/settings', function() {
 	require_once 'views/api/settings.php';
 });
