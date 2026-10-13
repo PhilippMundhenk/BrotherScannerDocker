@@ -195,6 +195,8 @@ test.describe('API edge cases', () => {
     expect((await idleRear.json()).job).toBeNull();
     await new Promise((r) => setTimeout(r, 2000));
     expect((await request.get('/api/scanner/scanto/')).status()).toBe(400);
+    // @-suppressed PHP warnings must not reach the log (#174)
+    expect(inContainer(['bash', '-c', 'grep -c "mkdir(): File exists" /var/log/scanner.log || true']).trim()).toBe('0');
   });
 
   test('thumbnail cache: recreates its folder and drops stale versions', async ({ request }) => {
