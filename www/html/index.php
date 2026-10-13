@@ -3,6 +3,9 @@ define('E_API', 1024);
 define('E_FRONTEND', 1025);
 
 function customErrorHandler($errno, $errstr, $errfile, $errline) {
+    if (!(error_reporting() & $errno)) {
+        return false;  // @-suppressed (PHP masks the level while the call runs), nothing to log
+    }
     $date = date("Y-m-d H:i:s");
 
     $errorType = match ($errno) {
