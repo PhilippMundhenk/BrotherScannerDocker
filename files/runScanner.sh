@@ -140,7 +140,52 @@ cat /opt/brother/scanner/brscan-skey/brscan-skey.config
 echo "-----"
 
 echo "starting scanner drivers..."
-su - "$NAME" -c "/usr/bin/brsaneconfig4 -a name=$NAME model=$MODEL ip=$IPADDRESS"
+# Two Brother SANE backends are installed: brscan4 for the older models and
+# brscan5 for the newer ones (ADS-1x00, DS-940DW, ...). Each brsaneconfig
+# accepts any model name but marks one it does not know as "Unknown", and the
+# backend then scans with a generic profile (wrong page geometry, #75). So the
+# model is registered with brscan4 first, and when that driver does not know
+# it, with brscan5. SCANNER_DRIVER=brscan4|brscan5 forces one. brscan-skey
+# reads both registrations and calls the same scripts for either.
+register_driver() { # $1 = 4|5
+  su - "$NAME" -c "/usr/bin/brsaneconfig$1 -a name=$NAME model=$MODEL ip=$IPADDRESS"
+}
+unregister_driver() { # $1 = 4|5
+  su - "$NAME" -c "/usr/bin/brsaneconfig$1 -r $NAME" >/dev/null 2>&1 || true
+}
+BRSCAN4_CFG=/opt/brother/scanner/brscan4/brsanenetdevice4.cfg
+BRSCAN5_CFG=/opt/brother/scanner/brscan5/brsanenetdevice.cfg
+SCANNER_DRIVER="${SCANNER_DRIVER:-auto}"
+case "${SCANNER_DRIVER,,}" in
+  brscan4)
+    register_driver 4
+    DRIVER=brscan4
+    ;;
+  brscan5)
+    register_driver 5
+    DRIVER=brscan5
+    ;;
+  *)
+    register_driver 4
+    if registration_known "$BRSCAN4_CFG" "$NAME"; then
+      DRIVER=brscan4
+    else
+      unregister_driver 4
+      register_driver 5
+      if registration_known "$BRSCAN5_CFG" "$NAME"; then
+        DRIVER=brscan5
+      else
+        unregister_driver 5
+        register_driver 4
+        DRIVER=brscan4
+        echo "model $MODEL is unknown to both drivers; using brscan4 with a generic profile (set SCANNER_DRIVER=brscan5 for a newer model)"
+      fi
+    fi
+    ;;
+esac
+echo "scanner driver: $DRIVER for model $MODEL"
+echo "$DRIVER" >/tmp/SCANNER_DRIVER
+chmod 644 /tmp/SCANNER_DRIVER
 su - "$NAME" -c "/usr/bin/brscan-skey"
 echo "-----"
 
@@ -271,7 +316,9 @@ fi
 echo "-----"
 
 echo "capabilities:"
-# kept for /api/actions (device.capabilities): the option lists of the device
+# the registered device (one backend, brother4 or brother5), then its option lists,
+# kept for /api/actions (device.capabilities)
+scanimage -L 2>&1 | grep -i 'brother' || true
 scanimage -A > /tmp/SCANNER_CAPABILITIES 2>&1 || true
 chmod 644 /tmp/SCANNER_CAPABILITIES
 cat /tmp/SCANNER_CAPABILITIES

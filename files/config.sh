@@ -59,3 +59,16 @@ load_config_file() {
   done <"$file"
   echo "config: $loaded setting(s) loaded from $file, $ignored overridden by the environment"
 }
+
+# registration_known <cfg> <name>: true when the driver resolved the model of
+# the device registered as <name> to a product id. Both brsaneconfig4 and
+# brsaneconfig5 accept any model name and write "Unknown" for one they do not
+# support (the backend then runs a generic profile with wrong geometry, #75),
+# so this is how the entrypoint tells which driver a model belongs to (#173).
+registration_known() {
+  local cfg="$1" name="$2" line
+  [[ -r "$cfg" ]] || return 1
+  line=$(grep -E "^DEVICE=${name} ," "$cfg" | tail -1)
+  [[ -n "$line" ]] || return 1
+  [[ "$line" != *" , Unknown , "* ]]
+}

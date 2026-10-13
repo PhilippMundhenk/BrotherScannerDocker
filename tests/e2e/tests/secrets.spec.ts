@@ -11,6 +11,9 @@ test.describe('secrets from files', () => {
     expect(env).toContain('FTP_PASSWORD=e2e-secret-password');
     expect(env).not.toContain('FTP_PASSWORD=e2e-secret-password\n\n'); // trailing newline stripped
     expect(docker(['logs', readState().container])).toContain('read FTP_PASSWORD from /run/secrets/ftp_password');
+    // the simulator's model is unknown to both Brother drivers: brscan4 with a hint (#173)
+    expect(docker(['logs', readState().container])).toContain('scanner driver: brscan4 for model MFC-SIMULATOR');
+    expect(docker(['logs', readState().container])).toContain('unknown to both drivers');
   });
 
   test('the container environment itself does not carry the secret value', async () => {
