@@ -80,5 +80,5 @@ since there is no device to register with.
 
 ## What is not covered
 
-The Brother driver itself (`brscan4`, `brscan-skey`): registration with the
+The Brother drivers themselves (`brscan4`, `brscan5`, `brscan-skey`): registration with the
 device, the button events, and the SNMP keepalive. Those need real hardware.

@@ -43,7 +43,7 @@ Details and the rest of the changes: [Migration guide](doc/migration.md).
 
 ## Documentation
 
-- [Setup](doc/setup.md): bridged or host networking, permissions, scanner buttons, duplex, calibration, file sizes, full compose example
+- [Setup](doc/setup.md): bridged or host networking, permissions, scanner buttons, scanner driver (brscan4 or brscan5), duplex, calibration, file sizes, full compose example
 - [Configuration](doc/configuration.md): every option, the configuration file, the settings page, precedence, secrets
 - [Web UI and API](doc/web-ui.md): the pages, thumbnails, the REST API, the API token, deprecated endpoints
 - [OCR](doc/ocr.md): the OCR service, the queue, validation of results

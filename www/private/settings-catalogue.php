@@ -23,6 +23,8 @@ return array(
           'description' => 'Refresh the Scan-to-PC registration on the device periodically.'),
     array('key' => 'KEEPALIVE_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '120', 'restart' => true, 'min' => 10, 'max' => 359,
           'description' => 'Seconds between registration refreshes (below the device lease of 360 s).'),
+    array('key' => 'SCANNER_DRIVER', 'group' => 'Scanner', 'type' => 'string', 'default' => 'auto', 'restart' => true,
+          'description' => 'Brother SANE driver: auto (brscan4 when it knows the model, else brscan5), brscan4 or brscan5.'),
     array('key' => 'SCANNER_PING_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '60', 'restart' => true, 'min' => 0, 'max' => 86400,
           'description' => 'Seconds between reachability checks of the scanner (0 disables).'),
 

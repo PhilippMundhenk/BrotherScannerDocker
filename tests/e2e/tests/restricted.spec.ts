@@ -16,6 +16,7 @@ test.describe('restricted configuration', () => {
       'run', '-d', '--name', NAME, '-p', `${PORT}:8080`,
       '-v', `${path.join(FIXTURES, 'scanimage')}:/usr/bin/scanimage:ro`,
       '-e', 'WEBSERVER=true', '-e', 'PORT=8080', '-e', 'IPADDRESS=192.0.2.10', '-e', 'KEEPALIVE=false',
+      '-e', 'MODEL=DS-940DW',  // a brscan5 model: the entrypoint must pick that driver (#173)
       '-e', 'SCANNER_PING_INTERVAL=0', '-e', 'RESOLUTION=100',
       '-e', 'GUI_THUMBNAILS=false', '-e', 'DISABLE_GUI_SCANTOIMAGE=true', '-e', 'RENAME_GUI_SCANTOFILE=Archive',
       // two labels arrive quoted, as a compose list entry `- KEY="value"` delivers them (#142)
@@ -90,6 +91,15 @@ test.describe('restricted configuration', () => {
     await expect(entry).toBeVisible({ timeout: 30_000 });
     await expect(entry.locator('img.thumb')).toHaveCount(0);
     await expect(entry.locator('button.file-delete')).toHaveCount(0);
+  });
+
+  test('a brscan5 model is registered with brscan5, and the scripts stay the same', async () => {
+    const logs = docker(['logs', NAME]);
+    expect(logs).toContain('scanner driver: brscan5 for model DS-940DW');
+    expect(logs).not.toContain('unknown to both drivers');
+    expect(docker(['exec', NAME, 'cat', '/opt/brother/scanner/brscan5/brsanenetdevice.cfg'])).toMatch(/"DS-940DW" , 0x4f9:0x46a/);
+    expect(docker(['exec', NAME, 'bash', '-c', 'grep -c DS-940DW /opt/brother/scanner/brscan4/brsanenetdevice4.cfg || true']).trim()).toBe('0');
+    expect(docker(['exec', NAME, 'cat', '/opt/brother/scanner/brscan-skey/brscan-skey.config'])).toContain('FILE="python3 /opt/brother/scanner/brscan-skey/script/scantofile.py"');
   });
 
   test('a missing configuration file is not logged as a warning on every request', async () => {

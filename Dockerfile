@@ -27,10 +27,12 @@ apt-get -y clean && \
 rm -rf /var/lib/apt/lists/* && \
 pip install --no-cache-dir requests==2.32.3 && \
 wget https://download.brother.com/welcome/dlf105200/brscan4-0.4.11-1.amd64.deb --progress=dot:giga -O /tmp/brscan4.deb && \
+wget https://download.brother.com/welcome/dlf104033/brscan5-1.7.0-0.amd64.deb --progress=dot:giga -O /tmp/brscan5.deb && \
 wget https://download.brother.com/welcome/dlf006652/brscan-skey-0.3.5-0.amd64.deb --progress=dot:giga -O /tmp/brscan-skey.deb && \
 dpkg -i --force-all /tmp/brscan4.deb && \
+dpkg -i --force-all /tmp/brscan5.deb && \
 dpkg -i --force-all /tmp/brscan-skey.deb && \
-rm -f /tmp/brscan4.deb /tmp/brscan-skey.deb
+rm -f /tmp/brscan4.deb /tmp/brscan5.deb /tmp/brscan-skey.deb
 EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh

@@ -54,6 +54,16 @@ services:
 
 No host IP address is needed; the startup scripts guess the host interface and adjust the Brother driver settings.
 
+## Scanner driver
+
+Brother ships two SANE drivers for Linux: `brscan4` for the older models (the MFC-L2700DW and most MFC/DCP devices up to about 2017) and `brscan5` for the newer ones (ADS-1200/1700W, DS-940DW and later). The image contains both. At start the model is registered with brscan4; when that driver does not know the model, with brscan5. The log says which one was taken:
+
+```
+scanner driver: brscan5 for model DS-940DW
+```
+
+A model unknown to both drivers runs on brscan4 with a generic profile, which may deliver wrong page geometry (a cut-off bottom, see [#75](https://github.com/PhilippMundhenk/BrotherScannerDocker/issues/75)); check the spelling of `MODEL` against Brother's name of the device, or force the driver with `SCANNER_DRIVER=brscan5`. The shortcut buttons, the web UI and the API work the same with either driver.
+
 ## Image tags
 
 | Tag | Points to |

@@ -56,3 +56,15 @@ teardown() {
   z=$(grep -n '^ZZZ_TEST$' "$LOCKED" | cut -d: -f1)
   [ "$a" -lt "$z" ]
 }
+
+@test "registration_known tells a resolved model from an Unknown one (#173)" {
+  CFG="$test_tmp/brsanenetdevice.cfg"
+  printf 'DEVICE=Known , "MFC-L2700DW" , 0x4f9:0x331 , IP-ADDRESS=192.0.2.8 \n' >"$CFG"
+  printf 'DEVICE=Mobile , "DS-940DW" , 0x4f9:0x46a , IP-ADDRESS=192.0.2.9 , FLAG=\n' >>"$CFG"
+  printf 'DEVICE=Typo , "MFC-L27OODW" , Unknown , IP-ADDRESS=192.0.2.7 \n' >>"$CFG"
+  registration_known "$CFG" Known
+  registration_known "$CFG" Mobile
+  ! registration_known "$CFG" Typo
+  ! registration_known "$CFG" Missing
+  ! registration_known "$test_tmp/absent.cfg" Known
+}

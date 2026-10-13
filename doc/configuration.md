@@ -15,6 +15,7 @@ A value set in the container environment wins over the configuration file, and t
 | NAME                                     | mandatory | Arbitrary (avoid spaces) name to give your scanner. Displayed on scanner, if multiple servers are running.                                       |
 | MODEL                                    | mandatory | Model of your scanner (e.g., MFC-L2700DW)                                                                                                        |
 | IPADDRESS                                | mandatory | IP Address of your scanner                                                                                                                       |
+| SCANNER_DRIVER | optional | `auto`, `brscan4` or `brscan5`. Which Brother SANE driver registers and drives the device; `auto` takes brscan4 when it knows the model and brscan5 otherwise (default: auto, see [Setup](setup.md#scanner-driver)) |
 | HOST_IPADDRESS | optional | IP address under which the scanner reaches this container (bridged networking, see [Setup](setup.md)); empty for host networking |
 | TZ | optional | Time zone for file names, logs and the web UI, e.g. `Europe/Berlin` (default: UTC) |
 | RESOLUTION                               | optional  | DPI resolution of scan, refer to capabilities of printer on startup                                                                              |
