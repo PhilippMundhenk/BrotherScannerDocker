@@ -2,7 +2,7 @@
 
 All notable changes to the container. The Home Assistant integration and the dashboard card have their own release notes in their repositories.
 
-## 2.0.1 (2026-10-14)
+## 2.1.0 (2026-10-14)
 
 ### Added
 
