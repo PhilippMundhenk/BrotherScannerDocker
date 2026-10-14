@@ -2,6 +2,16 @@
 
 All notable changes to the container. The Home Assistant integration and the dashboard card have their own release notes in their repositories.
 
+## 2.0.1 (2026-10-14)
+
+### Added
+
+- Brother's `brscan5` driver next to `brscan4`; the entrypoint registers the model with brscan4 and, when that driver does not know it, with brscan5. `SCANNER_DRIVER=auto|brscan4|brscan5` (#173, #176). Fixes the partial pages of the DS-940DW, which brscan4 had been driving with a generic profile (#75).
+
+### Fixed
+
+- `@`-suppressed PHP warnings no longer reach the log (`mkdir(): File exists` on every trigger) (#174, #175).
+
 ## 2.0.0 (2026-10-11)
 
 The first release in over a year and the largest since the project started. A v1 compose file keeps working as it is; the [migration guide](doc/migration.md) lists what changed and what is worth doing afterwards.
