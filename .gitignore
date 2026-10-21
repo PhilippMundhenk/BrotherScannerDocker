@@ -5,3 +5,6 @@ docker-compose.yml
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Coverage artifacts
+.coverage
