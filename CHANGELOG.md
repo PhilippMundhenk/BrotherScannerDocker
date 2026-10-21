@@ -7,6 +7,7 @@ All notable changes to the container. The Home Assistant integration and the das
 ### Fixed
 
 - The scanner's front-panel Scan-to-PC buttons no longer stop working after a few days. Brother's `brscan-skey` daemon leaks a network socket on every registration cycle until it hits its open-file limit; the image now starts the daemon with a raised limit and a watchdog that restarts it if it dies or climbs toward the limit, never during a scan (#179). `SKEY_WATCHDOG`, `SKEY_WATCHDOG_INTERVAL`, `SKEY_WATCHDOG_THRESHOLD` and `SKEY_WATCHDOG_MAX_FDS` configure it; `GET /api/scanner/status` gains a `buttons` field.
+- A scan that finds the document feeder empty is retried once from the flatbed, so a single button works for both the feeder and the glass again. brscan5 aborts an empty-feeder scan where brscan4 used to fall back to the glass; the retry restores that for newer models (#180). An explicit `SCAN_SOURCE` or `SCANNER_DRIVER=brscan4` keeps the previous behaviour.
 
 ## 2.1.0 (2026-10-14)
 

@@ -64,6 +64,8 @@ scanner driver: brscan5 for model DS-940DW
 
 A model unknown to both drivers runs on brscan4 with a generic profile, which may deliver wrong page geometry (a cut-off bottom, see [#75](https://github.com/PhilippMundhenk/BrotherScannerDocker/issues/75)); check the spelling of `MODEL` against Brother's name of the device, or force the driver with `SCANNER_DRIVER=brscan5`. The shortcut buttons, the web UI and the API work the same with either driver.
 
+One behaviour differs between the drivers: with an empty feeder and no `SCAN_SOURCE` set, brscan4 scans from the flatbed, while brscan5 aborts with "Document feeder out of documents". So that one button still works for both the feeder and the glass, a scan that finds the feeder empty is retried once from the flatbed (#180). Setting `SCAN_SOURCE` or `SCANNER_DRIVER=brscan4` keeps the old behaviour.
+
 ## Scanner buttons stop working
 
 Brother's `brscan-skey` daemon drives the device's front-panel Scan-to-PC buttons. It has a bug: it leaks one network socket every time it registers with the scanner, so after enough registration cycles it reaches its open-file limit and silently stops responding to button presses while web-UI and API scanning keep working (see [#179](https://github.com/PhilippMundhenk/BrotherScannerDocker/issues/179)). The leak is inside Brother's closed-source binary and cannot be fixed from here.

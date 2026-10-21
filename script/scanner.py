@@ -189,12 +189,27 @@ def apply_timezone() -> None:
         time.tzset()
 
 
-def execute_command(log: TextIO, command: List[str], **kwargs) -> None:
+def execute_command(log: TextIO, command: List[str], capture: bool = False, **kwargs):
     log.flush()
     print(f"  DEBUG: Executing command: {command}, kwargs={kwargs}")
     log.flush()
 
+    if capture:
+        # Run the command with its output captured (and copied into the log), so
+        # the caller can inspect it, e.g. to classify a scan failure. `check` is
+        # honoured here instead of by subprocess.run so the captured output can
+        # be attached to the raised error.
+        check = kwargs.pop("check", False)
+        proc = subprocess.run(command, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+        if proc.stdout:
+            log.write(proc.stdout)
+            log.flush()
+        if check and proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, command, output=proc.stdout)
+        return proc.stdout
+
     subprocess.run(command, text=True, stdout=log, stderr=log, **kwargs)
+    return None
 
 
 def execute_command_pid(log: TextIO, command: List[str], **kwargs) -> int:
@@ -237,6 +252,53 @@ def scan_area_mm() -> Dict[str, str]:
     return area
 
 
+SCANNER_CAPABILITIES_PATH = "/tmp/SCANNER_CAPABILITIES"
+FLATBED_SOURCE = "FlatBed"
+
+
+def device_has_flatbed(path: str = SCANNER_CAPABILITIES_PATH) -> bool:
+    """True when the device lists a flatbed source in its capabilities (captured
+    by the entrypoint into SCANNER_CAPABILITIES)."""
+    try:
+        with open(path) as handle:
+            return "flatbed" in handle.read().lower()
+    except OSError:
+        return False
+
+
+def source_was_requested(scanimage_args: List[str]) -> bool:
+    """True when a paper source was chosen explicitly, through SCAN_SOURCE or a
+    per-job --source (web UI / API). Then we must not second-guess it."""
+    if os.environ.get("SCAN_SOURCE", "").strip():
+        return True
+    return any(arg.startswith("--source=") for arg in scanimage_args)
+
+
+def adf_empty_from_start(scanimage_output: str) -> bool:
+    """True when scanimage failed because the document feeder was empty from the
+    start (SANE_STATUS_NO_DOCS), as brscan5 reports it. A paper jam is a
+    different condition and must not trigger a flatbed scan of the empty glass."""
+    text = (scanimage_output or "").lower()
+    if "jam" in text:
+        return False
+    return "out of documents" in text or "no docs" in text or "no_docs" in text or "no documents" in text
+
+
+def first_batch_page_exists(output_batch: str) -> bool:
+    """True when the batch produced at least its first page."""
+    first = output_batch % 1 if "%" in output_batch else output_batch
+    return os.path.exists(first)
+
+
+def with_flatbed_source(scan_command: List[str]) -> List[str]:
+    """Copy of the scan command with the paper source forced to the flatbed."""
+    rebuilt = [arg for arg in scan_command if not arg.startswith("--source=")]
+    # place the source next to the other mode options, before --resolution
+    insert_at = next((i for i, arg in enumerate(rebuilt) if arg.startswith("--resolution=")), len(rebuilt))
+    rebuilt.insert(insert_at, f"--source={FLATBED_SOURCE}")
+    return rebuilt
+
+
 def scan_cmd(
     log: TextIO, device: Optional[str], output_batch: str, scanimage_args: List[str]
 ) -> None:
@@ -270,7 +332,23 @@ def scan_cmd(
         f"--batch={output_batch}",
     ]
     # fmt: on
-    execute_command(log, scan_command, check=True)
+    try:
+        execute_command(log, scan_command, check=True, capture=True)
+    except subprocess.CalledProcessError as error:
+        # brscan5 aborts with "Document feeder out of documents" when the ADF is
+        # empty, where brscan4 silently fell back to the flatbed (#180). When no
+        # source was chosen, nothing was scanned yet, and the device has a
+        # flatbed, retry once from the glass so a single button works for both.
+        if (
+            not source_was_requested(scanimage_args)
+            and not first_batch_page_exists(output_batch)
+            and adf_empty_from_start(error.output)
+            and device_has_flatbed()
+        ):
+            print("  document feeder empty; retrying the scan from the flatbed")
+            execute_command(log, with_flatbed_source(scan_command), check=True, capture=True)
+        else:
+            raise
 
 
 def notify(log: TextIO, file_path: str, message: str) -> None:
