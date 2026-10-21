@@ -20,6 +20,7 @@ bats:
 lint:
 	shellcheck --severity=error \
 		files/config.sh \
+		files/skey.sh \
 		files/runScanner.sh \
 		tools/run.sh \
 		tools/update-container.sh

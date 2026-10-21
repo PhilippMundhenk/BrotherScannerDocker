@@ -37,6 +37,7 @@ EOF
 
 COPY files/runScanner.sh /opt/brother/runScanner.sh
 COPY files/config.sh /opt/brother/config.sh
+COPY files/skey.sh /opt/brother/skey.sh
 COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
 COPY files/lighttpd-scanner.conf /etc/lighttpd/conf-enabled/99-scanner-rewrite.conf
 COPY script /opt/brother/scanner/brscan-skey/script

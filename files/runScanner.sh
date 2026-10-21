@@ -26,11 +26,61 @@ keepAliveRegistration() {
     # during a scan can stall the feeder, and it must not coincide with paper
     # in the ADF. The scan scripts mark both phases with status files in /tmp
     # (ignored when older than 10 minutes, i.e. left behind by a crash).
-    if [[ -n "$(find /tmp -maxdepth 1 \( -name STATUS_SCAN -o -name STATUS_WAITING \) -mmin -10 2>/dev/null)" ]]; then
+    if scan_active; then
       echo "keepalive: scan active, skipping registration refresh" >>/var/log/scanner.log
       continue
     fi
     su - "$NAME" -c "/usr/bin/brscan-skey --refresh" >>/var/log/scanner.log 2>&1
+  done
+}
+
+# start_skey_daemon: launch Brother's button daemon with its soft open-file
+# limit raised to the hard limit. The daemon leaks a socket per registration
+# cycle (#179); the raised limit turns the failure from days into years, and
+# pam_limits resets the soft limit to 1024 for the `su -` login session, so it
+# has to be raised inside that session. The wrapper backgrounds brscan-skey-exe
+# and returns; the daemon inherits the raised limit.
+start_skey_daemon() {
+  su - "$NAME" -c 'ulimit -Sn "$(ulimit -Hn)" 2>/dev/null; exec /usr/bin/brscan-skey' \
+    >>/var/log/scanner.log 2>&1
+}
+
+# skey_watchdog: restart the daemon if it has died or its open-file count has
+# climbed toward the limit (leaked sockets, #179), never while a scan runs.
+# SKEY_WATCHDOG=false disables it; SKEY_WATCHDOG_INTERVAL seconds between checks
+# (default 60); SKEY_WATCHDOG_THRESHOLD percent of the soft limit that triggers
+# a restart (default 80); SKEY_WATCHDOG_MAX_FDS an optional absolute ceiling.
+skey_watchdog() {
+  if [[ "${SKEY_WATCHDOG,,}" == "false" ]]; then
+    echo "brscan-skey watchdog disabled"
+    return
+  fi
+  local interval="${SKEY_WATCHDOG_INTERVAL:-60}"
+  local pct="${SKEY_WATCHDOG_THRESHOLD:-80}"
+  local max_fds="${SKEY_WATCHDOG_MAX_FDS:-0}"
+  local ceiling=""
+  [[ "$max_fds" =~ ^[0-9]+$ && "$max_fds" -gt 0 ]] && ceiling=" or $max_fds files"
+  echo "starting brscan-skey watchdog (every ${interval}s, restart at ${pct}% of the open-file limit${ceiling})"
+  local pid fds soft
+  while true; do
+    sleep "$interval"
+    pid=$(pgrep -x brscan-skey-exe | head -1)
+    if [[ -z "$pid" ]]; then
+      echo "watchdog: brscan-skey is not running, starting it" >>/var/log/scanner.log
+      start_skey_daemon
+      continue
+    fi
+    scan_active && continue
+    fds=$(skey_fd_count "$pid") || continue
+    soft=$(skey_daemon_soft_limit "$pid")
+    if skey_should_restart "$fds" "$soft" "$pct" "$max_fds"; then
+      echo "watchdog: brscan-skey holds $fds of $soft open files, restarting to release leaked sockets (#179)" >>/var/log/scanner.log
+      su - "$NAME" -c "/usr/bin/brscan-skey -t" >>/var/log/scanner.log 2>&1 || true
+      sleep 1
+      pgrep -x brscan-skey-exe >/dev/null && pkill -x brscan-skey-exe 2>/dev/null
+      sleep 1
+      start_skey_daemon
+    fi
   done
 }
 
@@ -60,6 +110,8 @@ echo "setting up configuration file:"
 # the settings page know which keys are fixed.
 # shellcheck source=files/config.sh
 source /opt/brother/config.sh
+# shellcheck source=files/skey.sh
+source /opt/brother/skey.sh
 CONFIG_FILE="$(config_file_path)"
 mkdir -p "$(dirname "$CONFIG_FILE")" && chmod 777 "$(dirname "$CONFIG_FILE")"
 mkdir -p /opt/brother/scanner
@@ -186,7 +238,7 @@ esac
 echo "scanner driver: $DRIVER for model $MODEL"
 echo "$DRIVER" >/tmp/SCANNER_DRIVER
 chmod 644 /tmp/SCANNER_DRIVER
-su - "$NAME" -c "/usr/bin/brscan-skey"
+start_skey_daemon
 echo "-----"
 
 echo "setting up OCR queue worker:"
@@ -325,6 +377,7 @@ cat /tmp/SCANNER_CAPABILITIES
 
 echo "startup successful"
 keepAliveRegistration &
+skey_watchdog &
 while true; do
   tail -f /var/log/scanner.log
 done

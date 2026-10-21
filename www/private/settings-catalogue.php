@@ -27,6 +27,14 @@ return array(
           'description' => 'Brother SANE driver: auto (brscan4 when it knows the model, else brscan5), brscan4 or brscan5.'),
     array('key' => 'SCANNER_PING_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '60', 'restart' => true, 'min' => 0, 'max' => 86400,
           'description' => 'Seconds between reachability checks of the scanner (0 disables).'),
+    array('key' => 'SKEY_WATCHDOG', 'group' => 'Scanner', 'type' => 'bool', 'default' => 'true', 'restart' => true,
+          'description' => 'Watch Brother\'s button daemon and restart it if it dies or leaks too many open files (#179). Set false to disable.'),
+    array('key' => 'SKEY_WATCHDOG_INTERVAL', 'group' => 'Scanner', 'type' => 'int', 'default' => '60', 'restart' => true, 'min' => 5, 'max' => 3600,
+          'description' => 'Seconds between button-daemon checks.'),
+    array('key' => 'SKEY_WATCHDOG_THRESHOLD', 'group' => 'Scanner', 'type' => 'int', 'default' => '80', 'restart' => true, 'min' => 1, 'max' => 100,
+          'description' => 'Restart the button daemon when its open files reach this percent of the limit.'),
+    array('key' => 'SKEY_WATCHDOG_MAX_FDS', 'group' => 'Scanner', 'type' => 'int', 'default' => '0', 'restart' => true, 'min' => 0, 'max' => 1048576,
+          'description' => 'Optional absolute open-file ceiling that restarts the button daemon (0 uses the percentage instead).'),
 
     // --- Scanning
     array('key' => 'RESOLUTION', 'group' => 'Scanning', 'type' => 'int', 'default' => '300', 'restart' => false, 'min' => 50, 'max' => 9600,
