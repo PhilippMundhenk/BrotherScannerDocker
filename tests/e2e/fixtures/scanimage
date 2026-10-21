@@ -13,6 +13,9 @@ Behaviour:
     (default 0.5) per page like a real ADF would
   * the --mode and --source values, if any, are echoed to stderr so tests can check them
   * SIM_FAIL=true makes every scan exit 1 without writing pages
+  * SIM_ADF_EMPTY=true makes a scan from the feeder (the default source) exit 1
+    with "Document feeder out of documents" and no pages, like brscan5 does for
+    an empty ADF; a scan with --source=FlatBed still succeeds (#180)
 """
 
 import os
@@ -42,6 +45,11 @@ def main(argv):
 
     if os.environ.get("SIM_FAIL", "").lower() == "true":
         print("scanimage: sane_start: Document feeder jammed (simulated)", file=sys.stderr)
+        return 1
+
+    if os.environ.get("SIM_ADF_EMPTY", "").lower() == "true" and "flatbed" not in source.lower():
+        print("scanimage: sane_start: Document feeder out of documents", file=sys.stderr)
+        print("Batch terminated, 0 pages scanned", file=sys.stderr)
         return 1
 
     pages = int(os.environ.get("SIM_PAGES", "2"))
