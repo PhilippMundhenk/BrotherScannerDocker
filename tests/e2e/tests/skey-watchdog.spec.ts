@@ -152,8 +152,15 @@ for (const m of MODELS) {
       // polling can miss the exact peak.)
       expect(restartCount(NAME)).toBeGreaterThanOrEqual(1);
       expect(maxFds).toBeLessThan(CEILING);
-      // and the daemon is alive at the end, so the buttons work
-      expect(daemonPid(NAME)).not.toBe('');
+      // and the daemon comes back, so the buttons work. The loop may have
+      // stopped mid-restart (the gap is a second or two), so wait for it.
+      let revived = '';
+      const reviveDeadline = Date.now() + 15_000;
+      while (Date.now() < reviveDeadline && !revived) {
+        revived = daemonPid(NAME);
+        if (!revived) await sleep(500);
+      }
+      expect(revived).not.toBe('');
     });
   });
 }
