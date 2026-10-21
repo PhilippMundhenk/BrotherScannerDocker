@@ -64,6 +64,17 @@ scanner driver: brscan5 for model DS-940DW
 
 A model unknown to both drivers runs on brscan4 with a generic profile, which may deliver wrong page geometry (a cut-off bottom, see [#75](https://github.com/PhilippMundhenk/BrotherScannerDocker/issues/75)); check the spelling of `MODEL` against Brother's name of the device, or force the driver with `SCANNER_DRIVER=brscan5`. The shortcut buttons, the web UI and the API work the same with either driver.
 
+## Scanner buttons stop working
+
+Brother's `brscan-skey` daemon drives the device's front-panel Scan-to-PC buttons. It has a bug: it leaks one network socket every time it registers with the scanner, so after enough registration cycles it reaches its open-file limit and silently stops responding to button presses while web-UI and API scanning keep working (see [#179](https://github.com/PhilippMundhenk/BrotherScannerDocker/issues/179)). The leak is inside Brother's closed-source binary and cannot be fixed from here.
+
+The image contains it in two ways, so you should not notice it:
+
+- the daemon starts with its open-file limit raised to the host maximum, which pushes a failure from days to years, and
+- a watchdog restarts the daemon if it dies or its open files climb toward the limit, never during a scan. The daemon re-registers on start, so the buttons come straight back.
+
+`GET /api/scanner/status` reports a `buttons` field (the daemon is running). The watchdog is on by default; `SKEY_WATCHDOG=false` turns it off, and `SKEY_WATCHDOG_INTERVAL`, `SKEY_WATCHDOG_THRESHOLD` and `SKEY_WATCHDOG_MAX_FDS` tune it (see [Configuration](configuration.md)).
+
 ## Image tags
 
 | Tag | Points to |
