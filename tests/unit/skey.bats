@@ -106,3 +106,53 @@ teardown() {
   [ "$status" -eq 0 ]
   [[ "$output" =~ ^[0-9]+$ ]]
 }
+
+# --- skey_daemon_choice / skey_daemon_process (#188) -----------------------
+
+@test "daemon_choice: defaults to brscan-skey" {
+  run skey_daemon_choice ""
+  [ "$output" = "brscan-skey" ]
+  run skey_daemon_choice
+  [ "$output" = "brscan-skey" ]
+  run skey_daemon_choice brscan-skey
+  [ "$output" = "brscan-skey" ]
+}
+
+@test "daemon_choice: openskey, case-insensitively" {
+  run skey_daemon_choice openskey
+  [ "$output" = "openskey" ]
+  run skey_daemon_choice OpenSkey
+  [ "$output" = "openskey" ]
+}
+
+@test "daemon_choice: anything else falls back to brscan-skey" {
+  run skey_daemon_choice nonsense
+  [ "$output" = "brscan-skey" ]
+}
+
+@test "daemon_process: the process name per daemon" {
+  run skey_daemon_process openskey
+  [ "$output" = "openskey" ]
+  run skey_daemon_process brscan-skey
+  [ "$output" = "brscan-skey-exe" ]
+}
+
+# --- interface_ipv4 --------------------------------------------------------
+
+@test "interface_ipv4: the first IPv4 address of the interface" {
+  ip() {
+    echo "2: eth0    inet 192.168.44.58/24 brd 192.168.44.255 scope global eth0"
+    echo "2: eth0    inet 10.0.0.5/8 scope global secondary eth0"
+  }
+  run interface_ipv4 eth0
+  [ "$status" -eq 0 ]
+  [ "$output" = "192.168.44.58" ]
+}
+
+@test "interface_ipv4: nothing for an empty interface name or one without an address" {
+  run interface_ipv4 ""
+  [ "$status" -ne 0 ]
+  ip() { :; }
+  run interface_ipv4 eth9
+  [ -z "$output" ]
+}

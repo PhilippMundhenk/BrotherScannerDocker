@@ -35,6 +35,12 @@ return array(
           'description' => 'Restart the button daemon when its open files reach this percent of the limit.'),
     array('key' => 'SKEY_WATCHDOG_MAX_FDS', 'group' => 'Scanner', 'type' => 'int', 'default' => '0', 'restart' => true, 'min' => 0, 'max' => 1048576,
           'description' => 'Optional absolute open-file ceiling that restarts the button daemon (0 uses the percentage instead).'),
+    array('key' => 'SKEY_DAEMON', 'group' => 'Scanner', 'type' => 'string', 'default' => 'brscan-skey', 'restart' => true,
+          'description' => 'Scan-to-PC button daemon: brscan-skey (Brother\'s) or openskey (the open, leak-free reimplementation shipped in the image, with a built-in keepalive and registration self-test).'),
+    array('key' => 'DEVICE_STATUS', 'group' => 'Scanner', 'type' => 'bool', 'default' => 'true', 'restart' => false,
+          'description' => 'Answer GET /api/scanner/device with the scanner\'s own state read over SNMP (registered, model, serial, firmware, panel display, scan-key capability). Set false to turn it off.'),
+    array('key' => 'DEVICE_STATUS_CACHE_SECONDS', 'group' => 'Scanner', 'type' => 'int', 'default' => '10', 'restart' => false, 'min' => 0, 'max' => 3600,
+          'description' => 'How long a device status answer is reused before the scanner is asked again (0: every request).'),
 
     // --- Scanning
     array('key' => 'RESOLUTION', 'group' => 'Scanning', 'type' => 'int', 'default' => '300', 'restart' => false, 'min' => 50, 'max' => 9600,

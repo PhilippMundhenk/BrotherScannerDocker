@@ -10,6 +10,12 @@ keepAliveRegistration() {
   # running daemon to re-register all network scanners. Run it every few
   # minutes to keep the registration alive.
   # Disable with KEEPALIVE=false. Interval: KEEPALIVE_INTERVAL seconds (< 360).
+  # openskey refreshes (and verifies) the registration itself, from a socket
+  # it closes again, and holds back while a scan runs (SKEY_HOLD_FILES).
+  if [[ "$SKEY_DAEMON_CHOICE" == "openskey" ]]; then
+    echo "registration keepalive: built into openskey (every ${KEEPALIVE_INTERVAL:-120}s, verified by reading the registration back)"
+    return
+  fi
   if [[ "${KEEPALIVE,,}" == "false" ]]; then
     echo "registration keepalive disabled"
     return
@@ -41,8 +47,39 @@ keepAliveRegistration() {
 # has to be raised inside that session. The wrapper backgrounds brscan-skey-exe
 # and returns; the daemon inherits the raised limit.
 start_skey_daemon() {
+  if [[ "$SKEY_DAEMON_CHOICE" == "openskey" ]]; then
+    start_openskey
+    return
+  fi
   su - "$NAME" -c 'ulimit -Sn "$(ulimit -Hn)" 2>/dev/null; exec /usr/bin/brscan-skey' \
     >>/var/log/scanner.log 2>&1
+}
+
+# start_openskey: run the open reimplementation (SKEY_DAEMON=openskey, #188)
+# as the scanner user, like brscan-skey. It needs the host address the device
+# will send button events to: HOST_IPADDRESS, else the address of the
+# interface facing the scanner. The scan scripts are called as
+# "<script> <device> <name>", exactly as brscan-skey calls them, plus the
+# button event in the environment (SKEY_FUNC, SKEY_P1..4, SKEY_SEQ, ...),
+# which the job record keeps (#187). The environment goes through a file
+# because `su -` starts from a clean one.
+start_openskey() {
+  local host_ip="${HOST_IPADDRESS:-$(interface_ipv4 "$interface")}"
+  local script_dir=/opt/brother/scanner/brscan-skey/script
+  local env_file=/opt/brother/scanner/openskey.env
+  local func
+  {
+    printf 'export NAME=%q IPADDRESS=%q HOST_IPADDRESS=%q\n' "$NAME" "$IPADDRESS" "$host_ip"
+    printf 'export KEEPALIVE_INTERVAL=%q SKEY_DEVICE_PORT=%q\n' "${KEEPALIVE_INTERVAL:-120}" "${SKEY_DEVICE_PORT:-161}"
+    # never re-register while a scan runs or a front scan waits for rear pages
+    printf 'export SKEY_HOLD_FILES=%q\n' "/tmp/STATUS_SCAN:/tmp/STATUS_WAITING"
+    for func in file email image ocr; do
+      printf "export SKEY_%s='python3 %s/scanto%s.py \"\$1\" \"\$2\"'\n" "${func^^}" "$script_dir" "$func"
+    done
+  } >"$env_file"
+  chown "$NAME" "$env_file" && chmod 600 "$env_file"
+  su - "$NAME" -s /bin/bash -c "source $env_file; exec /usr/local/bin/openskey" >>/var/log/scanner.log 2>&1 &
+  echo "openskey started as $NAME (pid $!, device $IPADDRESS:${SKEY_DEVICE_PORT:-161}, host $host_ip)"
 }
 
 # skey_watchdog: restart the daemon if it has died or its open-file count has
@@ -60,16 +97,18 @@ skey_watchdog() {
   local max_fds="${SKEY_WATCHDOG_MAX_FDS:-0}"
   local ceiling=""
   [[ "$max_fds" =~ ^[0-9]+$ && "$max_fds" -gt 0 ]] && ceiling=" or $max_fds files"
-  echo "starting brscan-skey watchdog (every ${interval}s, restart at ${pct}% of the open-file limit${ceiling})"
+  echo "starting $SKEY_DAEMON_CHOICE watchdog (every ${interval}s, restart at ${pct}% of the open-file limit${ceiling})"
   local pid fds soft
   while true; do
     sleep "$interval"
-    pid=$(pgrep -x brscan-skey-exe | head -1)
+    pid=$(pgrep -x "$SKEY_DAEMON_PROCESS" | head -1)
     if [[ -z "$pid" ]]; then
-      echo "watchdog: brscan-skey is not running, starting it" >>/var/log/scanner.log
+      echo "watchdog: $SKEY_DAEMON_CHOICE is not running, starting it" >>/var/log/scanner.log
       start_skey_daemon
       continue
     fi
+    # openskey has no leak (#179 is in Brother's binary): only liveness matters.
+    [[ "$SKEY_DAEMON_CHOICE" == "openskey" ]] && continue
     scan_active && continue
     fds=$(skey_fd_count "$pid") || continue
     soft=$(skey_daemon_soft_limit "$pid")
@@ -125,6 +164,11 @@ export MODEL="${MODEL:-MFC-L2700DW}"
 export IPADDRESS="${IPADDRESS:-192.168.1.123}"
 export REMOVE_BLANK_THRESHOLD="${REMOVE_BLANK_THRESHOLD-0.3}"
 export FTP_PATH="${FTP_PATH:-/scans/}"
+# Which Scan-to-PC button daemon runs: Brother's brscan-skey (default) or
+# openskey, the open reimplementation (SKEY_DAEMON=openskey, see doc/setup.md).
+SKEY_DAEMON_CHOICE=$(skey_daemon_choice "${SKEY_DAEMON:-}")
+SKEY_DAEMON_PROCESS=$(skey_daemon_process "$SKEY_DAEMON_CHOICE")
+echo "button daemon: $SKEY_DAEMON_CHOICE"
 echo "-----"
 
 echo "setting up user & logfile:"
@@ -238,6 +282,15 @@ esac
 echo "scanner driver: $DRIVER for model $MODEL"
 echo "$DRIVER" >/tmp/SCANNER_DRIVER
 chmod 644 /tmp/SCANNER_DRIVER
+if [[ "${SKEY_MOCK_DEVICE,,}" == "true" ]]; then
+  # Test hook (tests/e2e): a stand-in scanner, openskey's mock device, inside
+  # the container, so the button daemon registers against it, button presses
+  # can be injected and the device status read without hardware. Not for
+  # production; see doc/development.md.
+  export SKEY_DEVICE_PORT="${SKEY_DEVICE_PORT:-1161}"
+  /usr/local/bin/openskey-mock-device --port "$SKEY_DEVICE_PORT" >>/var/log/scanner.log 2>&1 &
+  echo "mock device started on UDP :$SKEY_DEVICE_PORT (SKEY_MOCK_DEVICE, tests only)"
+fi
 start_skey_daemon
 echo "-----"
 
@@ -280,6 +333,9 @@ if [ "$WEBSERVER" == "true" ]; then
     echo "<?php"
     echo "\$UID=$USERID;"
     echo "\$MODEL=\"$MODEL\";"
+    # the device address and SNMP port for GET /api/scanner/device
+    echo "\$IPADDRESS=\"$IPADDRESS\";"
+    echo "\$SKEY_DEVICE_PORT=\"${SKEY_DEVICE_PORT:-161}\";"
     if [[ -n "$TZ" ]]; then
       echo "\$TZ=\"$TZ\";"
     fi
@@ -311,7 +367,7 @@ if [ "$WEBSERVER" == "true" ]; then
       fi
     done
     while IFS= read -r key; do
-      case "$key" in PATH|HOME|HOSTNAME|PWD|SHLVL|TERM|OLDPWD|UID|GID|EUID|PPID|LANG|LC_ALL|_|TZ|MODEL) continue ;; esac
+      case "$key" in PATH|HOME|HOSTNAME|PWD|SHLVL|TERM|OLDPWD|UID|GID|EUID|PPID|LANG|LC_ALL|_|TZ|MODEL|IPADDRESS|SKEY_DEVICE_PORT) continue ;; esac
       [[ -n "${!key+x}" ]] || continue
       echo "\$${key}=$(php_literal "${!key}");"
     done </opt/brother/scanner/locked.txt

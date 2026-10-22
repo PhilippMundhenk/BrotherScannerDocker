@@ -56,7 +56,8 @@ States: `queued`, `scanning`, `waiting_for_rear`, `scanning_rear`, `converting`,
 Other endpoints:
 
 - `GET /api/actions` describes the available actions, their labels and the accepted parameters, plus the image version and the device (name, model, address and the mode/resolution/source options it listed at startup, for integrations like Home Assistant).
-- `GET /api/scanner/status` reports `scan`, `waiting`, `ocr`, `reachable` (whether the device answered the last connection check) and `queue` (OCR jobs pending, in progress and failed, and whether the worker is holding back for a busy scanner).
+- `GET /api/scanner/status` reports `scan`, `waiting`, `ocr`, `reachable` (whether the device answered the last connection check), `buttons` (the Scan-to-PC button daemon runs) and `queue` (OCR jobs pending, in progress and failed, and whether the worker is holding back for a busy scanner).
+- `GET /api/scanner/device` asks the scanner itself, over SNMP through the bundled [openskey](https://github.com/PhilippMundhenk/openskey): `registered` (the device currently lists this container as a Scan-to-PC destination), `model`, `serial`, `firmware`, the panel `display` line, and whether network scanning and the Scan-to-PC key are supported and enabled (`net_scanner_*`, `scan_key_*`). Scanner objects only. Answers are reused for `DEVICE_STATUS_CACHE_SECONDS`; `DEVICE_STATUS=false` turns the endpoint off (404).
 - Files: `/api/file-list` (newest first; `?offset=N&limit=M` for one page, the `X-Total-Count` header carries the total), `/api/file/<name>/info`, `/api/file/<name>/download`, `/api/file/<name>/thumbnail`; with `ALLOW_GUI_FILEOPERATIONS=true` also rename (`PUT /api/file/<name>/rename`) and delete (`DELETE /api/file/<name>/delete`).
 - Settings: `GET`/`PUT /api/settings` and `POST /api/settings/import-environment`, see [Configuration](configuration.md).
 
