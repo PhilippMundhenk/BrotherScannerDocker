@@ -86,6 +86,30 @@ components:
         params:
           type: object
           description: per-job overrides (RESOLUTION, SCAN_MODE, SCAN_SOURCE) given at trigger time
+        trigger:
+          type: string
+          enum: [button, api]
+          description: who started the job, the Scan-to-PC button on the device or the REST API / web UI
+        button:
+          type: object
+          description: for a button-started job, what the button daemon reported (openskey; Brother's brscan-skey reports nothing)
+          properties:
+            function:
+              type: string
+              enum: [file, email, image, ocr]
+              description: the Scan-to-PC function pressed on the device
+            seq:
+              type: integer
+              description: the device's per-press sequence number
+            regid:
+              type: integer
+              description: the device's registration id of the function
+            client:
+              type: string
+              description: this host's address as the device sees it, when reported
+            params:
+              type: object
+              description: the per-press option fields P1..P4 as p1..p4 (0 means default; an MFC-L2700DW always sends 0)
         file:
           type: string
           description: PDF in /scans (state done)

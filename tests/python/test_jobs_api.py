@@ -148,3 +148,74 @@ def test_convert_records_done_with_ocr_state(tmp_path, monkeypatch, clean_env, j
     record = jobstate.read(job)
     assert record["state"] == "done" and record["file"] == f"{job}.pdf"
     assert record["ocr"] == "queued" and record["ocr_file"] == f"{job}-ocr.pdf"
+
+
+# --- who started the job (#187)
+
+import io
+import subprocess
+
+SKEY_VARIABLES = ("SKEY_FUNC", "SKEY_SEQ", "SKEY_REGID", "SKEY_CLIENT", "SKEY_P1", "SKEY_P2", "SKEY_P3", "SKEY_P4")
+
+
+def test_job_trigger_is_api_when_the_job_id_was_given(clean_env):
+    assert scanner.job_trigger(True) == {"trigger": "api"}
+
+
+def test_job_trigger_is_button_without_daemon_details(clean_env):
+    """Brother's brscan-skey calls the script with nothing in the environment."""
+    for name in SKEY_VARIABLES:
+        clean_env.delenv(name, raising=False)
+    assert scanner.job_trigger(False) == {"trigger": "button"}
+
+
+def test_job_trigger_records_what_openskey_hands_on(clean_env):
+    clean_env.setenv("SKEY_FUNC", "FILE")
+    clean_env.setenv("SKEY_SEQ", "56")
+    clean_env.setenv("SKEY_REGID", "60614")
+    clean_env.setenv("SKEY_CLIENT", "192.168.44.58")
+    for i, value in enumerate(("3", "1", "0", "2"), start=1):
+        clean_env.setenv(f"SKEY_P{i}", value)
+    assert scanner.job_trigger(False) == {
+        "trigger": "button",
+        "button": {
+            "function": "file", "seq": 56, "regid": 60614, "client": "192.168.44.58",
+            "params": {"p1": 3, "p2": 1, "p3": 0, "p4": 2},
+        },
+    }
+
+
+def test_job_trigger_ignores_values_that_are_not_numbers(clean_env):
+    for name in SKEY_VARIABLES:
+        clean_env.delenv(name, raising=False)
+    clean_env.setenv("SKEY_SEQ", "abc")
+    clean_env.setenv("SKEY_P1", "x")
+    clean_env.setenv("SKEY_FUNC", "  ")
+    assert scanner.job_trigger(False) == {"trigger": "button"}
+
+
+def test_scan_front_records_who_started_the_job(jobs_dir, monkeypatch, tmp_path, clean_env):
+    """The record carries the trigger from its first write, so the API sees it while the job runs."""
+    monkeypatch.setattr(scanner.tempfile, "gettempdir", lambda: str(tmp_path))
+    os.chdir(tmp_path)  # an earlier test may leave a removed job directory as cwd
+
+    def failing_scan(log, device, batch, args):
+        raise subprocess.CalledProcessError(1, ["scanimage"])
+
+    monkeypatch.setattr(scanner, "scan_cmd", failing_scan)
+    for name in SKEY_VARIABLES:
+        clean_env.delenv(name, raising=False)
+
+    # started through the API: the id was announced by the caller
+    scanner.scan_front(io.StringIO(), None, job_name="2026-10-10-19-25-20", action="file")
+    record = jobstate.read("2026-10-10-19-25-20")
+    assert record["state"] == "failed" and record["trigger"] == "api"
+    assert "button" not in record
+
+    # started on the device: no id, and openskey's event in the environment
+    clean_env.setenv("SKEY_FUNC", "OCR")
+    clean_env.setenv("SKEY_SEQ", "7")
+    scanner.scan_front(io.StringIO(), None, action="ocr")
+    newest = jobstate.list_jobs()[0]
+    assert newest["job"] != "2026-10-10-19-25-20"
+    assert newest["trigger"] == "button" and newest["button"] == {"function": "ocr", "seq": 7}

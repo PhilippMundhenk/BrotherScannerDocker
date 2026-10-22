@@ -51,7 +51,7 @@ curl http://<ContainerIP>:<Port>/api/jobs/2026-10-10-19-25-20
 {"job": "...", "action": "file", "state": "waiting_for_rear", "pages": 2, "waiting_until": "...", ...}
 ```
 
-States: `queued`, `scanning`, `waiting_for_rear`, `scanning_rear`, `converting`, `done` (with `file`, `file_url`, and `ocr` being `none`, `pending`, `in_progress`, `failed` or `done` with `ocr_file_url`), `failed` (with `error`). `GET /api/jobs` lists the recent jobs, newest first. `POST /api/jobs/<id>/rear` scans the rear pages for that specific job while it is waiting for them (the "Scan to E-mail" action always addresses the latest job).
+States: `queued`, `scanning`, `waiting_for_rear`, `scanning_rear`, `converting`, `done` (with `file`, `file_url`, and `ocr` being `none`, `pending`, `in_progress`, `failed` or `done` with `ocr_file_url`), `failed` (with `error`). Every job also says who started it: `trigger` is `button` (the Scan-to-PC button on the device) or `api` (this API or the web UI); a button-started job carries what the button daemon reported under `button` (`function`, `seq`, `regid`, `params` with the per-press fields `p1`..`p4`), which only [openskey](https://github.com/PhilippMundhenk/openskey) hands on (Brother's `brscan-skey` reports nothing). `GET /api/jobs` lists the recent jobs, newest first. `POST /api/jobs/<id>/rear` scans the rear pages for that specific job while it is waiting for them (the "Scan to E-mail" action always addresses the latest job).
 
 Other endpoints:
 
