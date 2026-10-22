@@ -36,7 +36,8 @@ test.describe('openskey button daemon', () => {
       // sends button events back to the same address
       '-e', 'IPADDRESS=127.0.0.1', '-e', 'HOST_IPADDRESS=127.0.0.1',
       '-e', 'SKEY_DAEMON=openskey', '-e', 'SKEY_MOCK_DEVICE=true',
-      '-e', 'KEEPALIVE_INTERVAL=5', '-e', 'SCANNER_PING_INTERVAL=0',
+      // the reachability check asks the (mock) device over SNMP (#193)
+      '-e', 'KEEPALIVE_INTERVAL=5', '-e', 'SCANNER_PING_INTERVAL=3',
       '-e', 'DEVICE_STATUS_CACHE_SECONDS=0',
       '-e', 'RESOLUTION=100', '-e', 'REAR_PAGE_WAIT_SECONDS=2',
       '-e', 'SIM_PAGES=1', '-e', 'SIM_SCAN_SECONDS=0.2',
@@ -73,6 +74,10 @@ test.describe('openskey button daemon', () => {
     expect(docker(['exec', NAME, 'bash', '-c', 'pgrep -x openskey | wc -l']).trim()).toBe('1');
     const status = (await get('/api/scanner/status')).body;
     expect(status.buttons).toBe(true);
+    // reachability is asked over SNMP, which the mock answers; the scan port
+    // is never opened for it (#193)
+    expect(logs).toContain('answers over SNMP every 3s');
+    await expect.poll(async () => (await get('/api/scanner/status')).body.reachable, { timeout: 15_000 }).toBe(true);
   });
 
   test('the device status endpoint reads the scanner over SNMP, scanner objects only', async () => {
