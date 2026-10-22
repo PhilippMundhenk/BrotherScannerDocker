@@ -91,6 +91,24 @@ skey_daemon_process() {
   esac
 }
 
+# device_reachable <ip> [<snmp port>]: 0 when the scanner answers, 1 when it
+# does not, 2 when the question was not asked. Asks over SNMP through openskey
+# (OPENSKEY_BIN, default /usr/local/bin/openskey): one UDP exchange the device
+# answers without side effects. Without openskey it falls back to opening the
+# scan port TCP 54921, which the device treats as a scan session it then has
+# to tear down; a scan that opens the device in that moment is refused
+# ("Invalid argument", #193), so that fallback never runs while a scan is
+# active (returns 2: keep the previous answer).
+device_reachable() {
+  local ip="$1" port="${2:-161}" bin="${OPENSKEY_BIN:-/usr/local/bin/openskey}"
+  if [[ -x "$bin" ]]; then
+    IPADDRESS="$ip" SKEY_DEVICE_PORT="$port" timeout 10 "$bin" status 2>/dev/null | grep -q '"reachable":true'
+    return
+  fi
+  scan_active && return 2
+  timeout 3 bash -c "exec 3<>/dev/tcp/$ip/54921" 2>/dev/null
+}
+
 # interface_ipv4 <interface>: the first IPv4 address on an interface, or
 # nothing. openskey needs the host address the device sends button events to
 # (HOST_IPADDRESS, else the address of the interface facing the scanner);

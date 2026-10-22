@@ -156,3 +156,55 @@ teardown() {
   run interface_ipv4 eth9
   [ -z "$output" ]
 }
+
+# --- device_reachable (#193) ------------------------------------------------
+
+@test "device_reachable: asks openskey over SNMP and passes the address and port on" {
+  cat > "$test_tmp/openskey" <<'STUB'
+#!/usr/bin/env bash
+echo "$1 IPADDRESS=$IPADDRESS SKEY_DEVICE_PORT=$SKEY_DEVICE_PORT" > "${STUB_LOG}"
+echo '{"device_ip":"192.0.2.10","reachable":true,"registered":true}'
+STUB
+  chmod +x "$test_tmp/openskey"
+  export OPENSKEY_BIN="$test_tmp/openskey" STUB_LOG="$test_tmp/stub.log"
+  run device_reachable 192.0.2.10 1161
+  [ "$status" -eq 0 ]
+  [ "$(cat "$test_tmp/stub.log")" = "status IPADDRESS=192.0.2.10 SKEY_DEVICE_PORT=1161" ]
+}
+
+@test "device_reachable: a device that does not answer SNMP is unreachable" {
+  cat > "$test_tmp/openskey" <<'STUB'
+#!/usr/bin/env bash
+echo '{"device_ip":"192.0.2.10","reachable":false,"registered":null}'
+exit 2
+STUB
+  chmod +x "$test_tmp/openskey"
+  export OPENSKEY_BIN="$test_tmp/openskey"
+  run device_reachable 192.0.2.10
+  [ "$status" -eq 1 ]
+}
+
+@test "device_reachable: the SNMP check runs even while a scan is active (no side effects)" {
+  cat > "$test_tmp/openskey" <<'STUB'
+#!/usr/bin/env bash
+echo '{"reachable":true}'
+STUB
+  chmod +x "$test_tmp/openskey"
+  export OPENSKEY_BIN="$test_tmp/openskey" TMPDIR="$test_tmp"
+  touch "$test_tmp/STATUS_SCAN"
+  run device_reachable 192.0.2.10
+  [ "$status" -eq 0 ]
+}
+
+@test "device_reachable: without openskey the scan port is never opened during a scan" {
+  export OPENSKEY_BIN="$test_tmp/does-not-exist" TMPDIR="$test_tmp"
+  touch "$test_tmp/STATUS_SCAN"
+  run device_reachable 127.0.0.1
+  [ "$status" -eq 2 ]
+}
+
+@test "device_reachable: without openskey and idle, a closed scan port means unreachable" {
+  export OPENSKEY_BIN="$test_tmp/does-not-exist" TMPDIR="$test_tmp"
+  run device_reachable 127.0.0.1
+  [ "$status" -eq 1 ]
+}

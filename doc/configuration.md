@@ -69,7 +69,7 @@ A value set in the container environment wins over the configuration file, and t
 | ALLOW_GUI_SETTINGS | optional | true/false. Enables the settings page (`/settings`) and the settings API, which write the configuration file (default: false) |
 | SCANNER_CONFIG_FILE | optional | Path of the configuration file inside the container (default: /scans/.config/scanner.conf) |
 | API_TOKEN | optional | When set, every request that starts a scan or changes a file must carry it (`Authorization: Bearer <token>`, `X-API-Token` header, or a `token` field). The web UI sends it itself (default: no token) |
-| SCANNER_PING_INTERVAL | optional | Seconds between checks whether the scanner answers on its scan port, reported as `reachable` by the status endpoint; 0 disables (default: 60) |
+| SCANNER_PING_INTERVAL | optional | Seconds between checks whether the scanner answers (over SNMP, one UDP exchange with no side effects on the device), reported as `reachable` by the status endpoint; 0 disables (default: 60) |
 | FTP_PASSWORD_FILE, SSH_PASSWORD_FILE, TELEGRAM_TOKEN_FILE, FTP_USER_FILE, SSH_USER_FILE, TELEGRAM_CHATID_FILE | optional | Path of a file inside the container to read the value from, for Docker secrets (see below) |
 
 Quotes around a value, as in the examples above, are optional; one pair of surrounding quotes is dropped.

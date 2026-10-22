@@ -402,22 +402,34 @@ fi
 echo "-----"
 
 echo "setting up reachability check:"
-# Every SCANNER_PING_INTERVAL seconds (0 disables) try the scanner's scan port
-# and record the result for GET /api/scanner/status (field "reachable").
+# Every SCANNER_PING_INTERVAL seconds (0 disables) ask the scanner whether it
+# is there and record the result for GET /api/scanner/status ("reachable").
+# The question goes over SNMP (`openskey status`: one UDP exchange the device
+# answers without side effects). Opening the scan port TCP 54921 instead, as
+# the check used to, starts a scan session the device has to tear down, and a
+# scan that opens the device in that moment is refused ("open of device ...
+# failed: Invalid argument" on an MFC-L2700DW, #193). The TCP probe stays as
+# the fallback when openskey is not in the image, and never runs during a scan.
 PING_INTERVAL="${SCANNER_PING_INTERVAL:-60}"
 if [[ "$PING_INTERVAL" =~ ^[0-9]+$ && "$PING_INTERVAL" -gt 0 ]]; then
   (
     while true; do
-      if timeout 3 bash -c "exec 3<>/dev/tcp/$IPADDRESS/54921" 2>/dev/null; then
-        echo 1 >/tmp/STATUS_REACHABLE
-      else
-        echo 0 >/tmp/STATUS_REACHABLE
-      fi
-      chmod 644 /tmp/STATUS_REACHABLE
+      # device_reachable (files/skey.sh): 0 answers, 1 does not, 2 not asked
+      # (a scan is running and only the scan-port fallback is available)
+      device_reachable "$IPADDRESS" "${SKEY_DEVICE_PORT:-161}"
+      case $? in
+        0) echo 1 >/tmp/STATUS_REACHABLE; chmod 644 /tmp/STATUS_REACHABLE ;;
+        2) : ;;
+        *) echo 0 >/tmp/STATUS_REACHABLE; chmod 644 /tmp/STATUS_REACHABLE ;;
+      esac
       sleep "$PING_INTERVAL"
     done
   ) &
-  echo "checking $IPADDRESS:54921 every ${PING_INTERVAL}s"
+  if [[ -x /usr/local/bin/openskey ]]; then
+    echo "checking that $IPADDRESS answers over SNMP every ${PING_INTERVAL}s"
+  else
+    echo "checking $IPADDRESS:54921 every ${PING_INTERVAL}s (never during a scan)"
+  fi
 else
   echo "reachability check disabled"
 fi
