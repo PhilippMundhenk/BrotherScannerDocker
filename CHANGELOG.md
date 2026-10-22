@@ -4,6 +4,10 @@ All notable changes to the container. The Home Assistant integration and the das
 
 ## 2.2.0 (unreleased)
 
+### Added
+
+- Every scan job records who started it: `trigger` is `button` (the Scan-to-PC button on the device) or `api` (REST API / web UI), and a button-started job carries what the button daemon reported under `button` (function, sequence number, the per-press fields P1..P4) when the daemon hands them on, so Home Assistant can react to a button press on the scanner as such (#187).
+
 ### Fixed
 
 - The scanner's front-panel Scan-to-PC buttons no longer stop working after a few days. Brother's `brscan-skey` daemon leaks a network socket on every registration cycle until it hits its open-file limit; the image now starts the daemon with a raised limit and a watchdog that restarts it if it dies or climbs toward the limit, never during a scan (#179). `SKEY_WATCHDOG`, `SKEY_WATCHDOG_INTERVAL`, `SKEY_WATCHDOG_THRESHOLD` and `SKEY_WATCHDOG_MAX_FDS` configure it; `GET /api/scanner/status` gains a `buttons` field.

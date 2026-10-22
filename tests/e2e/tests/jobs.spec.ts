@@ -63,6 +63,9 @@ test.describe('jobs API', () => {
     const waiting = await waitForState(request, trigger.job, ['waiting_for_rear'], 30_000);
     expect(waiting).toMatchObject({ action: 'file', pages: 2, params: { RESOLUTION: '100', SCAN_MODE: 'True Gray' } });
     expect(waiting.waiting_until).toBeTruthy();
+    // #187: started through the API, not on the device
+    expect(waiting.trigger).toBe('api');
+    expect(waiting.button).toBeUndefined();
 
     const done = await waitForState(request, trigger.job, ['done'], 60_000);
     expect(done.file).toBe(`${trigger.job}.pdf`);

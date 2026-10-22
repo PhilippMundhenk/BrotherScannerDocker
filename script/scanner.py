@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, TextIO
+from typing import Any, Dict, List, Optional, TextIO
 
 from sendtoftps import sendtoftps
 from trigger_inotify import trigger_inotify
@@ -662,6 +662,43 @@ def kill_front_processing_from_pid(job_dir: str) -> Optional[int]:
     return None
 
 
+def job_trigger(job_name_given: bool) -> Dict[str, Any]:
+    """Who started this job, for its record (#187).
+
+    The REST API and the web UI call the script with --job-id (the id they
+    announced); the Scan-to-PC button daemon on the device calls it without
+    one. So "trigger" is "api" or "button". A daemon that hands the button
+    event on in the environment (openskey: SKEY_FUNC, SKEY_P1..4, SKEY_SEQ,
+    SKEY_REGID, SKEY_CLIENT; Brother's brscan-skey passes nothing) gets those
+    details recorded under "button", so a client such as Home Assistant can
+    tell which button was pressed.
+    """
+    if job_name_given:
+        return {"trigger": "api"}
+    record: Dict[str, Any] = {"trigger": "button"}
+    button: Dict[str, Any] = {}
+    function = os.environ.get("SKEY_FUNC", "").strip().lower()
+    if function:
+        button["function"] = function
+    for key, variable in (("seq", "SKEY_SEQ"), ("regid", "SKEY_REGID")):
+        value = os.environ.get(variable, "").strip()
+        if value.isdigit():
+            button[key] = int(value)
+    params: Dict[str, int] = {}
+    for i in range(1, 5):
+        value = os.environ.get(f"SKEY_P{i}", "").strip()
+        if value.isdigit():
+            params[f"p{i}"] = int(value)
+    if params:
+        button["params"] = params
+    client = os.environ.get("SKEY_CLIENT", "").strip()
+    if client:
+        button["client"] = client
+    if button:
+        record["button"] = button
+    return record
+
+
 #
 # Scan entry points
 #
@@ -670,11 +707,13 @@ def scan_front(log: TextIO, device: Optional[str], scanimage_args=[], job_name: 
     # Clear any existing waiting status before starting a new scan
     clear_status('waiting')
 
-    # The job is named by its timestamp (the API passes the name it announced)
+    # The job is named by its timestamp (the API passes the name it announced);
+    # a job without a name was started on the device.
+    trigger = job_trigger(job_name is not None)
     if job_name is None:
         job_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     jobstate.prune()
-    jobstate.update(job_name, state="queued", action=action, side="front", params=overrides or {})
+    jobstate.update(job_name, state="queued", action=action, side="front", params=overrides or {}, **trigger)
     job_dir = os.path.join(tempfile.gettempdir(), job_name)
     filepath_base = os.path.join(job_dir, f"{job_name}-front-page")
     tmp_output_batch = f"{filepath_base}%04d.pnm"

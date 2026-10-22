@@ -17,6 +17,14 @@ States, in order of a normal life:
                       OCR copy was queued
     failed            scanning was cancelled (field "error")
 
+Every record also says who started the job (#187):
+    trigger           "button" (the Scan-to-PC button on the device: the
+                      daemon called the script without --job-id) or "api"
+                      (REST API / web UI)
+    button            for a button-started job, what the daemon reported:
+                      function, seq, regid, client, params {p1..p4}; only
+                      openskey hands these on, Brother's brscan-skey does not
+
 Files are written atomically and are world-readable; the directory is
 created with mode 755 so the web server user can list it.
 """
