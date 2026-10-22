@@ -1,3 +1,19 @@
+# openskey: the open, leak-free reimplementation of Brother's brscan-skey
+# Scan-to-PC daemon (SKEY_DAEMON=openskey, doc/setup.md) and its mock device
+# for the end-to-end tests, built from a pinned commit of
+# https://github.com/PhilippMundhenk/openskey (#188).
+FROM rust:1-slim-bookworm AS openskey
+ARG OPENSKEY_REPO=https://github.com/PhilippMundhenk/openskey.git
+ARG OPENSKEY_REF=de8e2ee37aa291e41bbd3e9006f9b37446be87da
+RUN <<EOF
+apt-get update && \
+apt-get -y --no-install-recommends install git ca-certificates && \
+rm -rf /var/lib/apt/lists/* && \
+git clone "$OPENSKEY_REPO" /src && \
+cd /src && git checkout --quiet "$OPENSKEY_REF" && \
+cargo build --release --bins
+EOF
+
 FROM python:slim-bookworm
 
 RUN <<EOF
@@ -41,6 +57,8 @@ COPY files/skey.sh /opt/brother/skey.sh
 COPY files/brscan-skey.config /opt/brother/scanner/brscan-skey/brscan-skey.config
 COPY files/lighttpd-scanner.conf /etc/lighttpd/conf-enabled/99-scanner-rewrite.conf
 COPY script /opt/brother/scanner/brscan-skey/script
+COPY --from=openskey /src/target/release/openskey /usr/local/bin/openskey
+COPY --from=openskey /src/target/release/mock-device /usr/local/bin/openskey-mock-device
 
 RUN <<EOF
 cp /etc/lighttpd/conf-available/05-auth.conf /etc/lighttpd/conf-enabled/ && \

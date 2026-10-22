@@ -69,3 +69,34 @@ skey_daemon_soft_limit() {
   fi
   ulimit -Hn 2>/dev/null || echo 1024
 }
+
+# skey_daemon_choice [<SKEY_DAEMON>]: which Scan-to-PC button daemon to run,
+# "brscan-skey" (Brother's closed binary, the default) or "openskey" (the open
+# reimplementation shipped in the image, which has no leak, keeps the
+# registration alive itself and verifies it by reading it back; #188). Any
+# other value falls back to brscan-skey.
+skey_daemon_choice() {
+  case "${1,,}" in
+    openskey) echo openskey ;;
+    *) echo brscan-skey ;;
+  esac
+}
+
+# skey_daemon_process <choice>: the process name of the running daemon, for
+# pgrep (the watchdog) and the status endpoint.
+skey_daemon_process() {
+  case "$1" in
+    openskey) echo openskey ;;
+    *) echo brscan-skey-exe ;;
+  esac
+}
+
+# interface_ipv4 <interface>: the first IPv4 address on an interface, or
+# nothing. openskey needs the host address the device sends button events to
+# (HOST_IPADDRESS, else the address of the interface facing the scanner);
+# brscan-skey discovers it on its own.
+interface_ipv4() {
+  local iface="$1"
+  [[ -n "$iface" ]] || return 1
+  ip -4 -o addr show dev "$iface" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1
+}

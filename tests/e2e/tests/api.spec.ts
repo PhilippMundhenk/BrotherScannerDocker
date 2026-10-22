@@ -86,3 +86,30 @@ test.describe('API', () => {
     expect((await listFiles(request)).some((f) => f.file === SAMPLE_FILE)).toBe(true);
   });
 });
+
+test.describe('device status (#188)', () => {
+  test('answers quickly with reachable=false for the unreachable test device, then from the cache', async ({ request }) => {
+    const started = Date.now();
+    const res = await request.get('/api/scanner/device');
+    expect(res.status()).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ device_ip: '192.0.2.10', reachable: false, registered: null, model: null, cached: false });
+    expect(Date.now() - started).toBeLessThan(10_000);
+    const again = await (await request.get('/api/scanner/device')).json();
+    expect(again.cached).toBe(true);
+    expect(again.checked).toBe(body.checked);
+  });
+
+  test('DEVICE_STATUS=false turns the endpoint off', async ({ request }) => {
+    try {
+      const put = await request.put('/api/settings', { data: { DEVICE_STATUS: 'false' } });
+      expect(put.status()).toBe(200);
+      const res = await request.get('/api/scanner/device');
+      expect(res.status()).toBe(404);
+      expect((await res.json()).message).toContain('DEVICE_STATUS');
+    } finally {
+      await request.put('/api/settings', { data: { DEVICE_STATUS: '' } });
+    }
+    expect((await request.get('/api/scanner/device')).status()).toBe(200);
+  });
+});

@@ -77,6 +77,11 @@ $router->map( 'GET', '/api/scanner/status', function() {
 });
 
 
+$router->map( 'GET', '/api/scanner/device', function() {
+	require_once 'views/api/scanner-device.php';
+});
+
+
 $router->map( 'POST', '/api/scanner/scanto', function() {
     api_token_required();
     $scanto = $_POST["target"] ?? '';

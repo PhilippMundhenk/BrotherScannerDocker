@@ -61,6 +61,51 @@ components:
             holding:
               type: boolean
               description: the worker holds the next upload back because the scanner is busy
+    DeviceStatus:
+      type: object
+      properties:
+        device_ip:
+          type: string
+        reachable:
+          type: boolean
+          description: the device answered SNMP at all
+        registered:
+          type: boolean
+          nullable: true
+          description: the device currently lists a Scan-to-PC destination (the registration read back)
+        model:
+          type: string
+          nullable: true
+          example: MFC-L2700DW
+        serial:
+          type: string
+          nullable: true
+        firmware:
+          type: string
+          nullable: true
+        display:
+          type: string
+          nullable: true
+          description: first line of the front-panel display
+        net_scanner_supported:
+          type: boolean
+          nullable: true
+        net_scanner_enabled:
+          type: boolean
+          nullable: true
+        scan_key_supported:
+          type: boolean
+          nullable: true
+          description: the device supports the network Scan-to-PC key
+        scan_key_enabled:
+          type: boolean
+          nullable: true
+        checked:
+          type: string
+          description: when the device was asked (ISO 8601)
+        cached:
+          type: boolean
+          description: the answer came from the cache (DEVICE_STATUS_CACHE_SECONDS)
     Job:
       type: object
       properties:
@@ -241,6 +286,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Status'
+
+  /scanner/device:
+    get:
+      summary: The scanner's own state, read from the device over SNMP
+      description: >-
+        Answered by `openskey status` (openskey ships in the image). Scanner objects only:
+        whether the device lists this container as a Scan-to-PC destination, model, serial,
+        firmware, the panel display line, and the network-scan / scan-key capability flags.
+        Cached for DEVICE_STATUS_CACHE_SECONDS (default 10). DEVICE_STATUS=false turns it off.
+      responses:
+        '200':
+          description: Device status (fields the model does not expose are null)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStatus'
+        '404':
+          description: Turned off (DEVICE_STATUS=false)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /scanner/scanto:
     post:

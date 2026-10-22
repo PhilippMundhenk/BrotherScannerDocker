@@ -77,6 +77,19 @@ The image contains it in two ways, so you should not notice it:
 
 `GET /api/scanner/status` reports a `buttons` field (the daemon is running). The watchdog is on by default; `SKEY_WATCHDOG=false` turns it off, and `SKEY_WATCHDOG_INTERVAL`, `SKEY_WATCHDOG_THRESHOLD` and `SKEY_WATCHDOG_MAX_FDS` tune it (see [Configuration](configuration.md)).
 
+## Button daemon: openskey
+
+Brother does not support its Linux drivers, so the leak above cannot be fixed at its source. [openskey](https://github.com/PhilippMundhenk/openskey) is an open reimplementation of the `brscan-skey` daemon's job: it registers the container with the device as a Scan-to-PC destination, keeps that registration alive from a socket it closes again (nothing to leak), verifies every registration by reading it back from the device, receives the button presses, drops the device's duplicate sends, and calls the same scan scripts. It is built into the image; `SKEY_DAEMON=openskey` switches to it:
+
+```
+button daemon: openskey
+openskey started as Scanner (device 192.168.1.50:161, host 192.168.1.10)
+openskey: registered Scan-to-PC for "Scanner"
+openskey: registration verified
+```
+
+With openskey the brscan-skey keepalive and the open-file watchdog are not needed (the watchdog only restarts it if it dies). `HOST_IPADDRESS` is taken from the interface facing the scanner when it is not set, as with bridged networking it must be an address the device can reach. The button event's fields are handed to the scan scripts and recorded on the job (`trigger: button`, see [Web UI and API](web-ui.md)), and `GET /api/scanner/device` reads the scanner's own state through it. Brother's daemon stays the default until openskey has seen more models; the protocol is documented in openskey's PROTOCOL.md, and a capture from another model is welcome.
+
 ## Image tags
 
 | Tag | Points to |

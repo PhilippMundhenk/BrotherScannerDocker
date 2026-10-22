@@ -7,6 +7,8 @@ All notable changes to the container. The Home Assistant integration and the das
 ### Added
 
 - Every scan job records who started it: `trigger` is `button` (the Scan-to-PC button on the device) or `api` (REST API / web UI), and a button-started job carries what the button daemon reported under `button` (function, sequence number, the per-press fields P1..P4) when the daemon hands them on, so Home Assistant can react to a button press on the scanner as such (#187).
+- `SKEY_DAEMON=openskey` runs [openskey](https://github.com/PhilippMundhenk/openskey), an open, leak-free reimplementation of Brother's `brscan-skey` Scan-to-PC daemon, instead of Brother's binary: it keeps the registration alive from a socket it closes again, verifies every registration by reading it back, deduplicates the device's resends and hands the button event to the scan scripts. Shipped in the image together with its mock device, which the end-to-end tests register against (#188). Brother's daemon stays the default for now.
+- `GET /api/scanner/device` reads the scanner's own state over SNMP: whether the device lists this container as a Scan-to-PC destination, model, serial, firmware, the panel display line and the scan-key capability flags. Scanner objects only; `DEVICE_STATUS` and `DEVICE_STATUS_CACHE_SECONDS` configure it (#188).
 
 ### Fixed
 

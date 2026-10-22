@@ -65,15 +65,17 @@ function ocrQueue() {
 // waiting:   the front scan is waiting for rear pages (status file, 3 minutes).
 // ocr:       the OCR queue worker is uploading (curl).
 // reachable: the device answered the entrypoint's connection check.
-// buttons:   Brother's brscan-skey daemon is running, so the device's
-//            front-panel Scan-to-PC buttons work. The entrypoint watchdog
-//            keeps it alive (it leaks sockets and would otherwise stop, #179).
+// buttons:   the Scan-to-PC button daemon is running, so the device's
+//            front-panel buttons work: Brother's brscan-skey (kept alive by
+//            the entrypoint watchdog, it leaks sockets, #179) or openskey
+//            (SKEY_DAEMON=openskey; exact name, so the mock device of the
+//            tests, openskey-mock-device, does not count).
 $result = array(
     'scan' => isStatusSet('scan', 600) || isProcessRunning('scanimage'),
     'waiting' => isStatusSet('waiting', 180),
     'ocr' => isProcessRunning('curl'),
     'reachable' => scannerReachable(),
-    'buttons' => isProcessRunning('brscan-skey-exe'),
+    'buttons' => isProcessRunning('brscan-skey-exe') || isProcessRunning('^openskey$'),
     'queue' => ocrQueue(),
 );
 
