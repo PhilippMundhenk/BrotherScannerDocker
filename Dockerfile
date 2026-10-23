@@ -4,7 +4,7 @@
 # https://github.com/PhilippMundhenk/openskey (#188).
 FROM rust:1-slim-bookworm AS openskey
 ARG OPENSKEY_REPO=https://github.com/PhilippMundhenk/openskey.git
-ARG OPENSKEY_REF=4eb7767783280535f3e7844a0824572b26b53f98
+ARG OPENSKEY_REF=9dc1778602b1d5744ce5d7e3e5815a36ae021013
 RUN <<EOF
 apt-get update && \
 apt-get -y --no-install-recommends install git ca-certificates && \
