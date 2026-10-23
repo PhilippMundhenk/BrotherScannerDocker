@@ -16,12 +16,14 @@ function settings_catalogue() {
 }
 
 function settings_catalogue_entry($key) {
-    foreach (settings_catalogue() as $entry) {
-        if ($entry['key'] === $key) {
-            return $entry;
+    static $index = null;
+    if ($index === null) {
+        $index = array();
+        foreach (settings_catalogue() as $entry) {
+            $index[$entry['key']] = $entry;
         }
     }
-    return null;
+    return is_string($key) && isset($index[$key]) ? $index[$key] : null;
 }
 
 function settings_config_path() {
@@ -49,9 +51,34 @@ function settings_locked_keys() {
     return $locked;
 }
 
-/** KEY=VALUE lines of the configuration file (all keys, also unknown ones). */
+/**
+ * The configuration files read during this request, by path. The settings
+ * page asks for every one of the ~60 settings and config.php overlays the
+ * file once more; reading the file for each of them cost 60 opens per
+ * request, which took seconds when /scans is a network share (#196). The
+ * cache is dropped whenever this backend writes the file.
+ */
+function &settings_file_cache() {
+    static $cache = array();
+    return $cache;
+}
+
+function settings_file_cache_clear() {
+    $cache = &settings_file_cache();
+    $cache = array();
+}
+
+/** KEY=VALUE lines of the configuration file (all keys, also unknown ones), read once per request. */
 function settings_file_values($path = null) {
     $path = $path ?? settings_config_path();
+    $cache = &settings_file_cache();
+    if (!array_key_exists($path, $cache)) {
+        $cache[$path] = settings_file_read($path);
+    }
+    return $cache[$path];
+}
+
+function settings_file_read($path) {
     $values = array();
     if (!is_file($path)) {
         return $values;  // no configuration file yet: nothing to overlay, nothing to log
@@ -93,13 +120,13 @@ function settings_file_overlay() {
     return $overlay;
 }
 
-function settings_effective_value($key) {
+function settings_effective_value($key, $file = null) {
     $locked = settings_locked_keys();
     $entry = settings_catalogue_entry($key);
     if (isset($locked[$key]) && isset($GLOBALS[$key])) {
         return array((string)$GLOBALS[$key], 'environment');
     }
-    $file = settings_file_values();
+    $file = $file ?? settings_file_values();
     if (array_key_exists($key, $file)) {
         return array($file[$key], 'file');
     }
@@ -110,8 +137,9 @@ function settings_effective_value($key) {
 function settings_all() {
     $result = array();
     $locked = settings_locked_keys();
+    $file = settings_file_values();
     foreach (settings_catalogue() as $entry) {
-        list($value, $source) = settings_effective_value($entry['key']);
+        list($value, $source) = settings_effective_value($entry['key'], $file);
         $item = $entry;
         $item['source'] = $source;
         $item['locked'] = isset($locked[$entry['key']]);
@@ -263,6 +291,8 @@ function settings_write_file($path, $values) {
         return "cannot write $path";
     }
     @chmod($path, 0664);
+    clearstatcache(true, $path);
+    settings_file_cache_clear();  // the next read in this request sees what was just written
     return null;
 }
 

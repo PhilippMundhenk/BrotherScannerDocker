@@ -1,11 +1,14 @@
 import { expect, test } from '@playwright/test';
-import { inContainer, listFiles, scannerStatus, triggerScan, waitFor, waitForNewFile, waitForQueueIdle } from '../helpers';
+import * as fs from 'fs';
+import * as path from 'path';
+import { docker, FIXTURES, inContainer, listFiles, readState, scannerStatus, triggerScan, waitFor, waitForNewFile, waitForQueueIdle } from '../helpers';
 
 // #124: settings from a configuration file on the volume, editable through
 // the settings page and the settings API. The e2e container runs with
 // ALLOW_GUI_SETTINGS=true and RESOLUTION=100 in its environment.
 
 const CONFIG = '/scans/.config/scanner.conf';
+const BUDGET_SETTINGS_MS = 1_000; // one settings page or API answer (#196)
 
 test.describe('settings page and API', () => {
   test.beforeEach(async ({ request }) => {
@@ -154,6 +157,31 @@ test.describe('settings page and API', () => {
       await expect(page.locator('#import-result')).toContainText('RESOLUTION');
     } finally {
       inContainer(['bash', '-c', `if [ -f ${CONFIG}.bak ]; then mv ${CONFIG}.bak ${CONFIG}; else rm -f ${CONFIG}; fi`]);
+    }
+  });
+
+  test('the page reads the configuration file once per request and answers within budget (#196)', async ({ request }) => {
+    // The page used to open the configuration file once per setting (60 times
+    // per request); on a network share for /scans that took seconds. The
+    // fixture counts the opens of the file while config.php's overlay and the
+    // page's settings_all() run, inside the container's own PHP.
+    const script = fs.readFileSync(path.join(FIXTURES, 'count-config-reads.php'), 'utf8');
+    const out = docker(['exec', '-i', readState().container, 'php'], script);
+    const counts = /settings=(\d+) opens=(\d+) stats=(\d+)/.exec(out);
+    expect(counts, out).not.toBeNull();
+    expect(Number(counts![1])).toBeGreaterThan(40);
+    expect(Number(counts![2])).toBe(1);
+    expect(Number(counts![3])).toBeLessThanOrEqual(1);
+
+    for (const url of ['/settings', '/api/settings']) {
+      const t0 = performance.now();
+      const res = await request.get(url);
+      const ms = performance.now() - t0;
+      expect(res.status()).toBe(200);
+      const line = `GET ${url}: ${ms.toFixed(0)} ms (budget ${BUDGET_SETTINGS_MS} ms)`;
+      console.log(line);
+      test.info().annotations.push({ type: 'timing', description: line });
+      expect(ms).toBeLessThan(BUDGET_SETTINGS_MS);
     }
   });
 });
