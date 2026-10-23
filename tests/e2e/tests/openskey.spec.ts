@@ -96,7 +96,8 @@ test.describe('openskey button daemon', () => {
       scan_key_enabled: true,
       cached: false,
     });
-    expect(body.display).toContain('Scan:');
+    // the mock serves the line as the real device does, in HP Roman-8 (0xCF for ü); openskey decodes it (openskey #12)
+    expect(body.display).toBe('Scan:   drück');
     expect(typeof body.checked).toBe('string');
     // this is a scanner project: no printer objects
     for (const key of Object.keys(body)) expect(key).not.toMatch(/toner|drum|page/i);
