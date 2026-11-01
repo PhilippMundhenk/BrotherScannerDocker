@@ -136,6 +136,29 @@ test.describe('openskey button daemon', () => {
     expect(scannerLog()).toContain('duplicate event (SEQ=56) ignored');
   });
 
+  test('the keepalive follows a scan at once and logs changes only (#199)', async () => {
+    // mark a scan in progress the way the scan scripts do (the simulated scan
+    // above is too short to catch a keepalive tick reliably)
+    const before = scannerLog().length;
+    const since = () => scannerLog().slice(before);
+    docker(['exec', NAME, 'touch', '/tmp/STATUS_WAITING']);
+    await expect.poll(since, { timeout: 20_000 }).toContain('registration refresh held back');
+    docker(['exec', NAME, 'rm', '-f', '/tmp/STATUS_WAITING']);
+    // the refresh follows the end of the scan within the 10 s re-check, not
+    // after a whole interval
+    await expect.poll(since, { timeout: 30_000 }).toContain('scan over, the registration refresh was held back for');
+    const log = scannerLog();
+    const count = (needle: string) => log.split('\n').filter((l) => l.includes(needle)).length;
+    // with KEEPALIVE_INTERVAL=5 the daemon has run dozens of cycles since the
+    // container started; only the changes of outcome are logged: start, each
+    // hold (the button scan may have caused one), the refresh after it
+    expect(count('registered Scan-to-PC for')).toBeGreaterThanOrEqual(2);
+    expect(count('registered Scan-to-PC for')).toBeLessThanOrEqual(6);
+    expect(count('registration refresh held back')).toBeGreaterThanOrEqual(1);
+    expect(count('registration refresh held back')).toBeLessThanOrEqual(4);
+    expect(log).not.toContain('registration refresh skipped');
+  });
+
   test('the watchdog revives openskey after it dies', async () => {
     const before = docker(['exec', NAME, 'bash', '-c', 'pgrep -x openskey | head -1']).trim();
     expect(before).not.toBe('');
