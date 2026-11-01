@@ -84,11 +84,10 @@ Brother does not support its Linux drivers, so the leak above cannot be fixed at
 ```
 button daemon: openskey
 openskey started as Scanner (device 192.168.1.50:161, host 192.168.1.10)
-openskey: registered Scan-to-PC for "Scanner"
-openskey: registration verified
+openskey: registered Scan-to-PC for "Scanner", registration verified
 ```
 
-With openskey the brscan-skey keepalive and the open-file watchdog are not needed (the watchdog only restarts it if it dies). `HOST_IPADDRESS` is taken from the interface facing the scanner when it is not set, as with bridged networking it must be an address the device can reach. The button event's fields are handed to the scan scripts and recorded on the job (`trigger: button`, see [Web UI and API](web-ui.md)), and `GET /api/scanner/device` reads the scanner's own state through it. Brother's daemon stays the default until openskey has seen more models; the protocol is documented in openskey's PROTOCOL.md, and a capture from another model is welcome.
+The registration is refreshed every two minutes (`KEEPALIVE_INTERVAL`); a line is logged only when the outcome changes. While a scan runs or a front scan waits for rear pages the refresh is held back and the log says so once; it follows the scan within ten seconds, and goes out despite the hold when the device no longer lists the registration or the lease is about to run out, so a long or jammed scan never leaves the panel without the entry (#199). With openskey the brscan-skey keepalive and the open-file watchdog are not needed (the watchdog only restarts it if it dies). `HOST_IPADDRESS` is taken from the interface facing the scanner when it is not set, as with bridged networking it must be an address the device can reach. The button event's fields are handed to the scan scripts and recorded on the job (`trigger: button`, see [Web UI and API](web-ui.md)), and `GET /api/scanner/device` reads the scanner's own state through it. Brother's daemon stays the default until openskey has seen more models; the protocol is documented in openskey's PROTOCOL.md, and a capture from another model is welcome.
 
 ## Image tags
 
