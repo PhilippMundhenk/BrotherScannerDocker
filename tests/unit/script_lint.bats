@@ -53,3 +53,10 @@ shell_scripts() {
   grep -qE 'pdftk'          "$REPO_ROOT/Dockerfile"
   grep -qE 'graphicsmagick' "$REPO_ROOT/Dockerfile"
 }
+
+@test "Dockerfile keeps scanner and SSH clients without GUI or SSH server metapackages" {
+  grep -qE '^[[:space:]]+procps[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
+  grep -qE '^[[:space:]]+sane-utils[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
+  grep -qE '^[[:space:]]+openssh-client[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
+  ! grep -qE '^[[:space:]]+(sane|ssh|openssh-server)[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
+}
