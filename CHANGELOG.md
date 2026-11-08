@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the container. The Home Assistant integration and the dashboard card have their own release notes in their repositories.
+All notable changes to the container. The Home Assistant integration, which includes the dashboard card, has its own release notes in its repository.
 
 ## 2.2.0 (unreleased)
 
