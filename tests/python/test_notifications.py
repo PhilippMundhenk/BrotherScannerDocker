@@ -1,5 +1,8 @@
 import io
 import subprocess
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+import threading
 
 import pytest
 
@@ -38,6 +41,45 @@ def test_telegram_sends_plain_text_not_url_encoded(monkeypatch):
 def test_telegram_failure_does_not_raise(monkeypatch):
     monkeypatch.setattr(telegram_module.requests, "post", lambda *a, **k: FakeResponse(ok=False))
     telegram_module.trigger_telegram(io.StringIO(), "hi", "bot1:x", "42")
+
+
+@pytest.mark.parametrize("status, expected", [(200, True), (503, False)])
+def test_telegram_with_real_http_response(monkeypatch, status, expected):
+    """Exercise Requests' JSON encoding and HTTP error handling without Telegram."""
+    received = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = self.rfile.read(int(self.headers["Content-Length"]))
+            received.append((self.path, self.headers["Content-Type"], json.loads(body)))
+            self.send_response(status)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    worker = threading.Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    session = telegram_module.requests.Session()
+    session.trust_env = False
+
+    def local_post(url, **kwargs):
+        assert url == "https://api.telegram.org/bot1:x/sendMessage"
+        assert kwargs["timeout"] == 30
+        return session.post(f"http://127.0.0.1:{server.server_port}/sendMessage", **kwargs)
+
+    monkeypatch.setattr(telegram_module.requests, "post", local_post)
+    try:
+        message = "Scan: café & page 2.pdf"
+        assert telegram_module.trigger_telegram(io.StringIO(), message, "bot1:x", "42") is expected
+        assert received == [("/sendMessage", "application/json", {"chat_id": "42", "text": message})]
+    finally:
+        server.shutdown()
+        worker.join(timeout=5)
+        server.server_close()
+        session.close()
 
 
 def test_ftp_skips_when_incomplete(monkeypatch):
