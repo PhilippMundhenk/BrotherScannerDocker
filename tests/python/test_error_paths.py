@@ -72,6 +72,7 @@ def test_remove_blank_pages_error_branches(tmp_path, monkeypatch):
         monkeypatch.setattr(scanner, "execute_command", failing)
         scanner.remove_blank_pages(log, str(pdf), 0.3)
         assert pdf.read_text() == "%PDF-1.4"
+        assert not (tmp_path / "in_noblank.pdf").exists(), "partial output removed"
     assert pdf.read_text() == "%PDF-1.4", "input untouched on every error path"
 
 

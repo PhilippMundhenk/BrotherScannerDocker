@@ -2,7 +2,7 @@
 """Scanner simulator: a stand-in for SANE's `scanimage` used by the end-to-end tests.
 
 It is bind-mounted over /usr/bin/scanimage in the test container, so the real
-    scan pipeline (scantofile.py, scanner.py, gm, gs, qpdf, the OCR queue) runs
+scan pipeline (scantofile.py, scanner.py, gm, gs, qpdf, the OCR queue) runs
 unchanged against a scanner that does not exist.
 
 Behaviour:

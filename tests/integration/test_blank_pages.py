@@ -100,6 +100,7 @@ class BlankPageIntegrationTests(unittest.TestCase):
         pdf.write_bytes(b"not a PDF")
         self.process(pdf)
         self.assertEqual(pdf.read_bytes(), b"not a PDF")
+        self.assertEqual(sorted(p.name for p in self.root.iterdir()), ["broken.pdf"])
 
 
 if __name__ == "__main__":

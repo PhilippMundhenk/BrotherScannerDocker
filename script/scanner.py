@@ -494,8 +494,8 @@ def remove_blank_pages(
         return
 
     # Replace the input only after successful page selection into a separate file.
+    output_file = os.path.join(dirname, f"{filename}_noblank.pdf")
     try:
-        output_file = os.path.join(dirname, f"{filename}_noblank.pdf")
         command = [
             "/usr/bin/qpdf",
             input_file,
@@ -515,6 +515,10 @@ def remove_blank_pages(
         )
     except subprocess.CalledProcessError:
         print(f"  ERROR: manipulating {input_file}. Skipping PDF manipulation.")
+    finally:
+        # A failed run can leave partial output behind; after success it is gone.
+        if os.path.exists(output_file):
+            os.remove(output_file)
 
 
 #
