@@ -34,7 +34,7 @@ make lint
 bats tests/unit
 
 # Python units
-pip install pytest requests==2.32.3
+pip install pytest requests==2.34.2
 pytest tests/python
 
 # end-to-end (needs Docker and Node 18+)
