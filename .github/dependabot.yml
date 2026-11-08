@@ -18,3 +18,7 @@ updates:
     groups:
       e2e-test-dependencies:
         update-types: [minor, patch]
+    ignore:
+      # Must match the Node major the e2e job runs on (setup-node in test.yml).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
