@@ -1,0 +1,3 @@
+# Python packages the scan scripts import at runtime. The image, the pytest
+# job and tests/README.md all install from this file; Dependabot keeps it current.
+requests==2.34.2

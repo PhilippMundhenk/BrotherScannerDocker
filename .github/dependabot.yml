@@ -1,0 +1,20 @@
+# Weekly version updates. The Brother driver downloads, OPENSKEY_REF and the
+# unversioned base image tags (python:slim-bookworm, rust:1-slim-bookworm)
+# are outside Dependabot's reach and are updated by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /tests/e2e
+    schedule:
+      interval: weekly
+    groups:
+      e2e-test-dependencies:
+        update-types: [minor, patch]
