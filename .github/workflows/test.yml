@@ -59,7 +59,7 @@ jobs:
             --entrypoint python3 brotherscanner:e2e /tests/test_blank_pages.py
       - name: Build coverage flavour (php-pcov)
         run: docker build -f tests/coverage/Dockerfile.coverage --build-arg BASE=brotherscanner:e2e -t brotherscanner:e2e-cov .
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
