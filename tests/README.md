@@ -68,7 +68,7 @@ tests/
 
 `tests/e2e/fixtures/scanimage` is a small Python program that is bind-mounted
 over `/usr/bin/scanimage` in the test container. The real pipeline (the
-`scanto*.py` entry points, `scanner.py`, GraphicsMagick, Ghostscript, pdftk,
+`scanto*.py` entry points, `scanner.py`, GraphicsMagick, Ghostscript, qpdf,
 the OCR queue worker) runs unchanged; only the scanner itself is simulated.
 It answers device queries, writes `SIM_PAGES` PGM pages per scan (each with a
 black rectangle so blank page removal keeps them), sleeps `SIM_SCAN_SECONDS`

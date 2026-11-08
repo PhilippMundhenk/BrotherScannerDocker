@@ -46,15 +46,16 @@ def test_remove_blank_pages_keeps_pages_above_threshold_including_two_digit_page
 
     def fake_execute(log, command, **kwargs):
         commands.append(command)
-        # pdftk would write the output file; emulate that so the replace step runs
+        # qpdf would write the output file; emulate that so the replace step runs
         with open(command[-1], "w") as handle:
             handle.write("%PDF-1.4 noblank")
 
     monkeypatch.setattr(scanner, "execute_command", fake_execute)
     scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
-    pdftk = commands[0]
-    assert pdftk[0].endswith("pdftk")
-    pages = pdftk[pdftk.index("cat") + 1:pdftk.index("output")]
+    qpdf = commands[0]
+    assert qpdf[:4] == ["/usr/bin/qpdf", str(pdf), "--pages", "."]
+    assert qpdf[-2] == "--"
+    pages = qpdf[4].split(",")
     assert pages == ["1", "3", "4", "5", "6", "7", "8", "9", "10", "12"]
     assert pdf.read_text() == "%PDF-1.4 noblank", "cleaned file replaces the input"
 
@@ -64,9 +65,38 @@ def test_remove_blank_pages_leaves_file_when_nothing_is_blank(tmp_path, monkeypa
     pdf.write_text("%PDF-1.4 original")
     monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 2)
     monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: 1.0)
-    monkeypatch.setattr(scanner, "execute_command", lambda log, command, **kw: open(command[-1], "w").close())
+    monkeypatch.setattr(scanner, "execute_command", lambda *a, **kw: pytest.fail("no rewrite needed"))
     scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
     assert pdf.read_text() == "%PDF-1.4 original"
+
+
+def test_remove_blank_pages_keeps_original_when_all_pages_are_blank(tmp_path, monkeypatch):
+    pdf = tmp_path / "in.pdf"
+    pdf.write_text("%PDF-1.4 original")
+    monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 2)
+    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: 0.0)
+    monkeypatch.setattr(scanner, "execute_command", lambda *a, **kw: pytest.fail("must not write an empty PDF"))
+    scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
+    assert pdf.read_text() == "%PDF-1.4 original"
+
+
+def test_remove_blank_pages_keeps_unknown_coverage_and_spaces_in_paths(tmp_path, monkeypatch):
+    pdf = tmp_path / "scan with spaces.pdf"
+    pdf.write_text("%PDF-1.4 original")
+    monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 3)
+    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: {1: None, 2: 0.0, 3: 0.9}[page])
+    commands = []
+
+    def fake_execute(log, command, **kwargs):
+        commands.append(command)
+        with open(command[-1], "w") as handle:
+            handle.write("%PDF-1.4 selected")
+
+    monkeypatch.setattr(scanner, "execute_command", fake_execute)
+    scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
+    assert commands[0][1] == str(pdf)
+    assert commands[0][4] == "1,3"
+    assert pdf.read_text() == "%PDF-1.4 selected"
 
 
 def test_rear_page_wait_is_configurable(monkeypatch, clean_env):

@@ -81,7 +81,7 @@ export async function waitFor(predicate: () => Promise<boolean>, timeoutMs: numb
   throw new Error(`timed out after ${timeoutMs} ms waiting for ${what}`);
 }
 
-/** Page count of a PDF inside the container's /scans, via pdftk's companion pdfinfo. */
+/** Page count of a PDF inside the container's /scans, via Poppler's pdfinfo. */
 export function pdfPageCount(file: string): number {
   const info = inContainer(['pdfinfo', `/scans/${file}`]);
   const match = /^Pages:\s+(\d+)/m.exec(info);

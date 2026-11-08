@@ -47,10 +47,11 @@ shell_scripts() {
 }
 
 @test "Dockerfile installs the packages the scan pipeline depends on" {
-  # pdfinfo from poppler-utils; gs from ghostscript; pdftk; gm from graphicsmagick
+  # pdfinfo from poppler-utils; gs from ghostscript; qpdf; gm from graphicsmagick
   grep -qE 'poppler-utils'  "$REPO_ROOT/Dockerfile"
   grep -qE 'ghostscript'    "$REPO_ROOT/Dockerfile"
-  grep -qE 'pdftk'          "$REPO_ROOT/Dockerfile"
+  grep -qE '^[[:space:]]+qpdf[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
+  ! grep -qE '^[[:space:]]+(pdftk|pdftk-java)[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
   grep -qE 'graphicsmagick' "$REPO_ROOT/Dockerfile"
 }
 
