@@ -38,7 +38,7 @@ jobs:
         run: pytest --cov --cov-report=term-missing --cov-report=xml:output/python-coverage.xml tests/python
       - name: Upload Python coverage
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-coverage
           path: output/python-coverage.xml
@@ -80,7 +80,7 @@ jobs:
         run: python3 tests/coverage/php_report.py tests/e2e/output/php-coverage www --fail-under 95 --xml tests/e2e/output/php-coverage.xml
       - name: Upload report and container logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-output
           path: tests/e2e/output
