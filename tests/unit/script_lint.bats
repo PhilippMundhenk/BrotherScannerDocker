@@ -60,3 +60,12 @@ shell_scripts() {
   grep -qE '^[[:space:]]+openssh-client[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
   ! grep -qE '^[[:space:]]+(sane|ssh|openssh-server)[[:space:]]+\\$' "$REPO_ROOT/Dockerfile"
 }
+
+@test "Dockerfile removes pip after installing application dependencies" {
+  local install_line remove_line
+  install_line=$(grep -nE '^pip install .*requests==' "$REPO_ROOT/Dockerfile" | cut -d: -f1)
+  remove_line=$(grep -nE '^python3 -m pip uninstall --yes pip' "$REPO_ROOT/Dockerfile" | cut -d: -f1)
+  [ -n "$install_line" ]
+  [ -n "$remove_line" ]
+  [ "$remove_line" -gt "$install_line" ]
+}
