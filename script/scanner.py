@@ -482,32 +482,43 @@ def remove_blank_pages(
 
         return picked_pages
 
-    # Use pdftk to remove pages
+    selected_pages = non_blank_pages()
+    removed_pages = page_count - len(selected_pages)
+    if removed_pages == 0:
+        print(f"  No blank pages detected in {input_file}")
+        return
+    if not selected_pages:
+        # Keep the original rather than discard the entire job when the
+        # threshold classifies every page as blank.
+        print(f"  All pages appear blank; keeping the original {input_file}")
+        return
+
+    # Replace the input only after successful page selection into a separate file.
+    output_file = os.path.join(dirname, f"{filename}_noblank.pdf")
     try:
-        output_file = os.path.join(dirname, f"{filename}_noblank.pdf")
-        selected_pages = non_blank_pages()
         command = [
-            "/usr/bin/pdftk",
+            "/usr/bin/qpdf",
             input_file,
-            "cat",
-            *selected_pages,
-            "output",
+            "--pages",
+            ".",
+            ",".join(selected_pages),
+            "--",
             output_file,
         ]
         execute_command(log, command, check=True)
 
-        removed_pages = page_count - len(selected_pages)
-        if removed_pages == 0:
-            print(f"  No blank pages detected in {input_file}")
-        else:
-            os.replace(output_file, input_file)
-            print(f"  Removed {removed_pages} blank pages and saved as {input_file}")
+        os.replace(output_file, input_file)
+        print(f"  Removed {removed_pages} blank pages and saved as {input_file}")
     except FileNotFoundError:
         print(
             f"  WARNING: '{command[0]}' executable not found. Skipping PDF manipulation."
         )
     except subprocess.CalledProcessError:
         print(f"  ERROR: manipulating {input_file}. Skipping PDF manipulation.")
+    finally:
+        # A failed run can leave partial output behind; after success it is gone.
+        if os.path.exists(output_file):
+            os.remove(output_file)
 
 
 #

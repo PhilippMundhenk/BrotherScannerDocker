@@ -1,6 +1,6 @@
 # Tests
 
-Four layers, all defined in `.github/workflows/test.yml`. The workflow is
+Five layers, all defined in `.github/workflows/test.yml`. The workflow is
 reusable only: the PR publish workflow runs it for every pull request and the
 master publish workflow before every release build, so an image is only
 produced when every layer is green and nothing runs twice:
@@ -10,6 +10,7 @@ produced when every layer is green and nothing runs twice:
 | static analysis | shellcheck | the remaining shell scripts: `files/runScanner.sh`, `tools/run.sh`, `tools/update-container.sh` | `make lint` |
 | shell hygiene | bats-core | `bash -n` on the shell scripts, executable bits in `script/`, Dockerfile sanity | `bats tests/unit` |
 | Python units | pytest | `script/scanner.py` (environment parsing, blank page removal, post-processing, rear wait), the OCR queue (`script/ocr_queue.py`) and the notification helpers, with subprocesses mocked | `pytest tests/python` |
+| PDF integration | unittest | real Ghostscript, qpdf, and Poppler in the built image: blank-page removal, retained text and order, and original preservation | See the container command below. |
 | end-to-end | Playwright | the built image running with a simulated scanner and a fake OCR service: web UI, REST API, scan pipeline, OCR queue, file ownership | `cd tests/e2e && npx playwright test` |
 
 The main container comes from `global-setup.ts` (everything switched on, port `E2E_PORT`, default 18080). Two specs start their own short-lived
@@ -38,6 +39,8 @@ pytest tests/python
 
 # end-to-end (needs Docker and Node 18+)
 docker build -t brotherscanner:e2e .
+docker run --rm --network none -v "$PWD/tests/integration:/tests:ro" \
+  --entrypoint python3 brotherscanner:e2e /tests/test_blank_pages.py
 cd tests/e2e
 npm ci
 npx playwright install chromium        # once
@@ -56,6 +59,8 @@ tests/
   python/
     conftest.py              puts script/ on sys.path, clean_env fixture
     test_*.py                pytest tests
+  integration/
+    test_blank_pages.py      real PDF-tool checks in the built image
   e2e/
     fixtures/scanimage       scanner simulator (stand-in for SANE's scanimage)
     fixtures/sample.pdf      seeded into /scans; also the fake OCR response
@@ -68,7 +73,7 @@ tests/
 
 `tests/e2e/fixtures/scanimage` is a small Python program that is bind-mounted
 over `/usr/bin/scanimage` in the test container. The real pipeline (the
-`scanto*.py` entry points, `scanner.py`, GraphicsMagick, Ghostscript, pdftk,
+`scanto*.py` entry points, `scanner.py`, GraphicsMagick, Ghostscript, qpdf,
 the OCR queue worker) runs unchanged; only the scanner itself is simulated.
 It answers device queries, writes `SIM_PAGES` PGM pages per scan (each with a
 black rectangle so blank page removal keeps them), sleeps `SIM_SCAN_SECONDS`

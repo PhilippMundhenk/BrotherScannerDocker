@@ -55,19 +55,24 @@ def test_remove_blank_pages_error_branches(tmp_path, monkeypatch):
     # page count unknown
     monkeypatch.setattr(scanner, "pdf_page_count", lambda l, p: None)
     scanner.remove_blank_pages(log, str(pdf), 0.3)
-    # pdftk missing
-    monkeypatch.setattr(scanner, "pdf_page_count", lambda l, p: 1)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda l, p, n: 0.0)
+    # qpdf missing
+    monkeypatch.setattr(scanner, "pdf_page_count", lambda l, p: 2)
+    monkeypatch.setattr(scanner, "page_ink_coverage", lambda l, p, n: 0.0 if n == 1 else 1.0)
 
     def missing(log, command, **kw):
         raise FileNotFoundError(command[0])
     monkeypatch.setattr(scanner, "execute_command", missing)
     scanner.remove_blank_pages(log, str(pdf), 0.3)
-    # pdftk fails
-    def failing(log, command, **kw):
-        raise subprocess.CalledProcessError(1, command)
-    monkeypatch.setattr(scanner, "execute_command", failing)
-    scanner.remove_blank_pages(log, str(pdf), 0.3)
+    # qpdf fails
+    for exit_code in (2, 3):  # qpdf errors and warnings both preserve the input
+        def failing(log, command, **kw):
+            with open(command[-1], "w") as output:
+                output.write("incomplete or warning-producing output")
+            raise subprocess.CalledProcessError(exit_code, command)
+        monkeypatch.setattr(scanner, "execute_command", failing)
+        scanner.remove_blank_pages(log, str(pdf), 0.3)
+        assert pdf.read_text() == "%PDF-1.4"
+        assert not (tmp_path / "in_noblank.pdf").exists(), "partial output removed"
     assert pdf.read_text() == "%PDF-1.4", "input untouched on every error path"
 
 

@@ -26,7 +26,7 @@ apt-get -y --no-install-recommends install \
   lighttpd \
   netbase \
   netpbm \
-  pdftk \
+  qpdf \
   php-cgi \
   php-curl \
   poppler-utils \
