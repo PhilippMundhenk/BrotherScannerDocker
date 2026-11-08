@@ -64,9 +64,15 @@ shell_scripts() {
 
 @test "Dockerfile removes pip after installing application dependencies" {
   local install_line remove_line
-  install_line=$(grep -nE '^pip install .*requests==' "$REPO_ROOT/Dockerfile" | cut -d: -f1)
+  install_line=$(grep -nE '^pip install --no-cache-dir -r /tmp/requirements\.txt' "$REPO_ROOT/Dockerfile" | cut -d: -f1)
   remove_line=$(grep -nE '^python3 -m pip uninstall --yes pip' "$REPO_ROOT/Dockerfile" | cut -d: -f1)
   [ -n "$install_line" ]
   [ -n "$remove_line" ]
   [ "$remove_line" -gt "$install_line" ]
+}
+
+@test "Python dependencies are pinned only in requirements.txt" {
+  grep -qE '^requests==[0-9]+\.[0-9]+\.[0-9]+$' "$REPO_ROOT/requirements.txt"
+  grep -qE 'pip install .*-r requirements\.txt' "$REPO_ROOT/.github/workflows/test.yml"
+  ! grep -nE 'requests==' "$REPO_ROOT/Dockerfile" "$REPO_ROOT/.github/workflows/test.yml" "$REPO_ROOT/tests/README.md"
 }
