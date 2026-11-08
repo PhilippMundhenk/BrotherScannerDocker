@@ -147,15 +147,20 @@ test.describe('openskey button daemon', () => {
     // the refresh follows the end of the scan within the 10 s re-check, not
     // after a whole interval
     await expect.poll(since, { timeout: 30_000 }).toContain('scan over, the registration refresh was held back for');
+    // With KEEPALIVE_INTERVAL=5 the daemon has run dozens of cycles since the
+    // container started, and it logs a keepalive line only when the outcome
+    // differs from the previous cycle. How many changes there are depends on
+    // timing (the button scan above holds twice, a self-test may go unanswered
+    // under load, #204), so assert the property itself: no keepalive line is
+    // ever followed by an identical one.
     const log = scannerLog();
-    const count = (needle: string) => log.split('\n').filter((l) => l.includes(needle)).length;
-    // with KEEPALIVE_INTERVAL=5 the daemon has run dozens of cycles since the
-    // container started; only the changes of outcome are logged: start, each
-    // hold (the button scan may have caused one), the refresh after it
-    expect(count('registered Scan-to-PC for')).toBeGreaterThanOrEqual(2);
-    expect(count('registered Scan-to-PC for')).toBeLessThanOrEqual(6);
-    expect(count('registration refresh held back')).toBeGreaterThanOrEqual(1);
-    expect(count('registration refresh held back')).toBeLessThanOrEqual(4);
+    const keepalive = log
+      .split('\n')
+      .filter((l) => /^openskey: (registered Scan-to-PC for|scan in progress|registration failed)/.test(l));
+    expect(keepalive.filter((l) => l.startsWith('openskey: registered Scan-to-PC for')).length).toBeGreaterThanOrEqual(2);
+    expect(keepalive.filter((l) => l.includes('registration refresh held back')).length).toBeGreaterThanOrEqual(1);
+    const repeated = keepalive.filter((l, i) => i > 0 && l === keepalive[i - 1]);
+    expect(repeated, keepalive.join('\n')).toEqual([]);
     expect(log).not.toContain('registration refresh skipped');
   });
 
