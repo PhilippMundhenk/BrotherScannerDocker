@@ -52,6 +52,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build image under test
         run: docker build -t brotherscanner:e2e .
+      - name: Test blank-page removal with real PDF tools
+        run: |
+          docker run --rm --network none \
+            -v "$PWD/tests/integration:/tests:ro" \
+            --entrypoint python3 brotherscanner:e2e /tests/test_blank_pages.py
       - name: Build coverage flavour (php-pcov)
         run: docker build -f tests/coverage/Dockerfile.coverage --build-arg BASE=brotherscanner:e2e -t brotherscanner:e2e-cov .
       - uses: actions/setup-node@v4
