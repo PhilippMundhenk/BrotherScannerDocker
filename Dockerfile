@@ -30,10 +30,10 @@ apt-get -y --no-install-recommends install \
   php-cgi \
   php-curl \
   poppler-utils \
+  procps \
   python3 \
-  sane \
   sane-utils \
-  ssh \
+  openssh-client \
   sshpass \
   sudo \
   tzdata \
