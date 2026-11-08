@@ -1,0 +1,28 @@
+name: Dependabot auto-merge
+
+# Approves Dependabot's patch and minor updates and turns on auto-merge for
+# them. GitHub merges such a PR only after every required check of the master
+# ruleset is green. Major updates are left for a maintainer to review.
+
+on: pull_request # yamllint disable-line rule:truthy
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'PhilippMundhenk/BrotherScannerDocker'
+    steps:
+      - name: Read the update type
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+      - name: Approve and enable auto-merge
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        run: |
+          gh pr review --approve "$PR_URL"
+          gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
