@@ -12,8 +12,11 @@ sys.path.insert(0, "/opt/brother/scanner/brscan-skey/script")
 import scanner
 
 
+TINTED_BLANK = "<tinted blank>"
+
+
 def make_pdf(path, labels):
-    """Write a PDF with blank pages or black rectangles and identifying text."""
+    """Write a PDF with blank pages, tinted blank pages or black rectangles and text."""
     objects = [b"<< /Type /Catalog /Pages 2 0 R >>", b""]
     objects.append(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
     kids = []
@@ -24,10 +27,13 @@ def make_pdf(path, labels):
             (f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 400] "
              f"/Resources << /Font << /F1 3 0 R >> >> /Contents {page + 1} 0 R >>").encode()
         )
-        content = (
-            f"0 g 30 70 240 200 re f BT /F1 18 Tf 30 310 Td ({label}) Tj ET"
-            if label else ""
-        ).encode()
+        if label == TINTED_BLANK:
+            # A scanned blank sheet: a light paper tint over the whole page.
+            content = b"0.94 0.92 0.88 rg 0 0 300 400 re f"
+        elif label:
+            content = f"0 g 30 70 240 200 re f BT /F1 18 Tf 30 310 Td ({label}) Tj ET".encode()
+        else:
+            content = b""
         objects.append(
             f"<< /Length {len(content)} >>\nstream\n".encode() + content + b"\nendstream"
         )
@@ -81,6 +87,19 @@ class BlankPageIntegrationTests(unittest.TestCase):
         pages = text.split("\f")
         self.assertEqual(pages.pop(), "")
         self.assertEqual([page.strip() for page in pages], [label for label in labels if label])
+
+    def test_tinted_blank_pages_are_removed(self):
+        """Regression: colour scans of blank paper were kept (about 9% C+M+Y ink)."""
+        pdf = self.root / "tinted.pdf"
+        labels = ["FIRST", TINTED_BLANK, "SECOND", TINTED_BLANK]
+        make_pdf(pdf, labels)
+
+        self.process(pdf)
+
+        count = subprocess.check_output(["qpdf", "--show-npages", str(pdf)], text=True)
+        self.assertEqual(count.strip(), "2")
+        text = subprocess.check_output(["pdftotext", str(pdf), "-"], text=True)
+        self.assertEqual([page.strip() for page in text.split("\f")[:-1]], ["FIRST", "SECOND"])
 
     def assert_preserved(self, labels):
         pdf = self.root / "original.pdf"

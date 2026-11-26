@@ -38,14 +38,18 @@ def test_execute_command_and_pid(monkeypatch, tmp_path):
     assert scanner.execute_command_pid(log, ["sleep", "1"]) == 4321
 
 
-def test_pdf_page_count_and_ink_coverage_via_subprocess(monkeypatch):
+def test_pdf_page_count_and_dark_coverage_via_subprocess(monkeypatch):
     monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(b"Pages: 3\n"))
     assert scanner.pdf_page_count(io.StringIO(), "x.pdf") == 3
     monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(b"", returncode=1))
     assert scanner.pdf_page_count(io.StringIO(), "x.pdf") is None
-    monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(b" 0.1 0.2 0.3 0.4 CMYK OK\n"))
-    assert scanner.page_ink_coverage(io.StringIO(), "x.pdf", 1) == pytest.approx(1.0)
-    assert scanner.parse_ink_coverage("a b c d CMYK") is None
+    image = b"P5\n2 2\n255\n" + bytes([0, 255, 255, 255])
+    monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(image))
+    assert scanner.page_dark_coverage(io.StringIO(), "x.pdf", 1) == pytest.approx(25.0)
+    monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(image, returncode=1))
+    assert scanner.page_dark_coverage(io.StringIO(), "x.pdf", 1) is None
+    monkeypatch.setattr(scanner.subprocess, "Popen", lambda *a, **kw: FakeProcess(b"garbage"))
+    assert scanner.page_dark_coverage(io.StringIO(), "x.pdf", 1) is None
 
 
 def test_remove_blank_pages_error_branches(tmp_path, monkeypatch):
@@ -57,7 +61,7 @@ def test_remove_blank_pages_error_branches(tmp_path, monkeypatch):
     scanner.remove_blank_pages(log, str(pdf), 0.3)
     # qpdf missing
     monkeypatch.setattr(scanner, "pdf_page_count", lambda l, p: 2)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda l, p, n: 0.0 if n == 1 else 1.0)
+    monkeypatch.setattr(scanner, "page_dark_coverage", lambda l, p, n: 0.0 if n == 1 else 1.0)
 
     def missing(log, command, **kw):
         raise FileNotFoundError(command[0])

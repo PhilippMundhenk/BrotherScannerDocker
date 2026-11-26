@@ -62,7 +62,7 @@ return array(
 
     // --- Post-processing
     array('key' => 'REMOVE_BLANK_THRESHOLD', 'group' => 'Post-processing', 'type' => 'float', 'default' => '0.3', 'restart' => false, 'min' => 0, 'max' => 100,
-          'description' => 'Ink coverage in percent below which a page counts as blank and is removed (empty: keep all pages).'),
+          'description' => 'Percentage of the page darker than light grey below which a page counts as blank and is removed; paper tint is ignored (empty: keep all pages).'),
     array('key' => 'USE_JPEG_COMPRESSION', 'group' => 'Post-processing', 'type' => 'bool', 'default' => 'false', 'restart' => false,
           'description' => 'Store the pages as JPEG inside the PDF (much smaller files).'),
 
