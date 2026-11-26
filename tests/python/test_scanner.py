@@ -24,10 +24,43 @@ def test_read_environment_handles_values_with_equals_and_blank_lines(tmp_path, m
     assert os.environ["EMPTY"] == ""
 
 
-def test_parse_ink_coverage():
-    gs_output = "GPL Ghostscript\n 0.00000  0.00000  0.00000  0.51230 CMYK OK\n"
-    assert scanner.parse_ink_coverage(gs_output) == pytest.approx(0.5123)
-    assert scanner.parse_ink_coverage("nothing useful") is None
+def pgm(pixels, width, height, header_extra=b"", maxval=255):
+    return b"P5\n" + header_extra + f"{width} {height}\n{maxval}\n".encode() + bytes(pixels)
+
+
+def test_parse_dark_coverage_counts_pixels_below_the_cutoff():
+    assert scanner.parse_dark_coverage(pgm([255] * 100, 10, 10)) == 0.0
+    assert scanner.parse_dark_coverage(pgm([0] * 100, 10, 10)) == 100.0
+    half = [0] * 50 + [255] * 50
+    assert scanner.parse_dark_coverage(pgm(half, 10, 10)) == pytest.approx(50.0)
+    # the cutoff itself counts as paper
+    assert scanner.parse_dark_coverage(pgm([160] * 10 + [159] * 10, 10, 2), 160) == pytest.approx(50.0)
+
+
+def test_parse_dark_coverage_ignores_paper_tint():
+    """Regression: a tinted, noisy blank page used to score ~9% ink."""
+    tinted = [235, 238, 230, 242] * 25
+    assert scanner.parse_dark_coverage(pgm(tinted, 10, 10)) == 0.0
+
+
+def test_parse_dark_coverage_accepts_header_comments():
+    data = pgm([0, 255], 2, 1, header_extra=b"# Ghostscript\n")
+    assert scanner.parse_dark_coverage(data) == pytest.approx(50.0)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        b"nothing useful",
+        b"",
+        b"P6\n1 1\n255\n\x00\x00\x00",  # colour PGM variant, not supported
+        pgm([0], 1, 1, maxval=65535),
+        b"P5\n0 0\n255\n",
+        b"P5\n10 10\n255\n\x00\x00",  # truncated pixel data
+    ],
+)
+def test_parse_dark_coverage_rejects_unusable_input(data):
+    assert scanner.parse_dark_coverage(data) is None
 
 
 def test_parse_page_count():
@@ -41,7 +74,7 @@ def test_remove_blank_pages_keeps_pages_above_threshold_including_two_digit_page
     pdf.write_text("%PDF-1.4")
     coverage = {page: (0.0 if page in (2, 11) else 0.9) for page in range(1, 13)}
     monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 12)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: coverage[page])
+    monkeypatch.setattr(scanner, "page_dark_coverage", lambda log, path, page: coverage[page])
     commands = []
 
     def fake_execute(log, command, **kwargs):
@@ -64,7 +97,7 @@ def test_remove_blank_pages_leaves_file_when_nothing_is_blank(tmp_path, monkeypa
     pdf = tmp_path / "in.pdf"
     pdf.write_text("%PDF-1.4 original")
     monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 2)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: 1.0)
+    monkeypatch.setattr(scanner, "page_dark_coverage", lambda log, path, page: 1.0)
     monkeypatch.setattr(scanner, "execute_command", lambda *a, **kw: pytest.fail("no rewrite needed"))
     scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
     assert pdf.read_text() == "%PDF-1.4 original"
@@ -74,7 +107,7 @@ def test_remove_blank_pages_keeps_original_when_all_pages_are_blank(tmp_path, mo
     pdf = tmp_path / "in.pdf"
     pdf.write_text("%PDF-1.4 original")
     monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 2)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: 0.0)
+    monkeypatch.setattr(scanner, "page_dark_coverage", lambda log, path, page: 0.0)
     monkeypatch.setattr(scanner, "execute_command", lambda *a, **kw: pytest.fail("must not write an empty PDF"))
     scanner.remove_blank_pages(io.StringIO(), str(pdf), 0.3)
     assert pdf.read_text() == "%PDF-1.4 original"
@@ -84,7 +117,7 @@ def test_remove_blank_pages_keeps_unknown_coverage_and_spaces_in_paths(tmp_path,
     pdf = tmp_path / "scan with spaces.pdf"
     pdf.write_text("%PDF-1.4 original")
     monkeypatch.setattr(scanner, "pdf_page_count", lambda log, path: 3)
-    monkeypatch.setattr(scanner, "page_ink_coverage", lambda log, path, page: {1: None, 2: 0.0, 3: 0.9}[page])
+    monkeypatch.setattr(scanner, "page_dark_coverage", lambda log, path, page: {1: None, 2: 0.0, 3: 0.9}[page])
     commands = []
 
     def fake_execute(log, command, **kwargs):

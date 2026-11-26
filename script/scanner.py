@@ -409,16 +409,44 @@ def parse_page_count(pdfinfo_output: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 
-def parse_ink_coverage(gs_output: str) -> Optional[float]:
-    """Sum the CMYK coverage percentages reported by the gs ink_cov device."""
-    for line in gs_output.splitlines():
-        parts = line.split()
-        if len(parts) >= 5 and parts[4] == "CMYK":
-            try:
-                return sum(float(value) for value in parts[:4])
-            except ValueError:
-                continue
-    return None
+# Blank page detection renders each page to grayscale and counts the pixels
+# darker than a fixed cutoff. Measuring ink (Ghostscript's ink_cov) is not
+# usable on colour scans: the paper tint and JPEG noise alone add up to several
+# percent of C, M and Y, far above any sensible blank-page threshold. Paper stays
+# above the cutoff while text and graphics fall below it. A low resolution is
+# enough for that and keeps the render fast.
+BLANK_RENDER_DPI = 75
+BLANK_DARK_CUTOFF = 160
+
+# Header of a binary PGM, e.g. "P5\n# comment\n631 874\n255\n". Ghostscript writes
+# the comment line itself; the pixel bytes start right after the final whitespace.
+_PGM_HEADER = re.compile(
+    rb"""
+    P5\s
+    (?:\#[^\n]*\n)*     # comment lines
+    (\d+)\s+(\d+)\s+    # width, height
+    (\d+)\s             # maximum pixel value
+    """,
+    re.VERBOSE,
+)
+
+
+def parse_dark_coverage(
+    pgm_data: bytes, cutoff: int = BLANK_DARK_CUTOFF
+) -> Optional[float]:
+    """Percentage of pixels darker than `cutoff` in a binary 8-bit PGM (P5) image."""
+    match = _PGM_HEADER.match(pgm_data)
+    if not match:
+        return None
+    width, height, maxval = (int(value) for value in match.groups())
+    pixel_count = width * height
+    if maxval != 255 or pixel_count == 0:
+        return None
+    pixels = pgm_data[match.end() : match.end() + pixel_count]
+    if len(pixels) != pixel_count:
+        return None
+    dark_table = bytes(1 if value < cutoff else 0 for value in range(256))
+    return 100.0 * pixels.translate(dark_table).count(1) / pixel_count
 
 
 def pdf_page_count(log: TextIO, input_file: str) -> Optional[int]:
@@ -429,14 +457,27 @@ def pdf_page_count(log: TextIO, input_file: str) -> Optional[int]:
     return parse_page_count(output.decode())
 
 
-def page_ink_coverage(log: TextIO, input_file: str, page: int) -> Optional[float]:
+def page_dark_coverage(log: TextIO, input_file: str, page: int) -> Optional[float]:
+    """Percentage of the page that is darker than light grey, or None if unmeasurable."""
     process = subprocess.Popen(
-        ["gs", "-o", "-", f"-dFirstPage={page}", f"-dLastPage={page}", "-sDEVICE=ink_cov", input_file],
+        [
+            "gs",
+            "-q",
+            "-o",
+            "-",
+            f"-r{BLANK_RENDER_DPI}",
+            f"-dFirstPage={page}",
+            f"-dLastPage={page}",
+            "-sDEVICE=pgmraw",
+            input_file,
+        ],
         stdout=subprocess.PIPE,
         stderr=log,
     )
     output, _ = process.communicate()
-    return parse_ink_coverage(output.decode())
+    if process.returncode != 0:
+        return None
+    return parse_dark_coverage(output)
 
 
 def remove_blank_pages(
@@ -450,7 +491,8 @@ def remove_blank_pages(
 
     Args:
     input_file (str): The path to the input PDF file.
-    remove_blank_threshold (float): The threshold for ink coverage to consider a page non-blank.
+    remove_blank_threshold (float): The percentage of the page that must be darker than
+        light grey for the page to count as non-blank.
     """
 
     filename = os.path.splitext(os.path.basename(input_file))[0]
@@ -469,16 +511,16 @@ def remove_blank_pages(
     def non_blank_pages() -> List[str]:
         picked_pages: List[str] = []
         for page in range(1, page_count + 1):
-            ink_coverage = page_ink_coverage(log, input_file, page)
-            if ink_coverage is None:
+            coverage = page_dark_coverage(log, input_file, page)
+            if coverage is None:
                 # Could not measure: never drop a page we know nothing about.
-                print(f"    Page {page}: keep (ink coverage unknown)")
+                print(f"    Page {page}: keep (content coverage unknown)")
                 picked_pages.append(str(page))
-            elif ink_coverage < remove_blank_threshold:
-                print(f"    Page {page}: delete (ink coverage: {ink_coverage:.2f}%)")
+            elif coverage < remove_blank_threshold:
+                print(f"    Page {page}: delete (content coverage: {coverage:.2f}%)")
             else:
                 picked_pages.append(str(page))
-                print(f"    Page {page}: keep (ink coverage: {ink_coverage:.2f}%)")
+                print(f"    Page {page}: keep (content coverage: {coverage:.2f}%)")
 
         return picked_pages
 
